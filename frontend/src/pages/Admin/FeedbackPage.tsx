@@ -29,7 +29,7 @@ const Sub = styled.p`
 export default function FeedbackPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-feedback'],
-    queryFn: adminApi.getFeedback,
+    queryFn: () => adminApi.getFeedback(),
   });
 
   return (

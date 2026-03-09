@@ -13,9 +13,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
-    "@salutejs/plasma-b2c": "^1.394.0",
-    "@salutejs/plasma-core": "^1.110.0",
-    "@salutejs/plasma-tokens-b2c": "^1.50.0",
     "@tanstack/react-query": "^5.17.19",
     "axios": "^1.6.7",
     "lucide-react": "^0.344.0",

@@ -26,7 +26,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          plasma: ['@salutejs/plasma-b2c', '@salutejs/plasma-tokens-b2c'],
           charts: ['recharts'],
         },
       },

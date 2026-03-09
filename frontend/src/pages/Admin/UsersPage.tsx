@@ -53,7 +53,7 @@ export default function UsersPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users'],
-    queryFn: adminApi.getUsers,
+    queryFn: () => adminApi.getUsers(),
   });
 
   const filtered = data?.filter((u) =>
