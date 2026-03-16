@@ -1,20 +1,22 @@
+# backend/app/main.py - Обновленный main
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
 
-# Импорт роутеров (пока закомментированы, создадим позже)
-# from app.chat.endpoints import router as chat_router
-# from app.documents.generator import router as docs_router
+from app.api import auth, chat
+from app.db.session import engine
+from app.db.base import Base
+from app.core.config import settings
+
+# Создаем таблицы
+Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Стартап и shutdown события"""
-    # При запуске
-    print(" Starting Legal AI Service...")
+    print("🚀 Starting Legal AI Service...")
     yield
-    # При остановке
-    print(" Shutting down Legal AI Service...")
+    print("🛑 Shutting down Legal AI Service...")
 
 app = FastAPI(
     title="Legal AI Service",
@@ -31,21 +33,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+app.include_router(chat.router, prefix="/chat", tags=["Chat"])
+
 @app.get("/")
 async def root():
-    """Health check"""
     return {
         "status": "ok",
         "service": "Legal AI Service",
-        "version": "0.1.0"
+        "version": "0.1.0",
+        "endpoints": {
+            "auth": ["/auth/register", "/auth/login", "/auth/consent"],
+            "chat": ["/chat/new", "/chat/list", "/chat/{id}/send_stream"]
+        }
     }
 
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
-# app.include_router(chat_router, prefix="/chat", tags=["Chat"])
-# app.include_router(docs_router, prefix="/documents", tags=["Documents"])
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
