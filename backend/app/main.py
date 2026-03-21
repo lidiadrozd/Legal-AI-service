@@ -7,30 +7,37 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# ✅ ИСПРАВЛЕННЫЕ ИМПОРТЫ — БЕЗ ОШИБОК!
+# ✅ ИМПОРТЫ
 from app.core.config import settings
 from app.db.session import engine, get_db
-from app.db.base_class import Base  # ✅ Пустой Base
+from app.db.base_class import Base
 
-# ✅ Заглушки роутеров (создадим позже)
+# ✅ ИМПОРТ РЕАЛЬНЫХ РОУТЕРОВ (когда они будут созданы)
+# Сейчас используем заглушки, но позже заменим на реальные импорты
+# from app.api import auth, chat, admin
+
+# ✅ ЗАГЛУШКИ РОУТЕРОВ (временное решение)
 from fastapi import APIRouter
-auth = APIRouter()
-chat = APIRouter()
-admin = APIRouter()
+auth_router = APIRouter(prefix="/auth", tags=["🔐 Auth"])
+chat_router = APIRouter(prefix="/chat", tags=["💬 Chat"])
+admin_router = APIRouter(prefix="/admin", tags=["⚙️ Admin"])
 
-# ✅ ПУСТЫЕ РОУТЕРЫ (чтобы не было ошибок импорта)
-@auth.get("/ping")
-async def auth_ping(): return {"auth": "ready"}
+# ✅ ВРЕМЕННЫЕ ЭНДПОИНТЫ ДЛЯ ЗАГЛУШЕК
+@auth_router.get("/ping")
+async def auth_ping(): 
+    return {"auth": "ready"}
 
-@chat.get("/ping")
-async def chat_ping(): return {"chat": "ready"}
+@chat_router.get("/ping")
+async def chat_ping(): 
+    return {"chat": "ready"}
 
-@admin.get("/ping")
-async def admin_ping(): return {"admin": "ready"}
+@admin_router.get("/ping")
+async def admin_ping(): 
+    return {"admin": "ready"}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """✅ АСИНХРОННЫЙ Lifecycle — все проблемы решены"""
+    """✅ АСИНХРОННЫЙ Lifecycle"""
     
     # 🔥 АСИНХРОННАЯ ИНИЦИАЛИЗАЦИЯ БД
     print("🔄 Инициализация базы данных...")
@@ -77,19 +84,19 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# ✅ CORS — ИСПРАВЛЕНИЕ!
+# ✅ CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if settings.DEBUG else settings.CORS_ORIGINS,  # ✅ Без split!
+    allow_origins=["*"] if settings.DEBUG else settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Роутеры (порядок ВАЖЕН!)
-app.include_router(auth.router, prefix="/auth", tags=["🔐 Auth"])
-app.include_router(chat.router, prefix="/chat", tags=["💬 Chat"])
-app.include_router(admin.router, prefix="/admin", tags=["⚙️ Admin"])
+# ✅ ПОДКЛЮЧЕНИЕ РОУТЕРОВ (ИСПРАВЛЕНО!)
+app.include_router(auth_router)  # ✅ Убрали .router
+app.include_router(chat_router)   # ✅ Убрали .router
+app.include_router(admin_router)  # ✅ Убрали .router
 
 # ✅ Health endpoints
 @app.get("/", tags=["📊 Status"])
@@ -122,7 +129,7 @@ async def health():
         "service": settings.APP_NAME,
         "environment": getattr(settings, 'ENVIRONMENT', 'dev'),
         "debug": settings.DEBUG,
-        "timestamp": "2026-03-21"
+        "timestamp": "2026-03-22"  # Обновлено
     }
 
 @app.get("/config", tags=["📊 Status"])
