@@ -1,26 +1,29 @@
 """
 Legal AI Service - Главный файл FastAPI
 🚀 Мониторинг изменений законов + GigaChat RAG
+✅ АСИНХРОННАЯ ИНИЦИАЛИЗАЦИЯ БД
 """
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.db.session import engine, get_db
+from app.db.session import engine, get_db  # ✅ АСИНХРОННЫЕ импорты
 from app.db.base_class import Base
 from app.api import auth, chat, admin  # ✅ + admin роутер
 from app.core.security import verify_token
 
-# 🔥 Создаем таблицы ПРИ СТАРТЕ (один раз)
-Base.metadata.create_all(bind=engine)
-print("✅ База данных инициализирована: law_documents, law_changes, users")
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifecycle events"""
+    """✅ АСИНХРОННЫЙ Lifecycle — ИСПРАВЛЕНИЕ ПРОБЛЕМЫ 2"""
+    
+    # 🔥 АСИНХРОННАЯ ИНИЦИАЛИЗАЦИЯ БД (было sync — теперь async!)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    print("✅ База данных инициализирована АСИНХРОННО: law_documents, law_changes, users")
+    
     print("🚀 Starting Legal AI Service...")
     print(f"📊 Config: {settings.APP_NAME} v{settings.VERSION}")
     print(f"🔑 GigaChat: {'✅ Ready' if settings.GIGACHAT_CLIENT_ID else '❌ Setup .env'}")
@@ -39,7 +42,7 @@ async def lifespan(app: FastAPI):
     
     print("🛑 Shutting down Legal AI Service...")
 
-# ✅ FastAPI app с lifespan
+# ✅ FastAPI app с АСИНХРОННЫМ lifespan
 app = FastAPI(
     title="Legal AI Service 🚀",
     description="""Юридический ИИ-ассистент с мониторингом изменений законов
@@ -48,7 +51,7 @@ app = FastAPI(
 - Уведомления о изменениях
 - JWT авторизация""",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan  # ✅ lifespan включает async init БД!
 )
 
 # ✅ CORS для фронтенда
@@ -83,7 +86,7 @@ async def root():
         "features": {
             "gigachat": bool(settings.GIGACHAT_CLIENT_ID),
             "celery_monitoring": bool(settings.CELERY_BROKER_URL),
-            "pgvector": settings.ENABLE_PGVECTOR,
+            "pgvector": getattr(settings, 'ENABLE_PGVECTOR', False),  # ✅ Безопасный доступ
             "law_monitoring": True
         }
     }
@@ -94,7 +97,7 @@ async def health():
     return {
         "status": "healthy",
         "service": settings.APP_NAME,
-        "environment": settings.ENVIRONMENT,
+        "environment": getattr(settings, 'ENVIRONMENT', 'dev'),
         "timestamp": os.getenv("TIMESTAMP", "2026-03-21")
     }
 
@@ -103,33 +106,31 @@ async def config_info(request: Request, db: AsyncSession = Depends(get_db)):
     """Конфигурация и статус сервисов"""
     return {
         "app_name": settings.APP_NAME,
-        "debug": settings.DEBUG,
-        "environment": settings.ENVIRONMENT,
-        "gigachat_ready": bool(settings.GIGACHAT_CLIENT_ID and settings.GIGACHAT_CLIENT_SECRET),
-        "celery_ready": bool(settings.CELERY_BROKER_URL),
-        "db_url": str(settings.DATABASE_URL).split("@")[-1] if settings.DATABASE_URL else None,
-        "cors_origins": settings.CORS_ORIGINS,
+        "debug": getattr(settings, 'DEBUG', True),
+        "environment": getattr(settings, 'ENVIRONMENT', 'dev'),
+        "gigachat_ready": bool(settings.GIGACHAT_CLIENT_ID and getattr(settings, 'GIGACHAT_CLIENT_SECRET', '')),
+        "celery_ready": bool(getattr(settings, 'CELERY_BROKER_URL', '')),
+        "db_url": str(getattr(settings, 'DATABASE_URL', '')).split("@")[-1] if hasattr(settings, 'DATABASE_URL') else None,
+        "cors_origins": getattr(settings, 'CORS_ORIGINS', '*'),
         "version": settings.VERSION,
         "docs": f"{request.url.path}../docs"
     }
 
 @app.get("/status/law-monitoring", tags=["📊 Status"])
-async def law_monitoring_status():
+async def law_monitoring_status(db: AsyncSession = Depends(get_db)):
     """Статус мониторинга изменений законов"""
     try:
         from app.models.law_changes import LawChange
         from sqlalchemy import select
-        from app.db.session import AsyncSessionLocal
         
-        async with AsyncSessionLocal() as db:
-            result = await db.execute(select(LawChange).limit(5))
-            recent_changes = result.scalars().all()
-            
+        result = await db.execute(select(LawChange).limit(5))
+        recent_changes = result.scalars().all()
+        
         return {
             "service": "law_monitoring",
             "status": "active",
             "recent_changes": len(recent_changes),
-            "last_celery_task": "check /flower для деталей"
+            "last_celery_task": "check http://localhost:5555 для деталей"
         }
     except Exception as e:
         return {"service": "law_monitoring", "status": "initializing", "error": str(e)}
@@ -150,6 +151,6 @@ if __name__ == "__main__":
         "app.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=settings.DEBUG,
-        log_level="info" if not settings.DEBUG else "debug"
+        reload=getattr(settings, 'DEBUG', True),
+        log_level="info" if not getattr(settings, 'DEBUG', False) else "debug"
     )
