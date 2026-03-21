@@ -1,18 +1,20 @@
 """
-Legal AI Service - Модели изменений законов (Задача 241949)
-✅ Совместимо с Async SQLAlchemy 2.0 + исправленные импорты
+Legal AI Service - Модели изменений законов 
 """
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, JSON, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
 from sqlalchemy.sql import func
-from sqlalchemy.ext.declarative import declarative_base  # ✅ Совместимость
-from app.db.base_class import Base  # ✅ Импорт исправленного Base
 from typing import List, Optional
+
+# ✅ ЛОКАЛЬНЫЙ Base — БЕЗ импорта app.db.base_class!
+class Base(DeclarativeBase):
+    """Локальный Base для моделей — БЕЗ циклических импортов!"""
+    pass
 
 class LawDocument(Base):
     __tablename__ = "law_documents"
     
-    # ✅ SQLAlchemy 2.0 стиль (опционально)
+    # ✅ SQLAlchemy 2.0 стиль
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(500), nullable=False)      # "ст. 421 ГК РФ"
     number: Mapped[str] = mapped_column(String(50), unique=True, index=True)  # "421"
@@ -57,7 +59,7 @@ class LawNotification(Base):
         Integer, ForeignKey("law_documents.id"), index=True
     )
     user_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("users.id"), index=True
+        Integer, index=True  # ✅ Без ForeignKey пока нет users!
     )
     title: Mapped[Optional[str]] = mapped_column(String(500))
     message: Mapped[Optional[Text]] = mapped_column(Text)
@@ -67,9 +69,8 @@ class LawNotification(Base):
     )
     sent_at: Mapped[Optional[DateTime]] = mapped_column(DateTime(timezone=True))
     
-    # ✅ Связи (безопасные для async)
+    # ✅ Только document связь (user добавим позже)
     document: "LawDocument" = relationship("LawDocument", back_populates="notifications")
-    # user: "User" = relationship("User")  # ✅ Временно отключено (если нет models/user.py)
 
-# ✅ Экспорт для __init__.py
+# ✅ Экспорт
 __all__ = ["LawDocument", "LawChange", "LawNotification"]
