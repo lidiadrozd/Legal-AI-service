@@ -2,6 +2,8 @@
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
+from .models.law_changes import LawDocument, LawChange, LawNotification 
+from .models.user import User 
 
 ModelType = TypeVar("ModelType", bound=Any)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=Any)
