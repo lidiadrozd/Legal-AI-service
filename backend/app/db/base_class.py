@@ -1,20 +1,23 @@
-
-from typing import Any, Dict, Generic, List, Optional, TypeVar, AsyncIterator
+"""
+Legal AI Service — Async CRUD Base
+"""
+from typing import Any, Generic, List, Optional, TypeVar
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import DeclarativeBase  # ✅ SQLAlchemy 2.0!
-from sqlalchemy import select
-from app.models.law_changes import LawDocument, LawChange, LawNotification 
-from app.models.user import User  # Если есть
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import select, func
 
-# ✅ Современный async TypeVar
-ModelType = TypeVar("ModelType", bound=Base)
+# ✅ TypeVar ДО определения Base (без bound пока)
+ModelType = TypeVar("ModelType")
 CreateSchemaType = TypeVar("CreateSchemaType", bound=Any)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=Any)
 
-# ✅ Современный Base для SQLAlchemy 2.0 + async
+# ✅ ЧИСТЫЙ Base — БЕЗ импортов моделей!
 class Base(DeclarativeBase):
-    """Базовый класс для всех моделей"""
+    """Базовый класс для моделей — НЕ импортируем ничего!"""
     pass
+
+# ✅ TypeVar теперь с bound Base
+ModelType = TypeVar("ModelType", bound=Base)
 
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     """✅ АСИНХРОННЫЙ CRUD репозиторий"""
@@ -24,6 +27,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def get(self, db: AsyncSession, id: Any) -> Optional[ModelType]:
         """Получить объект по ID"""
+        if not hasattr(self.model, 'id'):
+            return None
         result = await db.execute(select(self.model).where(self.model.id == id))
         return result.scalar_one_or_none()
 
@@ -43,7 +48,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj_in: CreateSchemaType
     ) -> ModelType:
         """Создать объект"""
-        db_obj = self.model(**obj_in.model_dump())  # ✅ Pydantic v2
+        # ✅ Безопасный model_dump (Pydantic v1/v2)
+        if hasattr(obj_in, 'model_dump'):
+            data = obj_in.model_dump()
+        else:
+            data = obj_in.dict()
+            
+        db_obj = self.model(**data)
         db.add(db_obj)
         await db.commit()
         await db.refresh(db_obj)
@@ -57,7 +68,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj_in: UpdateSchemaType
     ) -> ModelType:
         """Обновить объект"""
-        update_data = obj_in.model_dump(exclude_unset=True)  # ✅ Только измененные
+        # ✅ Безопасный model_dump
+        if hasattr(obj_in, 'model_dump'):
+            update_data = obj_in.model_dump(exclude_unset=True)
+        else:
+            update_data = obj_in.dict(exclude_unset=True)
+            
         for field, value in update_data.items():
             setattr(db_obj, field, value)
         db.add(db_obj)
@@ -70,32 +86,39 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db: AsyncSession, 
         *, 
         id: int
-    ) -> ModelType:
+    ) -> Optional[ModelType]:
         """Удалить объект"""
         obj = await self.get(db, id=id)
         if obj:
             await db.delete(obj)
             await db.commit()
-        return obj
+            return obj
+        return None
 
     async def count(self, db: AsyncSession) -> int:
         """Подсчет объектов"""
-        from sqlalchemy import func
         result = await db.execute(select(func.count()).select_from(self.model))
-        return result.scalar()
+        return result.scalar() or 0
 
-# ✅ Готовые CRUD классы для моделей
-class LawDocumentsCRUD(CRUDBase[LawDocument, Any, Any]):
+# ✅ УНИВЕРСАЛЬНЫЕ CRUD классы (создаются динамически)
+class CRUDLawDocument(CRUDBase["LawDocument", Any, Any]):
     pass
 
-class LawChangesCRUD(CRUDBase[LawChange, Any, Any]):
+class CRUDLawChange(CRUDBase["LawChange", Any, Any]):
     pass
 
-class LawNotificationsCRUD(CRUDBase[LawNotification, Any, Any]):
+class CRUDLawNotification(CRUDBase["LawNotification", Any, Any]):
     pass
 
-# ✅ Экспорт для использования
+# ✅ ФАБРИКА CRUD (рекомендуемый способ использования)
+def get_crud(model: type[ModelType]) -> CRUDBase[ModelType, Any, Any]:
+    """Создает CRUD для любой модели динамически"""
+    class DynamicCRUD(CRUDBase[model, Any, Any]):
+        pass
+    return DynamicCRUD(model)
+
+# ✅ Экспорт — БЕЗ импортов моделей!
 __all__ = [
-    "Base", "CRUDBase",
-    "LawDocumentsCRUD", "LawChangesCRUD", "LawNotificationsCRUD"
+    "Base", "CRUDBase", "get_crud",
+    "CRUDLawDocument", "CRUDLawChange", "CRUDLawNotification"
 ]
