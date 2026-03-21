@@ -4,12 +4,14 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
-from app.api.deps import get_db
+from app.db.session import get_db  # Измененный импорт
 from app.core.config import settings
-from app.core.security import create_access_token, create_refresh_token
+from app.core.security import create_access_token, create_refresh_token, verify_token
 from app.crud.user import user
-from app.schemas.auth import Token, LoginRequest
-from app.schemas.user import UserCreate, Consent
+from app.schemas.auth import Token
+from app.schemas.user import UserCreate, Consent, UserUpdate
+from app.api.deps import get_current_user  # Если deps.py удален, этот импорт тоже нужно исправить
+from app.models.user import User
 
 router = APIRouter()
 
@@ -52,7 +54,7 @@ def refresh_token(refresh_token_str: str):
 @router.post("/consent")
 def give_consent(
     consent_in: Consent,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),  # Этот импорт тоже нужно будет исправить
     db: Session = Depends(get_db)
 ):
     if not consent_in.consent:
