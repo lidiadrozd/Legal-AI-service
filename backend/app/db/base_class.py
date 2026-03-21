@@ -1,46 +1,101 @@
-# backend/app/db/base_class.py
-from typing import Any, Dict, Generic, List, Optional, TypeVar
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session
-from .models.law_changes import LawDocument, LawChange, LawNotification 
-from .models.user import User 
 
-ModelType = TypeVar("ModelType", bound=Any)
+from typing import Any, Dict, Generic, List, Optional, TypeVar, AsyncIterator
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import DeclarativeBase  # ✅ SQLAlchemy 2.0!
+from sqlalchemy import select
+from app.models.law_changes import LawDocument, LawChange, LawNotification 
+from app.models.user import User  # Если есть
+
+# ✅ Современный async TypeVar
+ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=Any)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=Any)
 
-Base = declarative_base()
+# ✅ Современный Base для SQLAlchemy 2.0 + async
+class Base(DeclarativeBase):
+    """Базовый класс для всех моделей"""
+    pass
 
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
-    def __init__(self, model: Any):
+    """✅ АСИНХРОННЫЙ CRUD репозиторий"""
+    
+    def __init__(self, model: type[ModelType]):
         self.model = model
 
-    def get(self, db: Session, id: Any) -> Optional[ModelType]:
-        return db.query(self.model).filter(self.model.id == id).first()
+    async def get(self, db: AsyncSession, id: Any) -> Optional[ModelType]:
+        """Получить объект по ID"""
+        result = await db.execute(select(self.model).where(self.model.id == id))
+        return result.scalar_one_or_none()
 
-    def get_multi(self, db: Session, skip: int = 0, limit: int = 100) -> List[ModelType]:
-        return db.query(self.model).offset(skip).limit(limit).all()
+    async def get_multi(
+        self, db: AsyncSession, skip: int = 0, limit: int = 100
+    ) -> List[ModelType]:
+        """Получить список с пагинацией"""
+        result = await db.execute(
+            select(self.model).offset(skip).limit(limit)
+        )
+        return list(result.scalars().all())
 
-    def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
-        db_obj = self.model(**obj_in.dict())
-        db.add(db_obj)
-        db.commit()
-        db.refresh(db_obj)
-        return db_obj
-
-    def update(
-        self, db: Session, *, db_obj: ModelType, obj_in: UpdateSchemaType
+    async def create(
+        self, 
+        db: AsyncSession, 
+        *, 
+        obj_in: CreateSchemaType
     ) -> ModelType:
-        obj_data = obj_in.dict()
-        for field, value in obj_data.items():
-            if value is not None:
-                setattr(db_obj, field, value)
-        db.commit()
-        db.refresh(db_obj)
+        """Создать объект"""
+        db_obj = self.model(**obj_in.model_dump())  # ✅ Pydantic v2
+        db.add(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
         return db_obj
 
-    def remove(self, db: Session, *, id: int) -> ModelType:
-        obj = db.query(self.model).get(id)
-        db.delete(obj)
-        db.commit()
+    async def update(
+        self, 
+        db: AsyncSession, 
+        *, 
+        db_obj: ModelType, 
+        obj_in: UpdateSchemaType
+    ) -> ModelType:
+        """Обновить объект"""
+        update_data = obj_in.model_dump(exclude_unset=True)  # ✅ Только измененные
+        for field, value in update_data.items():
+            setattr(db_obj, field, value)
+        db.add(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
+        return db_obj
+
+    async def remove(
+        self, 
+        db: AsyncSession, 
+        *, 
+        id: int
+    ) -> ModelType:
+        """Удалить объект"""
+        obj = await self.get(db, id=id)
+        if obj:
+            await db.delete(obj)
+            await db.commit()
         return obj
+
+    async def count(self, db: AsyncSession) -> int:
+        """Подсчет объектов"""
+        from sqlalchemy import func
+        result = await db.execute(select(func.count()).select_from(self.model))
+        return result.scalar()
+
+# ✅ Готовые CRUD классы для моделей
+class LawDocumentsCRUD(CRUDBase[LawDocument, Any, Any]):
+    pass
+
+class LawChangesCRUD(CRUDBase[LawChange, Any, Any]):
+    pass
+
+class LawNotificationsCRUD(CRUDBase[LawNotification, Any, Any]):
+    pass
+
+# ✅ Экспорт для использования
+__all__ = [
+    "Base", "CRUDBase",
+    "LawDocumentsCRUD", "LawChangesCRUD", "LawNotificationsCRUD"
+]
