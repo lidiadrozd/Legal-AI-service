@@ -1,8 +1,6 @@
-"""
-Legal AI Service - Полная конфигурация приложения
-"""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
+from typing import List, Optional
 from functools import lru_cache
 
 class Settings(BaseSettings):
@@ -11,6 +9,8 @@ class Settings(BaseSettings):
     # ========================================
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@db:5432/legal_ai"
     REDIS_URL: str = "redis://redis:6379/0"
+    CELERY_BROKER_URL: str = "redis://redis:6379/1"      # ✅ ДОБАВЛЕНО!
+    CELERY_RESULT_BACKEND: str = "redis://redis:6379/2"  # ✅ ДОБАВЛЕНО!
     
     # ========================================
     # JWT SECURITY
@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     RAG_DOCS_PATH: str = "/app/rag_docs"
     EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     VECTOR_DB_TYPE: str = "pgvector"  # или "faiss"
+    ENABLE_PGVECTOR: bool = True      # ✅ ИСПРАВЛЕНИЕ ПРОБЛЕМЫ 4!
     
     # ========================================
     # APP SETTINGS
@@ -41,12 +42,13 @@ class Settings(BaseSettings):
     APP_NAME: str = "Legal AI Service"
     DEBUG: bool = False
     VERSION: str = "1.0.0"
+    ENVIRONMENT: str = "development"  # ✅ ДОБАВЛЕНО! (dev/production)
     
     # ========================================
     # API & CORS
     # ========================================
     API_V1_STR: str = "/api/v1"
-    CORS_ORIGINS: list = ["*"]  # Production: ["https://dev.ai-jurist.ru"]
+    CORS_ORIGINS: List[str] = ["*"]   # ✅ List[str] вместо str!
     
     # ========================================
     # Rate Limiting (Redis)
@@ -54,11 +56,17 @@ class Settings(BaseSettings):
     RATE_LIMIT_REQUESTS: int = 100
     RATE_LIMIT_WINDOW: int = 3600  # 1 час
     
+    # ========================================
+    # CELERY
+    # ========================================
+    CELERY_TASK_ALWAYS_EAGER: bool = False  # ✅ Для main.py
+    CELERY_TASK_TIME_LIMIT: int = 300
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_ignore_empty=True,
         extra="ignore",
-        case_sensitive=True
+        case_sensitive=False  # ✅ Не чувствительно к регистру
     )
 
 @lru_cache()
