@@ -1,10 +1,9 @@
-"""
-Database session management
-"""
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import ListeningSession
 from sqlalchemy import event
 from app.core.config import settings
+from app.db.base_class import Base
 
 engine = create_async_engine(
     settings.DATABASE_URL, 
@@ -12,20 +11,17 @@ engine = create_async_engine(
     future=True
 )
 
-AsyncSessionLocal = sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
+AsyncSessionLocal = async_sessionmaker(
+    engine, 
+    class_=AsyncSession, 
+    expire_on_commit=False
 )
 
-class Base(DeclarativeBase):
-    pass
-
-# Event listener для создания таблиц
 @event.listens_for(engine, "connect")
 async def on_connect(dbapi_connection, connection_record):
     if settings.ENABLE_PGVECTOR:
         await dbapi_connection.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
-# Dependency
 async def get_db() -> AsyncSession:
     async with AsyncSessionLocal() as session:
         try:
