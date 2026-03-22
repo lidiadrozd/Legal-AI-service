@@ -1,5 +1,5 @@
 """CRUD операции"""
 from . import user, chat
-from .base import CRUDBase
+from app.db.base_class import CRUDBase
 
 __all__ = ["user", "chat", "CRUDBase"]

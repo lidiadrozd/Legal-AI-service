@@ -14,4 +14,3 @@ class User(Base):
     is_superuser = Column(Boolean, default=False)
     consent_given = Column(Boolean, default=False)
 
-    chats = relationship("Chat", back_populates="owner")

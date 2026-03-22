@@ -1,10 +1,10 @@
 """Pydantic схемы"""
 from .user import User, UserCreate
-from .chat import Chat, Message, MessageCreate
+from .chat import ChatResponse, Message, MessageCreate
 from .auth import Token, LoginRequest
 
 __all__ = [
     "User", "UserCreate",
-    "Chat", "Message", "MessageCreate", 
+    "ChatResponse", "Message", "MessageCreate",
     "Token", "LoginRequest"
 ]

@@ -44,7 +44,7 @@ class ChatResponse(ChatBase):  # ✅ Chat → ChatResponse (без конфли�
     model_config = ConfigDict(from_attributes=True)
     
     id: int
-    user_id: int
+    user_id: Optional[int] = None
     message_count: int = 0  # Кол-во сообщений
     created_at: datetime
     last_message_at: Optional[datetime] = None
