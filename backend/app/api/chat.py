@@ -10,57 +10,62 @@ import asyncio
 from fastapi.responses import StreamingResponse
 
 # ✅ ИСПРАВЛЕННЫЕ ИМПОРТЫ (без конфликтов имен)
-from app.db.session import get_db  # ✅ Только async!
-from app.core.config import settings
-from app.models.chat import ChatSession, Message  # ✅ Только SQLAlchemy модели
-from app.schemas.chat import ChatResponse, MessageCreate  # ✅ Только Pydantic схемы
-from app.db.base_class import LawChangesCRUD  # ✅ Async CRUD
+from app.db.session import get_db
+from app.models.chat import ChatSession, Message
+from app.models.law_changes import LawChange
+from app.models.user import User
+from app.schemas.chat import ChatResponse, MessageCreate
+from app.db.base_class import get_crud
+from app.api.deps import get_current_user
 
 router = APIRouter(prefix="/chat", tags=["💬 Chat"])
 
+_law_change_crud = get_crud(LawChange)
+
+
 @router.post("/new", response_model=ChatResponse)
 async def create_chat(
-    current_user: dict,  # ✅ Пока без User модели
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """Создать новый чат"""
     from app.models.chat import ChatSession
     
     # Создаем чат напрямую
     new_chat = ChatSession(
-        title="Новый чат", 
-        user_id=current_user.get("id", 1)
+        title="Новый чат",
+        user_id=current_user.id,
     )
     db.add(new_chat)
     await db.commit()
     await db.refresh(new_chat)
-    return ChatResponse.from_orm(new_chat)
+    return ChatResponse.model_validate(new_chat)
 
 @router.get("/list", response_model=List[ChatResponse])
 async def get_chats(
     skip: int = 0,
     limit: int = 100,
-    current_user: dict = Depends(lambda: {"id": 1}),  # Заглушка
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """Список чатов пользователя"""
     from app.models.chat import ChatSession
     
     result = await db.execute(
         select(ChatSession)
-        .where(ChatSession.user_id == current_user["id"])
+        .where(ChatSession.user_id == current_user.id)
         .offset(skip)
         .limit(limit)
     )
     chats = result.scalars().all()
-    return [ChatResponse.from_orm(chat) for chat in chats]
+    return [ChatResponse.model_validate(chat) for chat in chats]
 
 @router.post("/{chat_id}/send_stream")
 async def send_message_stream(
     chat_id: int,
     message_in: MessageCreate,
-    current_user: dict = Depends(lambda: {"id": 1}),
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Стриминговый чат с ИИ-юристом (RAG + GigaChat)
@@ -72,7 +77,7 @@ async def send_message_stream(
     result = await db.execute(
         select(ChatSession).where(
             ChatSession.id == chat_id, 
-            ChatSession.user_id == current_user["id"]
+            ChatSession.user_id == current_user.id
         )
     )
     chat_obj = result.scalar_one_or_none()
@@ -100,34 +105,33 @@ async def send_message_stream(
     await db.refresh(assistant_message)
     
     # 4. RAG Контекст (реальный поиск по изменениям)
-    law_crud = LawChangesCRUD(Message)
-    recent_laws = await law_crud.get_multi(db, limit=3)
+    recent_laws = await _law_change_crud.get_multi(db, limit=3)
     context = {
         "docs": [f"Изменение: {law.change_title}" for law in recent_laws],
-        "law_db_size": await law_crud.count(db)
+        "law_db_size": await _law_change_crud.count(db)
     }
     
     # 5. Симуляция GigaChat стриминга
     async def generate_stream():
         try:
             # Симулируем генерацию ответа
-            full_response = f"""Согласно ст. 421 ГК РФ (свобода договора), 
-в вашем случае применяются изменения от {asyncio.get_event_loop().time()}.
+            full_response = f"""Согласно ст. 421 ГК РФ (свобода договора),
+в вашем случае применяются изменения от {asyncio.get_running_loop().time()}.
 Контекст из базы: {len(context['docs'])} документов."""
-            
+
             # Стриминг по словам
             for word in full_response.split():
                 chunk = f"data: {word}\n\n"
                 yield chunk
                 await asyncio.sleep(0.05)
-            
+
             yield "data: [DONE]\n\n"
-            
+
             # Обновляем финальный ответ ассистента
             assistant_message.content = full_response
             db.add(assistant_message)
             await db.commit()
-            
+
         except Exception as e:
             yield f"data: Ошибка: {str(e)}\n\n"
             yield "data: [DONE]\n\n"
@@ -142,8 +146,8 @@ async def send_message_stream(
 async def submit_feedback(
     message_id: int,
     rating: str,  # "up" or "down"
-    current_user: dict = Depends(lambda: {"id": 1}),
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """Оценка ответа ИИ"""
     from app.models.chat import Message

@@ -3,7 +3,7 @@ Legal AI Service — Async SQLAlchemy Session
 """
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import event, text
+from sqlalchemy import event
 import os
 
 # ✅ БЕЗОПАСНЫЙ импорт config
@@ -20,14 +20,17 @@ engine = create_async_engine(DATABASE_URL, echo=False)
 
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-# ✅ pgvector (опционально)
-@event.listens_for(engine, "connect")
-async def on_connect(dbapi_connection, connection_record):
-    if ENABLE_PGVECTOR:
-        try:
-            await dbapi_connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-        except:
-            pass  # Игнорируем ошибки
+# ✅ pgvector (опционально): слушатель только на sync_engine (AsyncEngine не поддерживает connect)
+@event.listens_for(engine.sync_engine, "connect")
+def on_connect(dbapi_connection, connection_record):
+    if not ENABLE_PGVECTOR:
+        return
+    try:
+        cur = dbapi_connection.cursor()
+        cur.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        cur.close()
+    except Exception:
+        pass
 
 # ✅ FastAPI dependency
 async def get_db() -> AsyncSession:

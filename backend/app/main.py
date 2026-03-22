@@ -12,28 +12,7 @@ from app.core.config import settings
 from app.db.session import engine, get_db
 from app.db.base_class import Base
 
-# ✅ ИМПОРТ РЕАЛЬНЫХ РОУТЕРОВ (когда они будут созданы)
-# Сейчас используем заглушки, но позже заменим на реальные импорты
-# from app.api import auth, chat, admin
-
-# ✅ ЗАГЛУШКИ РОУТЕРОВ (временное решение)
-from fastapi import APIRouter
-auth_router = APIRouter(prefix="/auth", tags=["🔐 Auth"])
-chat_router = APIRouter(prefix="/chat", tags=["💬 Chat"])
-admin_router = APIRouter(prefix="/admin", tags=["⚙️ Admin"])
-
-# ✅ ВРЕМЕННЫЕ ЭНДПОИНТЫ ДЛЯ ЗАГЛУШЕК
-@auth_router.get("/ping")
-async def auth_ping(): 
-    return {"auth": "ready"}
-
-@chat_router.get("/ping")
-async def chat_ping(): 
-    return {"chat": "ready"}
-
-@admin_router.get("/ping")
-async def admin_ping(): 
-    return {"admin": "ready"}
+from app.api import auth, chat, admin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -93,10 +72,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ ПОДКЛЮЧЕНИЕ РОУТЕРОВ (ИСПРАВЛЕНО!)
-app.include_router(auth_router)  # ✅ Убрали .router
-app.include_router(chat_router)   # ✅ Убрали .router
-app.include_router(admin_router)  # ✅ Убрали .router
+app.include_router(auth.router)
+app.include_router(chat.router)
+app.include_router(admin.router)
 
 # ✅ Health endpoints
 @app.get("/", tags=["📊 Status"])
@@ -107,9 +85,9 @@ async def root():
         "version": settings.VERSION,
         "status": "running" if settings.GIGACHAT_CLIENT_ID else "config_required",
         "endpoints": {
-            "auth": ["/auth/ping"],
-            "chat": ["/chat/ping"],
-            "admin": ["/admin/ping"],
+            "auth": ["/auth/register", "/auth/login", "/auth/refresh", "/auth/consent"],
+            "chat": ["/chat/new", "/chat/list", "/chat/{chat_id}/send_stream", "/chat/feedback"],
+            "admin": ["/admin/monitor-laws"],
             "docs": "/docs",
             "health": "/health"
         },

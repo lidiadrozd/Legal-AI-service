@@ -12,6 +12,7 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     is_active: Optional[bool] = True
+    consent_given: Optional[bool] = None
 
 class UserInDB(UserBase):
     id: int
