@@ -4,6 +4,7 @@ Legal AI Service - Главный файл FastAPI
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -149,11 +150,11 @@ async def law_monitoring_status(db: AsyncSession = Depends(get_db)):
 # ✅ Обработчики ошибок
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
-    return {"error": "Endpoint не найден", "docs": "/docs"}
+    return JSONResponse(status_code=404, content={"error": "Endpoint не найден", "docs": "/docs"})
 
 @app.exception_handler(500)
 async def internal_error_handler(request: Request, exc):
-    return {"error": "Внутренняя ошибка сервера", "contact": "admin@ai-jurist.ru"}
+    return JSONResponse(status_code=500, content={"error": "Внутренняя ошибка сервера", "contact": "admin@ai-jurist.ru"})
 
 # ✅ Uvicorn
 if __name__ == "__main__":

@@ -10,6 +10,8 @@ services:
       POSTGRES_DB: legal_ai
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     networks:
       - legal_ai_network
     healthcheck:
@@ -25,6 +27,8 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    ports:
+      - "6379:6379"
     networks:
       - legal_ai_network
     healthcheck:
