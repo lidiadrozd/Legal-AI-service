@@ -136,3 +136,4 @@ Thumbs.db
 .env.local
 claude.md
 architecture_plan.md
+node_modules/
