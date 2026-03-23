@@ -3,17 +3,22 @@ Legal AI Service - Главный файл FastAPI
 """
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Depends
+import logging
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # ✅ ИМПОРТЫ
 from app.core.config import settings
 from app.db.session import engine, get_db
 from app.db.base_class import Base
+from app import models  # noqa: F401 - регистрирует модели в metadata
 
-from app.api import auth, chat, admin
+from app.api import auth, chat, admin, court_filings, notifications
+
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -76,6 +81,8 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(admin.router)
+app.include_router(court_filings.router)
+app.include_router(notifications.router)
 
 # ✅ Health endpoints
 @app.get("/", tags=["📊 Status"])
@@ -86,9 +93,15 @@ async def root():
         "version": settings.VERSION,
         "status": "running" if settings.GIGACHAT_CLIENT_ID else "config_required",
         "endpoints": {
-            "auth": ["/auth/register", "/auth/login", "/auth/refresh", "/auth/consent"],
+            "auth": ["/auth/register", "/auth/login", "/auth/refresh", "/auth/me", "/auth/logout", "/auth/consent"],
             "chat": ["/chat/new", "/chat/list", "/chat/{chat_id}/send_stream", "/chat/feedback"],
             "admin": ["/admin/monitor-laws"],
+            "court_filings": [
+                "/court-filings/submissions",
+                "/court-filings/submissions/{filing_id}",
+                "/court-filings/submissions/{filing_id}/status",
+            ],
+            "notifications": ["/notifications", "/notifications/{notification_id}/read"],
             "docs": "/docs",
             "health": "/health"
         },
@@ -150,11 +163,41 @@ async def law_monitoring_status(db: AsyncSession = Depends(get_db)):
 # ✅ Обработчики ошибок
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
+    logger.warning("404: path=%s", request.url.path)
     return JSONResponse(status_code=404, content={"error": "Endpoint не найден", "docs": "/docs"})
 
-@app.exception_handler(500)
-async def internal_error_handler(request: Request, exc):
-    return JSONResponse(status_code=500, content={"error": "Внутренняя ошибка сервера", "contact": "admin@ai-jurist.ru"})
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    logger.warning("HTTPException: status=%s path=%s detail=%s", exc.status_code, request.url.path, exc.detail)
+    return JSONResponse(status_code=exc.status_code, content={"error": exc.detail})
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning("Validation error: path=%s errors=%s", request.url.path, exc.errors())
+    return JSONResponse(
+        status_code=422,
+        content={"error": "Validation failed", "details": exc.errors()},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Остаточный обработчик (HTTPException обрабатывается отдельно, см. MRO Starlette)."""
+    import traceback
+
+    traceback.print_exc()
+    logger.exception("Unhandled exception on path=%s", request.url.path)
+    if settings.DEBUG:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"{type(exc).__name__}: {exc}"},
+        )
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Внутренняя ошибка сервера", "contact": "admin@ai-jurist.ru"},
+    )
 
 # ✅ Uvicorn
 if __name__ == "__main__":

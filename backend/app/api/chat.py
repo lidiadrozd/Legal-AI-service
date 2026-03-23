@@ -7,20 +7,29 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
 import asyncio
+import traceback
+import json
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 # ✅ ИСПРАВЛЕННЫЕ ИМПОРТЫ (без конфликтов имен)
 from app.db.session import get_db
 from app.models.chat import ChatSession, Message
 from app.models.law_changes import LawChange
 from app.models.user import User
-from app.schemas.chat import ChatResponse, MessageCreate
+from app.schemas.chat import ChatResponse, MessageCreate, Message as MessageSchema
 from app.db.base_class import get_crud
 from app.api.deps import get_current_user
+from app.services.nlp_service import NLPService
 
 router = APIRouter(prefix="/chat", tags=["💬 Chat"])
 
 _law_change_crud = get_crud(LawChange)
+_nlp_service = NLPService()
+
+
+class SendStreamRequest(BaseModel):
+    content: str
 
 
 @router.post("/new", response_model=ChatResponse)
@@ -60,10 +69,56 @@ async def get_chats(
     chats = result.scalars().all()
     return [ChatResponse.model_validate(chat) for chat in chats]
 
+@router.get("/{chat_id}/history", response_model=List[MessageSchema])
+async def get_chat_history(
+    chat_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """История сообщений выбранного чата пользователя."""
+    chat_result = await db.execute(
+        select(ChatSession).where(
+            ChatSession.id == chat_id,
+            ChatSession.user_id == current_user.id,
+        )
+    )
+    chat_obj = chat_result.scalar_one_or_none()
+    if not chat_obj:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    messages_result = await db.execute(
+        select(Message)
+        .where(Message.chat_id == chat_id)
+        .order_by(Message.created_at.asc())
+    )
+    messages = messages_result.scalars().all()
+    return [MessageSchema.model_validate(message) for message in messages]
+
+@router.delete("/{chat_id}")
+async def delete_chat(
+    chat_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Удалить чат пользователя вместе с сообщениями."""
+    result = await db.execute(
+        select(ChatSession).where(
+            ChatSession.id == chat_id,
+            ChatSession.user_id == current_user.id,
+        )
+    )
+    chat_obj = result.scalar_one_or_none()
+    if not chat_obj:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    await db.delete(chat_obj)
+    await db.commit()
+    return {"message": "Chat deleted"}
+
 @router.post("/{chat_id}/send_stream")
 async def send_message_stream(
     chat_id: int,
-    message_in: MessageCreate,
+    message_in: SendStreamRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -73,55 +128,77 @@ async def send_message_stream(
     """
     from app.models.chat import ChatSession, Message
     
-    # 1. Проверяем доступ к чату
-    result = await db.execute(
-        select(ChatSession).where(
-            ChatSession.id == chat_id, 
-            ChatSession.user_id == current_user.id
+    async def error_stream(error_text: str):
+        yield f"data: {error_text}\n\n"
+        yield "data: [DONE]\n\n"
+
+    try:
+        # 1. Проверяем доступ к чату
+        result = await db.execute(
+            select(ChatSession).where(
+                ChatSession.id == chat_id,
+                ChatSession.user_id == current_user.id
+            )
         )
-    )
-    chat_obj = result.scalar_one_or_none()
-    if not chat_obj:
-        raise HTTPException(status_code=404, detail="Chat not found")
+        chat_obj = result.scalar_one_or_none()
+        if not chat_obj:
+            raise HTTPException(status_code=404, detail="Chat not found")
+
+        # 2. Сохраняем сообщение пользователя
+        user_message = Message(
+            chat_id=chat_id,
+            content=message_in.content,
+            role="user"
+        )
+        db.add(user_message)
+        await db.commit()
+        await db.refresh(user_message)
+
+        # 3. Создаем пустое сообщение ассистента
+        assistant_message = Message(
+            chat_id=chat_id,
+            content="",
+            role="assistant"
+        )
+        db.add(assistant_message)
+        await db.commit()
+        await db.refresh(assistant_message)
+
+        # 4. RAG контекст. Если таблицы/данные пока не готовы, используем fallback.
+        context = {"docs": [], "law_db_size": 0}
+        try:
+            recent_laws = await _law_change_crud.get_multi(db, limit=3)
+            context = {
+                "docs": [f"Изменение: {law.change_title}" for law in recent_laws],
+                "law_db_size": await _law_change_crud.count(db)
+            }
+        except Exception as context_error:
+            # Не валим чат, если контекстный источник временно недоступен.
+            print(f"⚠️ RAG context unavailable: {context_error}")
+    except HTTPException:
+        raise
+    except Exception as pre_stream_error:
+        traceback.print_exc()
+        return StreamingResponse(
+            error_stream(f"Ошибка до стриминга: {pre_stream_error}"),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
+        )
     
-    # 2. Сохраняем сообщение пользователя
-    user_message = Message(
-        chat_id=chat_id,
-        content=message_in.content,
-        role="user"
-    )
-    db.add(user_message)
-    await db.commit()
-    await db.refresh(user_message)
-    
-    # 3. Создаем пустое сообщение ассистента
-    assistant_message = Message(
-        chat_id=chat_id,
-        content="",
-        role="assistant"
-    )
-    db.add(assistant_message)
-    await db.commit()
-    await db.refresh(assistant_message)
-    
-    # 4. RAG Контекст (реальный поиск по изменениям)
-    recent_laws = await _law_change_crud.get_multi(db, limit=3)
-    context = {
-        "docs": [f"Изменение: {law.change_title}" for law in recent_laws],
-        "law_db_size": await _law_change_crud.count(db)
-    }
-    
-    # 5. Симуляция GigaChat стриминга
+    # 5. Реальный ответ от GigaChat + SSE стриминг
     async def generate_stream():
         try:
-            # Симулируем генерацию ответа
-            full_response = f"""Согласно ст. 421 ГК РФ (свобода договора),
-в вашем случае применяются изменения от {asyncio.get_running_loop().time()}.
-Контекст из базы: {len(context['docs'])} документов."""
+            full_response = await _nlp_service.generate_response(
+                user_query=message_in.content,
+                context=context,
+                chat_history=""
+            )
 
-            # Стриминг по словам
-            for word in full_response.split():
-                chunk = f"data: {word}\n\n"
+            # Стриминг по символам-блокам с сохранением пробелов и переносов
+            chunk_size = 24
+            for i in range(0, len(full_response), chunk_size):
+                part = full_response[i:i + chunk_size]
+                chunk = f"data: {json.dumps({'content': part}, ensure_ascii=False)}\n\n"
                 yield chunk
                 await asyncio.sleep(0.05)
 
@@ -133,7 +210,11 @@ async def send_message_stream(
             await db.commit()
 
         except Exception as e:
-            yield f"data: Ошибка: {str(e)}\n\n"
+            error_text = f"Ошибка GigaChat: {str(e)}"
+            assistant_message.content = error_text
+            db.add(assistant_message)
+            await db.commit()
+            yield f"data: {json.dumps({'content': error_text}, ensure_ascii=False)}\n\n"
             yield "data: [DONE]\n\n"
     
     return StreamingResponse(

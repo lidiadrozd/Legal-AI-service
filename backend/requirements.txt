@@ -3,33 +3,38 @@ fastapi==0.115.0
 uvicorn[standard]==0.32.0
 
 # Pydantic & Config
-pydantic==2.9.2
-pydantic-settings==2.5.2
+pydantic==2.12.5
+email-validator>=2.0.0
+pydantic-settings==2.13.1
 
 # Database
-sqlalchemy==2.0.36
+sqlalchemy==2.0.48
 asyncpg==0.29.0
 alembic==1.16.2
 psycopg2-binary==2.9.10
 pgvector==0.3.0
 
 # Redis
-redis==5.3.2
+redis==5.3.1
 
 # Auth & Security
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 python-jose[cryptography]==3.3.0
 python-multipart==0.0.12
 
 # GigaChat + LangChain
-langchain==0.3.4
-langchain-gigachat==0.1.5
-langchain-community==0.3.2
+langchain==0.3.28
+langchain-community==0.3.31
+langchain-gigachat==0.3.12
 
 # Utils
 python-dotenv==1.0.1
-httpx==0.27.2
-aiohttp==3.12.11
+httpx==0.28.1
+aiohttp==3.13.3
 python-dateutil==2.9.0
 celery[redis]==5.4.0
 flower==2.0.1
+aiosqlite==0.20.0
+pytest==8.3.5
+pytest-asyncio==0.24.0

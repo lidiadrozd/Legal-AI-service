@@ -30,14 +30,21 @@ def on_connect(dbapi_connection, connection_record):
         cur.execute("CREATE EXTENSION IF NOT EXISTS vector")
         cur.close()
     except Exception:
-        pass
+        # Если расширение недоступно/нет прав, очищаем failed transaction state,
+        # иначе последующие SQL-команды на этом соединении падают с
+        # InFailedSQLTransactionError.
+        try:
+            dbapi_connection.rollback()
+        except Exception:
+            pass
 
 # ✅ FastAPI dependency
+# Коммит выполняется в CRUD/роутерах (await db.commit()), а не здесь — иначе двойной commit
+# после успешного user.create() давал InvalidRequestError и ответ 500.
 async def get_db() -> AsyncSession:
     async with AsyncSessionLocal() as session:
         try:
             yield session
-            await session.commit()
         except Exception:
             await session.rollback()
             raise

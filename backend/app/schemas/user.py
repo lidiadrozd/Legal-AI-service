@@ -35,3 +35,29 @@ class User(UserBase):
 
 class Consent(BaseModel):
     consent: bool
+
+
+class UserPublic(BaseModel):
+    """Ответ API в формате, ожидаемом фронтендом."""
+
+    id: str
+    email: str
+    full_name: str
+    role: str
+    is_active: bool
+    is_consent_given: bool
+    created_at: str
+
+
+def user_to_public(u) -> UserPublic:
+    ca = getattr(u, "created_at", None)
+    created = ca.isoformat() if ca is not None else "1970-01-01T00:00:00+00:00"
+    return UserPublic(
+        id=str(u.id),
+        email=u.email,
+        full_name=u.full_name,
+        role="super_admin" if u.is_superuser else "user",
+        is_active=u.is_active,
+        is_consent_given=u.consent_given,
+        created_at=created,
+    )

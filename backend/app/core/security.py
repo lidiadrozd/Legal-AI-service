@@ -1,5 +1,6 @@
 # backend/app/core/security.py
 from datetime import datetime, timedelta
+import hashlib
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -17,11 +18,20 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: Optional[str] = None
 
+
+def _normalize_password(password: str) -> str:
+    """bcrypt принимает только первые 72 байта, поэтому длинные пароли стабилизируем."""
+    if len(password.encode("utf-8")) <= 72:
+        return password
+    # SHA-256 дает фиксированную длину и одинаковый результат для hash/verify.
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(_normalize_password(plain_password), hashed_password)
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    return pwd_context.hash(_normalize_password(password))
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()

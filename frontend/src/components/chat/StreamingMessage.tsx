@@ -1,4 +1,6 @@
 import styled, { keyframes } from 'styled-components';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const blink = keyframes`
   0%, 100% { opacity: 1; }
@@ -22,7 +24,23 @@ const Bubble = styled.div`
   font-size: var(--font-size-sm);
   line-height: 1.65;
   word-break: break-word;
-  white-space: pre-wrap;
+`;
+
+const MarkdownContent = styled.div`
+  p {
+    margin: 0 0 8px;
+  }
+  p:last-child {
+    margin-bottom: 0;
+  }
+  h1, h2, h3, h4 {
+    margin: 8px 0 6px;
+    line-height: 1.4;
+  }
+  ul, ol {
+    margin: 6px 0 8px 18px;
+    padding: 0;
+  }
 `;
 
 const Cursor = styled.span`
@@ -60,7 +78,11 @@ export function StreamingMessage({ content }: Props) {
       <Bubble>
         {content ? (
           <>
-            {content}
+            <MarkdownContent>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {content}
+              </ReactMarkdown>
+            </MarkdownContent>
             <Cursor />
           </>
         ) : (

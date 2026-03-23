@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '@/hooks/useAuth';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const schema = z.object({
   email: z.string().email('Некорректный email'),
@@ -102,8 +103,10 @@ export default function LoginPage() {
   const onSubmit = async (data: FormData) => {
     try {
       await login(data);
-    } catch {
-      setError('root', { message: 'Неверный email или пароль' });
+    } catch (err) {
+      setError('root', {
+        message: getApiErrorMessage(err, 'Неверный email или пароль'),
+      });
     }
   };
 

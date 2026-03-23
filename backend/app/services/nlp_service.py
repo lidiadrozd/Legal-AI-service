@@ -1,9 +1,10 @@
 """
 NLP Service с автоматическим GigaChat токеном
 """
-import asyncio
-from langchain.schema import HumanMessage, SystemMessage
-from langchain_gigachat import GigaChat
+
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_gigachat.chat_models import GigaChat
+
 from app.core.prompts import get_system_prompt
 from app.services.gigachat_client import get_gigachat_client
 
@@ -18,7 +19,7 @@ class NLPService:
         token = await client.get_valid_token()
         
         return GigaChat(
-            credentials=token,
+            access_token=token,
             model=self.model,
             temperature=self.temperature,
             verify_ssl_certs=False  # Для разработки
@@ -36,8 +37,8 @@ class NLPService:
         
         messages = [
             SystemMessage(content=system_prompt),
-            HumanMessage(content=user_query)
+            HumanMessage(content=user_query),
         ]
-        
-        response = await llm.agenerate_messages([messages])
-        return response.generations[0][0].text
+
+        response = await llm.ainvoke(messages)
+        return response.content

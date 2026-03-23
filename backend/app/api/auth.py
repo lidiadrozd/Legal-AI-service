@@ -1,39 +1,47 @@
 # backend/app/api/auth.py - Роутер авторизации
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.core.security import create_access_token, create_refresh_token, verify_token
 from app.crud.user import user
-from app.schemas.auth import Token, RefreshTokenBody
-from app.schemas.user import UserCreate, Consent, UserUpdate
+from app.schemas.auth import (
+    TokenWithUser,
+    LoginRequest,
+    RefreshTokenBody,
+    ConsentRequest,
+)
+from app.schemas.user import UserCreate, UserUpdate, UserPublic, user_to_public
 from app.api.deps import get_current_user
 from app.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["🔐 Auth"])
 
 
-@router.post("/register", response_model=Token)
+def _tokens_for_user(db_user: User) -> TokenWithUser:
+    access_token = create_access_token(data={"sub": db_user.email})
+    refresh_token = create_refresh_token(data={"sub": db_user.email})
+    return TokenWithUser(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        user=user_to_public(db_user),
+    )
+
+
+@router.post("/register", response_model=TokenWithUser)
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     db_user = await user.get_by_email(db, email=user_in.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     new_user = await user.create(db, obj_in=user_in)
-    access_token = create_access_token(data={"sub": new_user.email})
-    refresh_token = create_refresh_token(data={"sub": new_user.email})
-
-    return Token(access_token=access_token, refresh_token=refresh_token)
+    return _tokens_for_user(new_user)
 
 
-@router.post("/login", response_model=Token)
-async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db),
-):
+@router.post("/login", response_model=TokenWithUser)
+async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user_obj = await user.authenticate(
-        db, email=form_data.username, password=form_data.password
+        db, email=body.email, password=body.password
     )
     if not user_obj:
         raise HTTPException(
@@ -42,10 +50,7 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(data={"sub": user_obj.email})
-    refresh_token = create_refresh_token(data={"sub": user_obj.email})
-
-    return Token(access_token=access_token, refresh_token=refresh_token)
+    return _tokens_for_user(user_obj)
 
 
 @router.post("/refresh")
@@ -58,13 +63,27 @@ async def refresh_token_endpoint(body: RefreshTokenBody):
     return {"access_token": access_token}
 
 
+@router.get("/me", response_model=UserPublic)
+async def get_me(current_user: User = Depends(get_current_user)):
+    return user_to_public(current_user)
+
+
+@router.post("/logout")
+async def logout(current_user: User = Depends(get_current_user)):
+    return {"message": "ok"}
+
+
 @router.post("/consent")
 async def give_consent(
-    consent_in: Consent,
+    consent_in: ConsentRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if not consent_in.consent:
+    if not (
+        consent_in.consent_data_processing
+        and consent_in.consent_terms
+        and consent_in.consent_ai_usage
+    ):
         raise HTTPException(status_code=400, detail="Consent must be accepted")
 
     await user.update(

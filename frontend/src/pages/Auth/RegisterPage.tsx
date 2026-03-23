@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '@/hooks/useAuth';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const schema = z
   .object({
@@ -114,8 +115,10 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     try {
       await registerUser({ email: data.email, full_name: data.full_name, password: data.password });
-    } catch {
-      setError('root', { message: 'Ошибка регистрации. Возможно, этот email уже используется.' });
+    } catch (err) {
+      setError('root', {
+        message: getApiErrorMessage(err, 'Не удалось зарегистрироваться.'),
+      });
     }
   };
 
