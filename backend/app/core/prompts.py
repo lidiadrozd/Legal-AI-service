@@ -87,6 +87,85 @@ DOCUMENT_GENERATION_PROMPT = """
 Формат: Word-совместимый текст с полями [ФИО], [сумма].
 """
 
+# Промпт для анализа влияния изменений законодательства на дела пользователей
+LAW_IMPACT_ANALYSIS_PROMPT = """
+Ты - ИИ-Юрист, эксперт по российскому законодательству.
+Проанализируй, влияет ли изменение закона на дело пользователя.
+
+ДЕЛО ПОЛЬЗОВАТЕЛЯ:
+Категория: {case_category}
+Описание: {case_description}
+
+ИЗМЕНЕНИЕ ЗАКОНОДАТЕЛЬСТВА:
+Название: {change_title}
+Категория: {change_category}
+Описание: {change_summary}
+Источник: {change_source}
+Дата: {change_date}
+
+FEW-SHOT ПРИМЕРЫ:
+
+Пример 1 (влияет):
+Дело: трудовой спор об увольнении, категория labor_law
+Изменение: поправки в ст. 81 ТК РФ об основаниях увольнения
+Ответ:
+{{
+  "affects": true,
+  "severity": "high",
+  "reason": "Изменение напрямую затрагивает основания увольнения, которые являются предметом спора",
+  "legal_basis": "ст. 81 ТК РФ",
+  "recommended_actions": ["Проверить соответствие увольнения новым требованиям", "Обновить позицию по делу"],
+  "notification_template": "law_change_critical",
+  "urgency_days": 7
+}}
+
+Пример 2 (не влияет):
+Дело: трудовой спор об увольнении, категория labor_law
+Изменение: поправки в НК РФ об НДС
+Ответ:
+{{
+  "affects": false,
+  "severity": "none",
+  "reason": "Изменение налогового законодательства не затрагивает трудовые отношения",
+  "legal_basis": null,
+  "recommended_actions": [],
+  "notification_template": null,
+  "urgency_days": null
+}}
+
+Пример 3 (влияет косвенно):
+Дело: взыскание долга по договору аренды, категория civil_law
+Изменение: изменение порядка досудебного урегулирования споров (АПК РФ)
+Ответ:
+{{
+  "affects": true,
+  "severity": "medium",
+  "reason": "Изменение процессуального порядка может повлиять на сроки и порядок подачи иска",
+  "legal_basis": "ст. 4 АПК РФ",
+  "recommended_actions": ["Проверить соблюдение нового досудебного порядка", "Уточнить сроки претензии"],
+  "notification_template": "law_change_standard",
+  "urgency_days": 14
+}}
+
+ПРАВИЛА АНАЛИЗА:
+1. affects=true только если изменение реально касается категории или сути дела
+2. severity: "high" — срочные действия, "medium" — желательно проверить, "low" — к сведению, "none" — не влияет
+3. notification_template: выбери из ["law_change_critical", "law_change_standard", null]
+4. urgency_days: сколько дней есть на реакцию (null если не влияет)
+5. recommended_actions: конкретные шаги, не абстрактные советы
+
+Верни ТОЛЬКО JSON без пояснений:
+{{
+  "affects": true/false,
+  "severity": "high/medium/low/none",
+  "reason": "Краткое объяснение",
+  "legal_basis": "ст. XX ГК РФ или null",
+  "recommended_actions": ["действие 1", "действие 2"],
+  "notification_template": "law_change_critical/law_change_standard/null",
+  "urgency_days": 7/14/30/null
+}}
+"""
+
 # Функции для получения промптов
 def get_system_prompt(context: str = "", chat_history: str = "", user_query: str = "") -> str:
     return SYSTEM_PROMPT.format(
@@ -114,4 +193,23 @@ def get_document_prompt(
         document_type=document_type,
         template_name=template_name,
         client_data=client_data
+    )
+
+def get_law_impact_prompt(
+    case_category: str,
+    case_description: str,
+    change_title: str,
+    change_category: str,
+    change_summary: str,
+    change_source: str,
+    change_date: str,
+) -> str:
+    return LAW_IMPACT_ANALYSIS_PROMPT.format(
+        case_category=case_category,
+        case_description=case_description,
+        change_title=change_title,
+        change_category=change_category,
+        change_summary=change_summary,
+        change_source=change_source,
+        change_date=change_date,
     )
