@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useUIStore } from '@/store/uiStore';
 import { ToastContainer } from '@/components/common/ToastContainer';
+import { useNotificationWS } from '@/hooks/useNotificationWS';
 
 interface AppLayoutProps {
   isAdmin?: boolean;
@@ -61,6 +62,7 @@ const Overlay = styled.div<{ $visible: boolean }>`
 
 export function AppLayout({ isAdmin = false }: AppLayoutProps) {
   const { sidebarOpen, setSidebarOpen } = useUIStore();
+  useNotificationWS();
 
   return (
     <Shell>

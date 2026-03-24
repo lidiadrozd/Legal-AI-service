@@ -137,3 +137,6 @@ Thumbs.db
 claude.md
 architecture_plan.md
 node_modules/
+
+# TypeScript build cache
+*.tsbuildinfo
