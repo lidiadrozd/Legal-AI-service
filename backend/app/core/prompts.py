@@ -112,6 +112,12 @@ SYSTEM_PROMPT = """
 {dialog_state}
 
 === ТВОЙ ОТВЕТ ===
+
+=== РЕЖИМ JSON ===
+Если система требует JSON:
+- Отвечай ТОЛЬКО JSON
+- Без пояснений
+- Без текста до/после
 """
 
 def get_system_prompt(context="", chat_history="", user_query="", dialog_state=""):
@@ -165,11 +171,20 @@ CLARIFICATION_CHECK_PROMPT = """
   "already_known_facts": ["список фактов из истории"]
 }}
 
+ФИНАЛЬНАЯ ПРОВЕРКА:
+- Вопросы не повторяют chat_history
+- Не больше 3 вопросов
+- JSON валиден
+Если есть ошибка → исправь
+
 ОТВЕТ ДОЛЖЕН БЫТЬ СТРОГО JSON:
 - Без ```json
 - Без пояснений
 - Без текста до/после
 - Валидный для json.loads()
+
+ЕСЛИ JSON НЕВАЛИДЕН:
+→ ИСПРАВЬ ПЕРЕД ОТПРАВКОЙ
 
 ТРЕБОВАНИЯ:
 - Макс. 3 вопроса, только критические
@@ -228,11 +243,44 @@ FINAL_RECOMMENDATION_PROMPT = """
   "confidence": "high/medium/low"
 }}
 
+ТРЕБОВАНИЯ К action_plan:
+- Минимум 2 шага
+- НЕЛЬЗЯ возвращать пустой список
+
+ЕСЛИ action_plan ПУСТОЙ:
+→ ДОБАВЬ МИНИМУМ 2 ШАГА
+→ ИСПРАВЬ ОТВЕТ ПЕРЕД ОТПРАВКОЙ
+
+ПРИМЕР правильного action_plan:
+"action_plan": [
+  {{
+    "step": 1,
+    "action": "Подготовить исковое заявление",
+    "deadline": "1 месяц",
+    "note": "Согласно ст. 392 ТК РФ"
+  }},
+  {{
+    "step": 2,
+    "action": "Подать иск в районный суд",
+    "deadline": "после подготовки",
+    "note": "По месту нахождения работодателя"
+  }}
+]
+
+ФИНАЛЬНАЯ ПРОВЕРКА:
+- JSON валиден
+- action_plan содержит шаги
+- все поля заполнены
+Если есть ошибка → исправь
+
 ОТВЕТ ДОЛЖЕН БЫТЬ СТРОГО JSON:
 - Без ```json
 - Без пояснений
 - Без текста до/после
 - Валидный для json.loads()
+
+ЕСЛИ JSON НЕВАЛИДЕН:
+→ ИСПРАВЬ ПЕРЕД ОТПРАВКОЙ
 
 ВАЖНО:
 - Используй: «на основании ст...», «согласно ст...», «работодатель обязан...»
@@ -265,10 +313,58 @@ PRETRIAL_CHECK_PROMPT = """
   "legal_basis": "ст. 4 АПК РФ, 30 дней ожидания"
 }}
 
+КЛЮЧИ ДОЛЖНЫ БЫТЬ СТРОГО ИЗ СПИСКА:
+- pretrial_sent
+- pretrial_date
+- response_received
+- days_passed
+- can_file_lawsuit
+- recommendation
+- legal_basis
+
+ЗАПРЕЩЕНО:
+- изменять названия ключей
+- добавлять новые ключи
+- допускать опечатки в ключах
+
+ЕСЛИ ХОТЯ БЫ ОДИН КЛЮЧ НЕ СОВПАДАЕТ С УКАЗАННЫМ:
+→ ОТВЕТ СЧИТАЕТСЯ НЕВАЛИДНЫМ
+→ ИСПРАВЬ ПЕРЕД ОТПРАВКОЙ
+
+ПРИМЕР ПРАВИЛЬНОГО JSON:
+{{
+  "pretrial_sent": false,
+  "pretrial_date": null,
+  "response_received": false,
+  "days_passed": null,
+  "can_file_lawsuit": false,
+  "recommendation": "Отправить претензию",
+  "legal_basis": "ст. 4 АПК РФ"
+}}
+
+ОПРЕДЕЛЕНИЕ ПРИМЕНИМОСТИ:
+
+- Трудовые споры → досудебный порядок НЕ обязателен
+- Гражданские споры → зависит от договора/закона
+- Арбитражные споры → обязателен (ст. 4 АПК РФ)
+
+Если досудебный порядок НЕ обязателен:
+→ can_file_lawsuit = true
+→ recommendation = "Можно сразу подавать иск"
+
+ФИНАЛЬНАЯ ПРОВЕРКА:
+- JSON валиден
+- Все ключи присутствуют
+- Ключи названы точно
+Если есть ошибка → исправь перед отправкой
+
 ОТВЕТ ДОЛЖЕН БЫТЬ СТРОГО JSON:
 - Без ```json
 - Без пояснений
 - Валидный JSON
+
+ЕСЛИ JSON НЕВАЛИДЕН:
+→ ИСПРАВЬ ПЕРЕД ОТПРАВКОЙ
 """
 
 # Промпт для генерации документов
@@ -390,11 +486,18 @@ FEW-SHOT ПРИМЕРЫ:
 - Без пояснений
 - Без текста до/после
 - Валидный для json.loads()
+
+ЕСЛИ JSON НЕВАЛИДЕН:
+→ ИСПРАВЬ ПЕРЕД ОТПРАВКОЙ
 """
 
 # Функции для получения промптов
+import json
+
 def get_pretrial_check_prompt(user_data: dict) -> str:
-    return PRETRIAL_CHECK_PROMPT.format(user_data=user_data)
+    return PRETRIAL_CHECK_PROMPT.format(
+        user_data=json.dumps(user_data, ensure_ascii=False)
+    )
 
 def get_document_prompt(
     document_type: str,
@@ -402,7 +505,6 @@ def get_document_prompt(
     client_data: dict
 ) -> str:
     return DOCUMENT_GENERATION_PROMPT.format(
-        system_prompt=SYSTEM_PROMPT,
         document_type=document_type,
         template_name=template_name,
         client_data=client_data
