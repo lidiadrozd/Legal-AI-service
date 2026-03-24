@@ -12,11 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 # ✅ ИМПОРТЫ
 from app.core.config import settings
-from app.db.session import engine, get_db
+from app.core.superadmin import ensure_superadmin_exists
+from app.db.session import engine, get_db, AsyncSessionLocal
 from app.db.base_class import Base
 from app import models  # noqa: F401 - регистрирует модели в metadata
 
-from app.api import auth, chat, admin, court_filings, notifications
+from app.api import auth, chat, admin, court_filings, notifications, ws_notifications
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,12 @@ async def lifespan(app: FastAPI):
         print("✅ База данных инициализирована АСИНХРОННО!")
     except Exception as e:
         print(f"❌ Ошибка БД: {e}")
+
+    # Автосоздание суперадмина из переменных окружения.
+    async with AsyncSessionLocal() as db:
+        created = await ensure_superadmin_exists(db)
+        if created:
+            print("✅ Superadmin user created")
     
     # ✅ Проверка конфигурации
     print("🚀 Starting Legal AI Service...")
@@ -83,6 +90,7 @@ app.include_router(chat.router)
 app.include_router(admin.router)
 app.include_router(court_filings.router)
 app.include_router(notifications.router)
+app.include_router(ws_notifications.router)
 
 # ✅ Health endpoints
 @app.get("/", tags=["📊 Status"])
@@ -101,7 +109,7 @@ async def root():
                 "/court-filings/submissions/{filing_id}",
                 "/court-filings/submissions/{filing_id}/status",
             ],
-            "notifications": ["/notifications", "/notifications/{notification_id}/read"],
+            "notifications": ["/notifications", "/notifications/{notification_id}/read", "/api/ws/notifications?token=..."],
             "docs": "/docs",
             "health": "/health"
         },

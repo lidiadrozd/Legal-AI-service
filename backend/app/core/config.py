@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    SUPERADMIN_EMAIL: str = os.getenv("SUPERADMIN_EMAIL", "")
+    SUPERADMIN_PASSWORD: str = os.getenv("SUPERADMIN_PASSWORD", "")
+    SUPERADMIN_FULL_NAME: str = os.getenv("SUPERADMIN_FULL_NAME", "Super Admin")
     
     # ========================================
     # GigaChat API (автообновление токена)
