@@ -30,7 +30,13 @@ class Settings(BaseSettings):
     GIGACHAT_CLIENT_SECRET: str = os.getenv('GIGACHAT_CLIENT_SECRET', "")  # ✅ Дефолт!
     GIGACHAT_MODEL: str = "GigaChat-Pro"
     GIGACHAT_SCOPE: str = "GIGACHAT_API_PERS"
-    
+
+    # ========================================
+    # DUMA API
+    # ========================================
+    DUMA_API_KEY: Optional[str] = None
+    DUMA_APP_KEY: Optional[str] = None
+
     # ========================================
     # RAG & Vector Store
     # ========================================
