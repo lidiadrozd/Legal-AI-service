@@ -51,24 +51,21 @@ async def notifications_ws(
         await websocket.send_json(payload)
 
     stream_task = asyncio.create_task(stream_notifications(user.id, send_payload, stop_event))
-    heartbeat_task = asyncio.create_task(_heartbeat(websocket, stop_event))
 
     try:
         # Keep socket alive and detect disconnects from client side.
         while True:
-            await websocket.receive_text()
+            # Важно: не отправляем "ping" в виде уведомления (фронт может показывать это как пустое).
+            # Вместо этого просто ждём входящие сообщения с таймаутом.
+            # Если клиент молчит — продолжаем цикл без отправки данных.
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=60)
+            except asyncio.TimeoutError:
+                continue
     except WebSocketDisconnect:
         logger.info("Notification WS disconnected: user_id=%s", user.id)
     finally:
         stop_event.set()
-        for task in (stream_task, heartbeat_task):
+        for task in (stream_task,):
             task.cancel()
-        await asyncio.gather(stream_task, heartbeat_task, return_exceptions=True)
-
-
-async def _heartbeat(websocket: WebSocket, stop_event: asyncio.Event) -> None:
-    while not stop_event.is_set():
-        await asyncio.sleep(30)
-        if stop_event.is_set():
-            break
-        await websocket.send_json({"type": "ping"})
+        await asyncio.gather(stream_task, return_exceptions=True)
