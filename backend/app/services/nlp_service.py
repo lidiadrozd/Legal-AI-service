@@ -12,6 +12,9 @@ class NLPService:
     def __init__(self):
         self.model = "GigaChat-Pro"
         self.temperature = 0.1
+        # Сильно длинная история замедляет ответы и повышает риск повторов.
+        # Берём хвост, чтобы сохранить последние факты/вопросы.
+        self.max_history_chars = 6000
     
     async def _get_llm(self) -> GigaChat:
         """Получаем LLM с валидным токеном"""
@@ -29,11 +32,13 @@ class NLPService:
         self,
         user_query: str,
         context: dict = None,
-        chat_history: str = ""
+        chat_history: str = "",
+        dialog_state: str = "",
     ) -> str:
         """Генерация ответа с автообновлением токена"""
         llm = await self._get_llm()
-        system_prompt = get_system_prompt(context or {}, chat_history, user_query)
+        history_tail = (chat_history or "")[-self.max_history_chars :]
+        system_prompt = get_system_prompt(context or {}, history_tail, user_query, dialog_state=dialog_state)
         
         messages = [
             SystemMessage(content=system_prompt),
@@ -42,3 +47,4 @@ class NLPService:
 
         response = await llm.ainvoke(messages)
         return response.content
+
