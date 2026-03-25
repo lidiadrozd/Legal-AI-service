@@ -188,10 +188,26 @@ async def send_message_stream(
     # 5. Реальный ответ от GigaChat + SSE стриминг
     async def generate_stream():
         try:
+            # История диалога нужна модели, чтобы НЕ повторять вопросы и использовать уже данные факты.
+            # Берём последние сообщения (включая только что сохранённое сообщение пользователя).
+            history_limit = 20
+            history_result = await db.execute(
+                select(Message)
+                .where(Message.chat_id == chat_id)
+                .order_by(Message.created_at.desc())
+                .limit(history_limit)
+            )
+            history_messages = list(reversed(history_result.scalars().all()))
+            chat_history = "\n".join(
+                f"{m.role}: {m.content}".strip()
+                for m in history_messages
+                if (m.content or "").strip()
+            )
+
             full_response = await _nlp_service.generate_response(
                 user_query=message_in.content,
                 context=context,
-                chat_history=""
+                chat_history=chat_history,
             )
 
             # Стриминг по символам-блокам с сохранением пробелов и переносов
@@ -249,3 +265,4 @@ async def submit_feedback(
     await db.commit()
     
     return {"message": f"Feedback '{rating}' submitted successfully"}
+
