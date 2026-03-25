@@ -6,6 +6,11 @@ from app.models.law_changes import LawDocument, LawChange
 import httpx
 import asyncio
 from datetime import datetime, timedelta
+from sqlalchemy import select
+
+from app.models.notification import Notification
+from app.models.user import User
+from app.services.notification_bus import publish_notification
 
 celery_app = Celery("legal_ai")
 celery_app.conf.update(
@@ -61,8 +66,94 @@ def monitor_law_changes(self):
 @celery_app.task
 def send_notifications():
     """Отправка уведомлений пользователям"""
-    # TODO: Email/SMS через SMTP/Telegram Bot
-    print("🔔 Отправка уведомлений о изменениях законов")
+    async def _send():
+        async with AsyncSessionLocal() as db:
+            # Берём изменения за последние 2 суток (на случай, если ежедневная задача была недоступна).
+            since = datetime.utcnow() - timedelta(days=2)
+
+            changes_result = await db.execute(
+                select(LawChange)
+                .where(LawChange.created_at >= since)
+                .order_by(LawChange.created_at.asc())
+            )
+            changes = list(changes_result.scalars().all())
+            if not changes:
+                return
+
+            users_result = await db.execute(select(User).where(User.is_active == True))  # noqa: E712
+            users = list(users_result.scalars().all())
+            if not users:
+                return
+
+            created_count = 0
+
+            for change in changes:
+                change_title = (change.change_title or "").strip() or "Изменение законодательства"
+                # Детерминированный заголовок: позволяет легко не дублировать уведомления.
+                title = f"LAW_CHANGE#{change.id}: {change_title}"
+
+                date_str = None
+                if change.change_date is not None:
+                    try:
+                        date_str = change.change_date.date().isoformat()
+                    except Exception:
+                        date_str = None
+
+                description = (change.description or "").strip()
+                if not description:
+                    description = "Описание изменения не предоставлено источником."
+
+                link = (change.source_url or "").strip()
+
+                message_lines = [
+                    f"📄 {change_title}",
+                    f"📅 Дата: {date_str}" if date_str else None,
+                    f"🔗 Источник: {link}" if link else None,
+                    "",
+                    "Что изменилось:",
+                    description,
+                ]
+                message = "\n".join([line for line in message_lines if line is not None]).strip()
+
+                for user in users:
+                    # Идемпотентность: если такое уведомление уже есть — не создаём повторно.
+                    exists_result = await db.execute(
+                        select(Notification.id).where(
+                            Notification.user_id == user.id,
+                            Notification.notification_type == "law_change",
+                            Notification.title == title,
+                        )
+                    )
+                    if exists_result.scalar_one_or_none() is not None:
+                        continue
+
+                    notification = Notification(
+                        user_id=user.id,
+                        title=title,
+                        message=message,
+                        notification_type="law_change",
+                        severity="medium",
+                        is_read=False,
+                    )
+                    db.add(notification)
+                    created_count += 1
+
+                    # Реалтайм доставка через Redis/WS
+                    publish_notification(
+                        {
+                            "title": title,
+                            "message": message,
+                            "type": "law_change",
+                            "severity": "medium",
+                            "meta": {"law_change_id": change.id},
+                        },
+                        user_id=user.id,
+                    )
+
+            if created_count > 0:
+                await db.commit()
+
+    asyncio.run(_send())
 
 # Планировщик (каждый день в 9:00)
 celery_app.conf.beat_schedule = {
