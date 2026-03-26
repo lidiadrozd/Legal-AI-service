@@ -137,7 +137,7 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
   const { chatId } = useParams();
   const navigate = useNavigate();
   const addToast = useUIStore((s) => s.addToast);
-  const { chats, removeChat, setActiveChat, clearMessages } = useChatStore();
+  const { chats, removeChat, setActiveChat, clearMessages, addChat } = useChatStore();
 
   const handleNewChat = async () => {
     try {
@@ -150,6 +150,7 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+      addChat(newChat);
       setActiveChat(newChat);
       clearMessages();
       navigate(`/chat/${result.chat_id}`);

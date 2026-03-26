@@ -27,6 +27,11 @@ const Bubble = styled.div<{ $isUser: boolean }>`
   line-height: 1.65;
   border: ${({ $isUser }) => ($isUser ? 'none' : '1px solid var(--color-border)')};
   word-break: break-word;
+  user-select: text;
+  cursor: text;
+  ${({ $isUser }) =>
+    $isUser &&
+    `::selection { background: rgba(255,255,255,0.35); color: #fff; }`}
 `;
 
 const MarkdownContent = styled.div`

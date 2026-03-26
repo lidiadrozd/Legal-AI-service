@@ -130,7 +130,7 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   ::selection {
-    background: var(--color-primary-muted);
+    background: rgba(33, 160, 56, 0.40);
     color: var(--color-text);
   }
 `;

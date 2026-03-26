@@ -4,7 +4,7 @@ Legal AI Service - Chat API endpoints
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from typing import List
 import asyncio
 import traceback
@@ -221,14 +221,20 @@ async def send_message_stream(
             yield "data: [DONE]\n\n"
 
             # Обновляем финальный ответ ассистента
-            assistant_message.content = full_response
-            db.add(assistant_message)
+            await db.execute(
+                update(Message)
+                .where(Message.id == assistant_message.id)
+                .values(content=full_response)
+            )
             await db.commit()
 
         except Exception as e:
             error_text = f"Ошибка GigaChat: {str(e)}"
-            assistant_message.content = error_text
-            db.add(assistant_message)
+            await db.execute(
+                update(Message)
+                .where(Message.id == assistant_message.id)
+                .values(content=error_text)
+            )
             await db.commit()
             yield f"data: {json.dumps({'content': error_text}, ensure_ascii=False)}\n\n"
             yield "data: [DONE]\n\n"
