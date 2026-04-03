@@ -1,6 +1,13 @@
 import apiClient from './client';
 import { getAccessToken } from '@/utils/tokenStorage';
-import type { Chat, Message, CreateChatResponse, SendMessageRequest } from '@/types/chat.types';
+import { capitalizeFirstLetter } from '@/utils/capitalizeFirst';
+import type {
+  Chat,
+  Message,
+  CreateChatResponse,
+  SendMessageRequest,
+  ChatGeneratedDocument,
+} from '@/types/chat.types';
 
 const RAW_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim();
 const BASE_URL = RAW_BASE_URL.startsWith('http')
@@ -10,9 +17,10 @@ const BASE_URL = RAW_BASE_URL.startsWith('http')
 export const chatApi = {
   createChat: async (): Promise<CreateChatResponse> => {
     const response = await apiClient.post<{ id: number; title: string | null }>('/chat/new');
+    const rawTitle = response.data.title ?? 'Правовой вопрос';
     return {
       chat_id: String(response.data.id),
-      title: response.data.title ?? 'Новый чат',
+      title: capitalizeFirstLetter(rawTitle) || 'Правовой вопрос',
     };
   },
 
@@ -31,7 +39,7 @@ export const chatApi = {
     return response.data.map((chat) => ({
       id: String(chat.id),
       user_id: chat.user_id ? String(chat.user_id) : '',
-      title: chat.title ?? 'Новый чат',
+      title: capitalizeFirstLetter(chat.title ?? 'Правовой вопрос') || 'Правовой вопрос',
       message_count: chat.message_count ?? 0,
       created_at: chat.created_at,
       updated_at: chat.last_message_at ?? chat.created_at,
@@ -71,7 +79,9 @@ export const chatApi = {
     onChunk: (chunk: string) => void,
     onDone: (messageId: string) => void,
     onError: (err: string) => void,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    onTitle?: (title: string) => void,
+    onGeneratedDocument?: (doc: ChatGeneratedDocument) => void
   ): Promise<void> => {
     const token = getAccessToken();
 
@@ -106,6 +116,7 @@ export const chatApi = {
     const decoder = new TextDecoder();
     let messageId = '';
     let buffer = '';
+    let streamCompleted = false;
 
     try {
       while (true) {
@@ -125,14 +136,33 @@ export const chatApi = {
 
           const payload = dataLines.join('\n');
           if (payload === '[DONE]') {
-            onDone(messageId);
+            streamCompleted = true;
+            onDone(messageId ? String(messageId) : '');
             return;
           }
 
           try {
             const parsed = JSON.parse(payload);
-            if (parsed.message_id) messageId = parsed.message_id;
+            if (parsed.message_id != null && parsed.message_id !== '') {
+              messageId = String(parsed.message_id);
+            }
+            if (typeof parsed.title === 'string' && parsed.title.trim() && onTitle) {
+              onTitle(parsed.title);
+            }
             if (typeof parsed.content === 'string') onChunk(parsed.content);
+            if (
+              parsed.generated_document &&
+              typeof parsed.generated_document === 'object' &&
+              onGeneratedDocument
+            ) {
+              const g = parsed.generated_document as { id?: unknown; title?: unknown };
+              if (typeof g.id === 'string') {
+                onGeneratedDocument({
+                  id: g.id,
+                  title: typeof g.title === 'string' ? g.title : 'Документ',
+                });
+              }
+            }
           } catch {
             // Совместимость со старым plain-text форматом
             onChunk(payload);
@@ -147,10 +177,32 @@ export const chatApi = {
           .find((entry) => entry.startsWith('data:'));
         if (line) {
           const payload = line.slice(5).trimStart();
-          if (payload && payload !== '[DONE]') {
+          if (payload === '[DONE]') {
+            streamCompleted = true;
+            onDone(messageId ? String(messageId) : '');
+          } else if (payload) {
             try {
               const parsed = JSON.parse(payload);
+              if (parsed.message_id != null && parsed.message_id !== '') {
+                messageId = String(parsed.message_id);
+              }
+              if (typeof parsed.title === 'string' && parsed.title.trim() && onTitle) {
+                onTitle(parsed.title);
+              }
               if (typeof parsed.content === 'string') onChunk(parsed.content);
+              if (
+                parsed.generated_document &&
+                typeof parsed.generated_document === 'object' &&
+                onGeneratedDocument
+              ) {
+                const g = parsed.generated_document as { id?: unknown; title?: unknown };
+                if (typeof g.id === 'string') {
+                  onGeneratedDocument({
+                    id: g.id,
+                    title: typeof g.title === 'string' ? g.title : 'Документ',
+                  });
+                }
+              }
             } catch {
               onChunk(payload);
             }
@@ -162,7 +214,9 @@ export const chatApi = {
       onError('Ошибка при получении ответа');
     } finally {
       reader.releaseLock();
-      onDone(messageId);
+      if (!streamCompleted) {
+        onDone(messageId ? String(messageId) : '');
+      }
     }
   },
 };

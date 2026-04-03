@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     GIGACHAT_CLIENT_SECRET: str = os.getenv('GIGACHAT_CLIENT_SECRET', "")  # ✅ Дефолт!
     GIGACHAT_MODEL: str = "GigaChat-Pro"
     GIGACHAT_SCOPE: str = "GIGACHAT_API_PERS"
+    # Таймаут ожидания полного ответа модели в чате (сек.)
+    GIGACHAT_GENERATE_TIMEOUT_SECONDS: int = 120
     
     # ========================================
     # RAG & Vector Store
@@ -67,6 +69,13 @@ class Settings(BaseSettings):
     # ========================================
     CELERY_TASK_ALWAYS_EAGER: bool = False
     CELERY_TASK_TIME_LIMIT: int = 300
+
+    # ========================================
+    # Документы (файлы пользователей + встроенные шаблоны)
+    # ========================================
+    DOCUMENTS_STORAGE_PATH: str = "storage/documents"
+    # Пустая строка = каталог backend/builtin_templates относительно корня проекта backend
+    BUILTIN_TEMPLATES_PATH: str = ""
     
     model_config = SettingsConfigDict(
         env_file=".env",

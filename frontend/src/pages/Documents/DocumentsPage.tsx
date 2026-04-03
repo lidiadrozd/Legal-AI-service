@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import styled from 'styled-components';
-import { Upload, FileText } from 'lucide-react';
+import { Upload, FileText, Trash2 } from 'lucide-react';
 import { documentsApi } from '@/api/documents';
 import { DocumentCard } from '@/components/documents/DocumentCard';
 import { DocumentViewer } from '@/components/documents/DocumentViewer';
@@ -39,6 +39,13 @@ const Sub = styled.p`
   color: var(--color-text-secondary);
 `;
 
+const Actions = styled.div`
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+`;
+
 const UploadBtn = styled.label`
   display: inline-flex;
   align-items: center;
@@ -53,6 +60,29 @@ const UploadBtn = styled.label`
   transition: background var(--transition-fast);
   &:hover { background: var(--color-primary-hover); }
   input { display: none; }
+`;
+
+const ClearBtn = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: transparent;
+  color: var(--color-error, #f87171);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+  &:hover:not(:disabled) {
+    border-color: var(--color-error, #f87171);
+    background: var(--color-error-muted, rgba(248, 113, 113, 0.12));
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 `;
 
 const ProgressBar = styled.div<{ $pct: number }>`
@@ -106,6 +136,23 @@ const EmptySub = styled.div`
   font-size: var(--font-size-sm);
 `;
 
+const RetryBtn = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--color-surface);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  &:hover {
+    border-color: var(--color-primary);
+  }
+`;
+
 const Skeleton = styled.div`
   background: var(--color-surface);
   border-radius: var(--radius-md);
@@ -120,12 +167,14 @@ const Skeleton = styled.div`
 
 export default function DocumentsPage() {
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
+  const [clearing, setClearing] = useState(false);
   const addToast = useUIStore((s) => s.addToast);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['documents'],
     queryFn: documentsApi.list,
+    retry: 1,
   });
 
   const { upload, progress, isUploading } = useFileUpload();
@@ -142,28 +191,72 @@ export default function DocumentsPage() {
     e.target.value = '';
   };
 
+  const handleClearAll = useCallback(async () => {
+    if (!data?.length) return;
+    const ok = window.confirm(
+      `Удалить все документы (${data.length} шт.)? Файлы будут стёрты безвозвратно.`
+    );
+    if (!ok) return;
+    setClearing(true);
+    try {
+      const { deleted } = await documentsApi.clearAll();
+      setSelectedDoc(null);
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      addToast({
+        type: 'success',
+        message: deleted ? `Удалено документов: ${deleted}` : 'Список уже был пуст',
+      });
+    } catch {
+      addToast({ type: 'error', message: 'Не удалось очистить документы' });
+    } finally {
+      setClearing(false);
+    }
+  }, [addToast, data, queryClient]);
+
   return (
     <Page>
       <Header>
         <TitleArea>
           <Title>Документы</Title>
-          <Sub>Загруженные файлы для анализа</Sub>
+          <Sub>Загрузки и документы, созданные в чате (GigaChat)</Sub>
         </TitleArea>
-        <UploadBtn>
-          <Upload size={16} />
-          Загрузить документ
-          <input
-            type="file"
-            accept=".pdf,.docx,.txt,.doc"
-            onChange={handleFileChange}
-            disabled={isUploading}
-          />
-        </UploadBtn>
+        <Actions>
+          <UploadBtn>
+            <Upload size={16} />
+            Загрузить документ
+            <input
+              type="file"
+              accept=".pdf,.docx,.txt,.doc"
+              onChange={handleFileChange}
+              disabled={isUploading || clearing}
+            />
+          </UploadBtn>
+          <ClearBtn
+            type="button"
+            onClick={handleClearAll}
+            disabled={isLoading || isError || !data?.length || isUploading || clearing}
+          >
+            <Trash2 size={16} />
+            Очистить всё
+          </ClearBtn>
+        </Actions>
       </Header>
 
       {isUploading && <ProgressBar $pct={progress} />}
 
-      {isLoading ? (
+      {isError ? (
+        <EmptyState>
+          <EmptyIcon><FileText size={28} /></EmptyIcon>
+          <EmptyTitle>Не удалось загрузить список</EmptyTitle>
+          <EmptySub style={{ marginBottom: 16 }}>
+            {(error as Error)?.message ||
+              'Проверьте авторизацию и что backend запущен; в DevTools → Network посмотрите ответ GET /documents.'}
+          </EmptySub>
+          <RetryBtn type="button" onClick={() => refetch()}>
+            Повторить запрос
+          </RetryBtn>
+        </EmptyState>
+      ) : isLoading ? (
         <Grid>
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} />)}
         </Grid>
@@ -171,7 +264,10 @@ export default function DocumentsPage() {
         <EmptyState>
           <EmptyIcon><FileText size={28} /></EmptyIcon>
           <EmptyTitle>Документов пока нет</EmptyTitle>
-          <EmptySub>Загрузите файл PDF, DOCX или TXT для анализа</EmptySub>
+          <EmptySub>
+            Загрузите PDF, DOCX или TXT. Документы, которые чат оформляет автоматически, тоже попадают в этот
+            список.
+          </EmptySub>
         </EmptyState>
       ) : (
         <Grid>

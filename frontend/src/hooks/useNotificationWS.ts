@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useUIStore } from '@/store/uiStore';
+import { capitalizeFirstLetter } from '@/utils/capitalizeFirst';
 
 const RECONNECT_DELAY_MS = 3000;
 
@@ -43,8 +44,8 @@ export function useNotificationWS() {
         try {
           const data = JSON.parse(event.data);
           const notification = {
-            title: data.title ?? 'Уведомление',
-            body: data.body ?? '',
+            title: capitalizeFirstLetter(String(data.title ?? 'Уведомление')) || 'Уведомление',
+            body: capitalizeFirstLetter(String(data.body ?? '')) || String(data.body ?? ''),
             severity: data.severity ?? 'medium',
             icon: data.icon ?? '🔔',
           };

@@ -1,5 +1,6 @@
 import apiClient from './client';
 import type { Document, UploadDocumentResponse } from '@/types/document.types';
+import { capitalizeFilename } from '@/utils/capitalizeFirst';
 
 export const documentsApi = {
   upload: async (
@@ -17,17 +18,20 @@ export const documentsApi = {
         }
       },
     });
-    return response.data;
+    return {
+      ...response.data,
+      filename: capitalizeFilename(response.data.filename),
+    };
   },
 
   list: async (): Promise<Document[]> => {
     const response = await apiClient.get<Document[]>('/documents');
-    return response.data;
+    return response.data.map((d) => ({ ...d, title: capitalizeFilename(d.title) }));
   },
 
   getById: async (id: string): Promise<Document> => {
     const response = await apiClient.get<Document>(`/documents/${id}`);
-    return response.data;
+    return { ...response.data, title: capitalizeFilename(response.data.title) };
   },
 
   download: async (id: string, filename: string): Promise<void> => {
@@ -44,5 +48,11 @@ export const documentsApi = {
 
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/documents/${id}`);
+  },
+
+  /** Удалить все документы пользователя. */
+  clearAll: async (): Promise<{ deleted: number }> => {
+    const response = await apiClient.delete<{ deleted: number }>('/documents/all');
+    return response.data;
   },
 };

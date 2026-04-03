@@ -1,12 +1,15 @@
 import { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import styled from 'styled-components';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { MessageInput } from '@/components/chat/MessageInput';
 import { useChat } from '@/hooks/useChat';
 import { useSSE } from '@/hooks/useSSE';
 import { useChatStore } from '@/store/chatStore';
+import { useUIStore } from '@/store/uiStore';
 import { chatApi } from '@/api/chat';
+import { capitalizeFilename } from '@/utils/capitalizeFirst';
 
 const Wrapper = styled.div`
   display: flex;
@@ -29,6 +32,8 @@ export default function ChatPage() {
   const { loadChats, openChat } = useChat();
   const { stream, cancel } = useSSE();
   const { activeChat } = useChatStore();
+  const addToast = useUIStore((s) => s.addToast);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     loadChats();
@@ -74,13 +79,27 @@ export default function ChatPage() {
       };
       useChatStore.getState().appendMessage(userMsg);
 
-      await stream({
-        chat_id: chatIdToUse,
-        content,
-        attachment_ids: fileId ? [fileId] : undefined,
-      });
+      await stream(
+        {
+          chat_id: chatIdToUse,
+          content,
+          attachment_ids: fileId ? [fileId] : undefined,
+        },
+        {
+          onTitle: (title) => {
+            useChatStore.getState().updateChatTitle(chatIdToUse!, title);
+          },
+          onGeneratedDocument: (doc) => {
+            queryClient.invalidateQueries({ queryKey: ['documents'] });
+            addToast({
+              message: `Документ «${capitalizeFilename(doc.title)}» сформирован. Откройте раздел «Документы», чтобы скачать файл.`,
+              type: 'success',
+            });
+          },
+        }
+      );
     },
-    [activeChat, chatId, navigate, stream],
+    [activeChat, addToast, chatId, navigate, queryClient, stream],
   );
 
   const handleSuggestion = useCallback(

@@ -17,7 +17,7 @@ from app.db.session import engine, get_db, AsyncSessionLocal
 from app.db.base_class import Base
 from app import models  # noqa: F401 - регистрирует модели в metadata
 
-from app.api import auth, chat, admin, court_filings, notifications, ws_notifications
+from app.api import auth, chat, admin, court_filings, notifications, ws_notifications, documents
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +86,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(documents.router)
 app.include_router(chat.router)
 app.include_router(admin.router)
 app.include_router(court_filings.router)

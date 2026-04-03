@@ -39,6 +39,12 @@ export interface CreateChatResponse {
   title: string;
 }
 
+/** Сервер присылает после авто-генерации документа из чата (блок [AUTO_DOC]). */
+export interface ChatGeneratedDocument {
+  id: string;
+  title: string;
+}
+
 export interface FeedbackRequest {
   message_id: string;
   rating: FeedbackRating;

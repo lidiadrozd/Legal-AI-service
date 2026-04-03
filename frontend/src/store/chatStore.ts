@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { capitalizeFirstLetter } from '@/utils/capitalizeFirst';
 import type { Chat, Message, FeedbackRating } from '@/types/chat.types';
 
 interface ChatState {
@@ -15,6 +16,7 @@ interface ChatActions {
   addChat: (chat: Chat) => void;
   removeChat: (chatId: string) => void;
   setActiveChat: (chat: Chat | null) => void;
+  updateChatTitle: (chatId: string, title: string) => void;
   setMessages: (messages: Message[]) => void;
   appendMessage: (message: Message) => void;
   startStreaming: () => void;
@@ -44,6 +46,15 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
   setActiveChat: (chat) => set({ activeChat: chat }),
 
+  updateChatTitle: (chatId, title) =>
+    set((s) => {
+      const t = capitalizeFirstLetter(title);
+      return {
+        chats: s.chats.map((c) => (c.id === chatId ? { ...c, title: t } : c)),
+        activeChat: s.activeChat?.id === chatId ? { ...s.activeChat, title: t } : s.activeChat,
+      };
+    }),
+
   setMessages: (messages) => set({ messages }),
 
   appendMessage: (message) =>
@@ -59,22 +70,49 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
   finishStreaming: (messageId) => {
     const { streamingContent, messages } = get();
-    if (!streamingContent) {
+    const text = (streamingContent || '').trim();
+    if (!text) {
       set({ isStreaming: false, streamingContent: '', streamingMessageId: null });
       return;
     }
+
+    const chatId = get().activeChat?.id || '';
+    let emptyAssistantIdx = -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'assistant' && !(messages[i].content || '').trim()) {
+        emptyAssistantIdx = i;
+        break;
+      }
+    }
+
+    const resolvedId =
+      emptyAssistantIdx >= 0
+        ? String(messages[emptyAssistantIdx].id)
+        : messageId || crypto.randomUUID();
+
     const assistantMessage: Message = {
-      id: messageId || crypto.randomUUID(),
-      chat_id: get().activeChat?.id || '',
+      id: resolvedId,
+      chat_id: chatId,
       role: 'assistant',
       content: streamingContent,
-      created_at: new Date().toISOString(),
+      created_at:
+        emptyAssistantIdx >= 0 ? messages[emptyAssistantIdx].created_at : new Date().toISOString(),
     };
+
+    const newMessages =
+      emptyAssistantIdx >= 0
+        ? [
+            ...messages.slice(0, emptyAssistantIdx),
+            assistantMessage,
+            ...messages.slice(emptyAssistantIdx + 1),
+          ]
+        : [...messages, assistantMessage];
+
     set({
       isStreaming: false,
       streamingContent: '',
       streamingMessageId: null,
-      messages: [...messages, assistantMessage],
+      messages: newMessages,
     });
   },
 

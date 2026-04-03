@@ -82,6 +82,14 @@ export function ChatWindow({ onSuggestionClick }: ChatWindowProps) {
   const { messages, isStreaming, streamingContent } = useChatStore();
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  /** Пустой черновик ассистента из БД не показываем во время стрима — только индикатор набора. */
+  const visibleMessages =
+    isStreaming
+      ? messages.filter(
+          (m) => m.role !== 'assistant' || (m.content != null && String(m.content).trim() !== '')
+        )
+      : messages;
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
@@ -108,7 +116,7 @@ export function ChatWindow({ onSuggestionClick }: ChatWindowProps) {
 
   return (
     <Wrap>
-      {messages.map((msg) => (
+      {visibleMessages.map((msg) => (
         <MessageBubble key={msg.id} message={msg} />
       ))}
       {isStreaming && <StreamingMessage content={streamingContent} />}

@@ -2,6 +2,8 @@
 Legal AI Service - Системные промпты для GigaChat
 """
 
+import json
+
 # ОСНОВНОЙ SYSTEM PROMPT (короткий и строгий, чтобы отвечать быстрее)
 SYSTEM_PROMPT = """
 ТЫ — юридический AI‑помощник «ЮрAIст». Эксперт по российскому праву.
@@ -29,6 +31,13 @@ SYSTEM_PROMPT = """
 5) Ответ должен быть коротким:
 - Без воды, без повторов, 300–500 токенов.
 - В конце: confidence = high/medium/low. Если low — порекомендуй очную консультацию.
+
+6) Авто-создание документа:
+- Если в [РЕКОМЕНДАЦИИ] ты советуешь составить конкретный документ (претензия, исковое заявление, заявление, договор и т.п.) — сразу после строки confidence добавь РОВНО одну строку:
+  [AUTO_DOC]{{"document_type":"краткий тип на русском","template_title":"точное имя файла из списка шаблонов или пустая строка"}}
+- Если список шаблонов в контексте пуст, всё равно добавь [AUTO_DOC] с "template_title":"" (сервис сформирует текст без файла-шаблона).
+- Если рекомендация не про подготовку документа — НЕ добавляй [AUTO_DOC].
+- Внутрь JSON только двойные кавычки; без комментариев и без текста после JSON.
 
 === ФОРМАТ ОТВЕТА ===
 Если данных НЕ хватает:
@@ -104,20 +113,25 @@ PRETRIAL_CHECK_PROMPT = """
 """
 
 # Промпт для генерации документов
-DOCUMENT_GENERATION_PROMPT = """
-{{
-  "system_prompt": "{system_prompt}",
-  "document_type": "{document_type}",
-  "template_name": "{template_name}",
-  "client_data": {client_data}
-}}
+DOCUMENT_GENERATION_PROMPT = """Ты готовишь текст юридического документа для пользователя.
 
-Генерируй ЮРИДИЧЕСКИЙ ДОКУМЕНТ по шаблону:
-- ПРЕТЕНЗИЯ (ст. 720 ГК РФ)
-- ИСКОВОЕ ЗАЯВЛЕНИЕ (ст. 131 ГПК РФ)
-- ДОГОВОР
+Тип документа: {document_type}
+Имя шаблона (файл): {template_name}
 
-Формат: Word-совместимый текст с полями [ФИО], [сумма].
+Факты и запрос пользователя:
+{user_query}
+
+Текст загруженного шаблона (ориентир по структуре и формулировкам; допускается пусто):
+---
+{template_content}
+---
+
+Известные поля (JSON): {client_data_json}
+
+Правила:
+- Соблюдай российскую терминологию и ссылки на нормы только из списка в системном промпте «ЮрAIст»; не придумывай статьи.
+- Если чего-то не хватает — впиши очевидные плейсхолдеры в квадратных скобках: [ФИО], [адрес], [сумма], [дата].
+- Выведи только готовый текст документа (без преамбулы «конечно», без Markdown-заголовков с #).
 """
 
 # Функции для получения промптов
@@ -147,11 +161,14 @@ def get_pretrial_check_prompt(user_data: dict) -> str:
 def get_document_prompt(
     document_type: str,
     template_name: str,
-    client_data: dict
+    user_query: str,
+    template_content: str,
+    client_data: dict,
 ) -> str:
     return DOCUMENT_GENERATION_PROMPT.format(
-        system_prompt=SYSTEM_PROMPT,
         document_type=document_type,
         template_name=template_name,
-        client_data=client_data
+        user_query=user_query or "",
+        template_content=template_content or "",
+        client_data_json=json.dumps(client_data or {}, ensure_ascii=False),
     )

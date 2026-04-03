@@ -1,7 +1,8 @@
-
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from typing import List, Optional
 from datetime import datetime
+
+from app.utils.text import capitalize_first_letter
 
 # ========================================
 # MESSAGE SCHEMAS
@@ -9,7 +10,7 @@ from datetime import datetime
 class MessageBase(BaseModel):
     """Базовая схема сообщения"""
     model_config = ConfigDict(from_attributes=True)
-    
+
     content: str
     role: str  # "user" or "assistant"
 
@@ -32,8 +33,18 @@ class Message(MessageBase):
 class ChatBase(BaseModel):
     """Базовая схема чата"""
     model_config = ConfigDict(from_attributes=True)
-    
+
     title: Optional[str] = None
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def _normalize_title(cls, v: object) -> Optional[str]:
+        if v is None:
+            return None
+        s = str(v).strip()
+        if not s:
+            return None
+        return capitalize_first_letter(s)
 
 class ChatCreate(ChatBase):
     """Создание чата"""

@@ -5,6 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/store/uiStore';
 import { useState, useRef } from 'react';
 import { NotificationBell } from '@/components/common/NotificationBell';
+import { useLocation } from 'react-router-dom';
+import { useChatStore } from '@/store/chatStore';
 
 const Bar = styled.header`
   height: var(--header-height);
@@ -97,6 +99,11 @@ export function Header() {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const { activeChat } = useChatStore();
+
+  const isChatRoute = location.pathname === '/chat' || location.pathname.startsWith('/chat/');
+  const headerTitle = isChatRoute ? (activeChat?.title ?? 'Правовой вопрос') : 'Юридический ИИ-ассистент';
 
   const handleLogout = async () => {
     setOpen(false);
@@ -108,7 +115,7 @@ export function Header() {
       <BurgerBtn onClick={toggleSidebar}>
         <Menu size={20} />
       </BurgerBtn>
-      <Title>Юридический ИИ-ассистент</Title>
+      <Title>{headerTitle}</Title>
       <NotificationBell />
       <UserMenu ref={menuRef}>
         <UserBtn onClick={() => setOpen((v) => !v)}>
