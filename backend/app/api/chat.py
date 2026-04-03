@@ -604,6 +604,7 @@ async def send_message_stream(
                 if doc_ready and doc_ready.status == "ready":
                     gen_payload = {"id": doc_ready.id, "title": doc_ready.title}
 
+<<<<<<< HEAD
             if gen_payload:
                 yield f"data: {json.dumps({'generated_document': gen_payload}, ensure_ascii=False)}\n\n"
 
@@ -621,6 +622,24 @@ async def send_message_stream(
                 persisted = True
             except Exception:
                 traceback.print_exc()
+=======
+            # Обновляем финальный ответ ассистента
+            await db.execute(
+                update(Message)
+                .where(Message.id == assistant_message.id)
+                .values(content=full_response)
+            )
+            await db.commit()
+
+        except Exception as e:
+            error_text = f"Ошибка GigaChat: {str(e)}"
+            await db.execute(
+                update(Message)
+                .where(Message.id == assistant_message.id)
+                .values(content=error_text)
+            )
+            await db.commit()
+>>>>>>> be87a3ca7d57fae1fb1eaece8a41ae6fc5b182a6
             yield f"data: {json.dumps({'content': error_text}, ensure_ascii=False)}\n\n"
             yield f"data: {json.dumps({'message_id': assistant_message.id}, ensure_ascii=False)}\n\n"
             yield "data: [DONE]\n\n"

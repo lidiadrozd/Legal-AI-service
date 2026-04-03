@@ -40,6 +40,7 @@ export default function ChatPage() {
   }, [loadChats]);
 
   useEffect(() => {
+    useChatStore.getState().resetStreaming();
     if (chatId) {
       openChat(chatId);
       const found = useChatStore.getState().chats.find((c) => c.id === chatId);
