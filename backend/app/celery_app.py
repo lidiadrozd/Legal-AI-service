@@ -6,11 +6,14 @@ from app.models.law_changes import LawDocument, LawChange
 import httpx
 import asyncio
 from datetime import datetime, timedelta
+import logging
 from sqlalchemy import select
 
 from app.models.notification import Notification
 from app.models.user import User
 from app.services.notification_bus import publish_notification
+
+logger = logging.getLogger(__name__)
 
 celery_app = Celery("legal_ai")
 celery_app.conf.update(
@@ -136,19 +139,26 @@ def send_notifications():
                         is_read=False,
                     )
                     db.add(notification)
+                    await db.flush()
                     created_count += 1
 
-                    # Реалтайм доставка через Redis/WS
-                    publish_notification(
-                        {
-                            "title": title,
-                            "message": message,
-                            "type": "law_change",
-                            "severity": "medium",
-                            "meta": {"law_change_id": change.id},
-                        },
-                        user_id=user.id,
-                    )
+                    try:
+                        publish_notification(
+                            {
+                                "title": title,
+                                "message": message,
+                                "type": "law_change",
+                                "severity": "medium",
+                                "id": notification.id,
+                                "meta": {"law_change_id": change.id},
+                            },
+                            user_id=user.id,
+                        )
+                    except Exception:
+                        logger.exception(
+                            "Redis publish failed for law_change notification user_id=%s",
+                            user.id,
+                        )
 
             if created_count > 0:
                 await db.commit()
