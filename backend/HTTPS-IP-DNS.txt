@@ -1,0 +1,2 @@
+Публичный IP VPS: 87.242.87.53
+Traefik + LE (профиль https): TRAEFIK_API_DOMAIN=87-242-87-53.nip.io (см. backend/.env)
