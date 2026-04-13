@@ -1,14 +1,10 @@
 import { useEffect, useRef } from 'react';
+import { getNotificationWebSocketUrl } from '@/config/apiEnv';
 import { useAuthStore } from '@/store/authStore';
-import { useNotificationStore } from '@/store/notificationStore';
+import { useNotificationStore, type IncomingNotification } from '@/store/notificationStore';
 import { useUIStore } from '@/store/uiStore';
 
 const RECONNECT_DELAY_MS = 3000;
-
-function getWsBaseUrl(): string {
-  const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-  return apiUrl.replace(/^https:\/\//, 'wss://').replace(/^http:\/\//, 'ws://');
-}
 
 export function useNotificationWS() {
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -27,7 +23,7 @@ export function useNotificationWS() {
     function connect() {
       if (unmountedRef.current) return;
 
-      const url = `${getWsBaseUrl()}/ws/notifications?token=${accessToken}`;
+      const url = getNotificationWebSocketUrl(accessToken);
       let ws: WebSocket;
 
       try {
@@ -41,12 +37,37 @@ export function useNotificationWS() {
 
       ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data);
-          const notification = {
-            title: data.title ?? 'Уведомление',
-            body: data.body ?? '',
-            severity: data.severity ?? 'medium',
-            icon: data.icon ?? '🔔',
+          const data = JSON.parse(event.data) as Record<string, unknown>;
+          const rawId = data.id;
+          const serverId =
+            typeof rawId === 'number'
+              ? rawId
+              : typeof rawId === 'string' && /^\d+$/.test(rawId)
+                ? parseInt(rawId, 10)
+                : undefined;
+          const rawSev = data.severity;
+          const severity =
+            rawSev === 'low' ||
+            rawSev === 'medium' ||
+            rawSev === 'high' ||
+            rawSev === 'critical'
+              ? rawSev
+              : 'medium';
+          const body =
+            typeof data.message === 'string'
+              ? data.message
+              : typeof data.body === 'string'
+                ? data.body
+                : '';
+          const createdAt =
+            typeof data.timestamp === 'string' ? data.timestamp : undefined;
+          const notification: IncomingNotification = {
+            title: typeof data.title === 'string' ? data.title : 'Уведомление',
+            body,
+            severity,
+            icon: typeof data.icon === 'string' ? data.icon : '🔔',
+            serverId,
+            createdAt,
           };
           addNotification(notification);
           if (notification.severity === 'high' || notification.severity === 'critical') {
