@@ -1,11 +1,9 @@
 import apiClient from './client';
+import { getRestApiBaseUrl } from '@/config/apiEnv';
 import { getAccessToken } from '@/utils/tokenStorage';
 import type { Chat, Message, CreateChatResponse, SendMessageRequest } from '@/types/chat.types';
 
-const RAW_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim();
-const BASE_URL = RAW_BASE_URL.startsWith('http')
-  ? RAW_BASE_URL.replace(/\/$/, '')
-  : '/api';
+const STREAM_BASE_URL = getRestApiBaseUrl();
 
 export const chatApi = {
   createChat: async (): Promise<CreateChatResponse> => {
@@ -77,7 +75,7 @@ export const chatApi = {
 
     let response: Response;
     try {
-      response = await fetch(`${BASE_URL}/chat/${request.chat_id}/send_stream`, {
+      response = await fetch(`${STREAM_BASE_URL}/chat/${request.chat_id}/send_stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -166,3 +164,5 @@ export const chatApi = {
     }
   },
 };
+
+
