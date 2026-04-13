@@ -9,6 +9,7 @@ from app.db.session import get_db
 from app.models.notification import Notification
 from app.models.user import User
 from app.schemas.notification import NotificationCreate, NotificationOut
+from app.services.notification_bus import publish_notification_async
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 logger = logging.getLogger(__name__)
@@ -62,6 +63,22 @@ async def create_notification(
     await db.commit()
     await db.refresh(notification)
     logger.info("Notification created: notification_id=%s user_id=%s", notification.id, current_user.id)
+    try:
+        await publish_notification_async(
+            {
+                "title": notification.title,
+                "message": notification.message,
+                "type": notification.notification_type or "system",
+                "severity": notification.severity or "medium",
+                "id": notification.id,
+            },
+            user_id=current_user.id,
+        )
+    except Exception:
+        logger.exception(
+            "Realtime publish failed (notification saved): notification_id=%s",
+            notification.id,
+        )
     return notification
 
 
@@ -104,3 +121,4 @@ async def mark_notification_as_read(
 
     logger.info("Notification marked read: notification_id=%s user_id=%s", notification_id, current_user.id)
     return notification
+
