@@ -1,72 +1,83 @@
-import { useState, useCallback } from 'react';
-import { documentsApi } from '@/api/documents';
+import { useEffect, useRef } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import { useUIStore } from '@/store/uiStore';
-import {
-  ALLOWED_FILE_TYPES,
-  ALLOWED_EXTENSIONS,
-  MAX_FILE_SIZE_BYTES,
-} from '@/types/document.types';
-import type { UploadDocumentResponse } from '@/types/document.types';
 
-interface UploadState {
-  isUploading: boolean;
-  progress: number;
-  error: string | null;
-  result: UploadDocumentResponse | null;
+const RECONNECT_DELAY_MS = 3000;
+
+function getWsBaseUrl(): string {
+  const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+  return apiUrl.replace(/^https:\/\//, 'wss://').replace(/^http:\/\//, 'ws://');
 }
 
-export function useFileUpload() {
+export function useNotificationWS() {
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const addNotification = useNotificationStore((s) => s.addNotification);
   const addToast = useUIStore((s) => s.addToast);
-  const [state, setState] = useState<UploadState>({
-    isUploading: false,
-    progress: 0,
-    error: null,
-    result: null,
-  });
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unmountedRef = useRef(false);
 
-  const validateFile = (file: File): string | null => {
-    if (!ALLOWED_FILE_TYPES.includes(file.type as typeof ALLOWED_FILE_TYPES[number])) {
-      const ext = ALLOWED_EXTENSIONS.join(', ');
-      return `Недопустимый формат файла. Разрешены: ${ext}`;
-    }
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      return 'Файл слишком большой. Максимальный размер: 20 МБ';
-    }
-    return null;
-  };
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
 
-  const upload = useCallback(
-    async (file: File): Promise<UploadDocumentResponse | null> => {
-      const validationError = validateFile(file);
-      if (validationError) {
-        setState((s) => ({ ...s, error: validationError }));
-        addToast({ message: validationError, type: 'error' });
-        return null;
-      }
+    unmountedRef.current = false;
 
-      setState({ isUploading: true, progress: 0, error: null, result: null });
+    function connect() {
+      if (unmountedRef.current) return;
+
+      const url = `${getWsBaseUrl()}/ws/notifications?token=${accessToken}`;
+      let ws: WebSocket;
 
       try {
-        const result = await documentsApi.upload(file, (percent) => {
-          setState((s) => ({ ...s, progress: percent }));
-        });
-        setState({ isUploading: false, progress: 100, error: null, result });
-        addToast({ message: `Файл «${file.name}» загружен`, type: 'success' });
-        return result;
+        ws = new WebSocket(url);
       } catch {
-        const errorMsg = 'Ошибка загрузки файла. Попробуйте ещё раз.';
-        setState({ isUploading: false, progress: 0, error: errorMsg, result: null });
-        addToast({ message: errorMsg, type: 'error' });
-        return null;
+        scheduleReconnect();
+        return;
       }
-    },
-    [addToast]
-  );
 
-  const reset = useCallback(() => {
-    setState({ isUploading: false, progress: 0, error: null, result: null });
-  }, []);
+      wsRef.current = ws;
 
-  return { ...state, upload, reset };
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          const notification = {
+            title: data.title ?? 'Уведомление',
+            body: data.body ?? '',
+            severity: data.severity ?? 'medium',
+            icon: data.icon ?? '🔔',
+          };
+          addNotification(notification);
+          if (notification.severity === 'high' || notification.severity === 'critical') {
+            addToast({ message: notification.title, type: 'warning' });
+          }
+        } catch {
+          // ignore malformed messages
+        }
+      };
+
+      ws.onclose = () => {
+        if (!unmountedRef.current) scheduleReconnect();
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+    }
+
+    function scheduleReconnect() {
+      reconnectTimerRef.current = setTimeout(connect, RECONNECT_DELAY_MS);
+    }
+
+    connect();
+
+    return () => {
+      unmountedRef.current = true;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      wsRef.current?.close();
+      wsRef.current = null;
+    };
+  }, [isAuthenticated, accessToken, addNotification, addToast]);
 }
 
