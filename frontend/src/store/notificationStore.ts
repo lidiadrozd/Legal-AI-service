@@ -10,15 +10,41 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface ServerNotificationRow {
+  id: number;
+  title: string;
+  message: string;
+  notification_type?: string | null;
+  severity?: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
 interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
 }
 
+export type IncomingNotification = {
+  title: string;
+  body: string;
+  severity: Notification['severity'];
+  icon: string;
+  serverId?: number;
+  createdAt?: string;
+};
+
 interface NotificationActions {
-  addNotification: (n: Omit<Notification, 'id' | 'read' | 'createdAt'>) => void;
+  addNotification: (n: IncomingNotification) => void;
+  hydrateFromServer: (rows: ServerNotificationRow[]) => void;
   markAllRead: () => void;
   clearAll: () => void;
+}
+
+function normalizeSeverity(raw: string | null | undefined): Notification['severity'] {
+  const v = (raw || 'medium').toLowerCase();
+  if (v === 'low' || v === 'medium' || v === 'high' || v === 'critical') return v;
+  return 'medium';
 }
 
 export const useNotificationStore = create<NotificationState & NotificationActions>((set) => ({
@@ -26,16 +52,37 @@ export const useNotificationStore = create<NotificationState & NotificationActio
   unreadCount: 0,
 
   addNotification: (n) => {
-    const notification: Notification = {
-      ...n,
-      id: crypto.randomUUID(),
-      read: false,
-      createdAt: new Date().toISOString(),
-    };
-    set((s) => ({
-      notifications: [notification, ...s.notifications],
-      unreadCount: s.unreadCount + 1,
+    const id = n.serverId != null ? `db-${n.serverId}` : crypto.randomUUID();
+    set((s) => {
+      if (s.notifications.some((x) => x.id === id)) return s;
+      const notification: Notification = {
+        id,
+        title: n.title,
+        body: n.body,
+        severity: n.severity,
+        icon: n.icon,
+        read: false,
+        createdAt: n.createdAt ?? new Date().toISOString(),
+      };
+      return {
+        notifications: [notification, ...s.notifications],
+        unreadCount: s.unreadCount + 1,
+      };
+    });
+  },
+
+  hydrateFromServer: (rows) => {
+    const notifications: Notification[] = rows.map((row) => ({
+      id: `db-${row.id}`,
+      title: row.title,
+      body: row.message,
+      severity: normalizeSeverity(row.severity),
+      icon: '🔔',
+      read: row.is_read,
+      createdAt: row.created_at,
     }));
+    const unreadCount = notifications.filter((n) => !n.read).length;
+    set({ notifications, unreadCount });
   },
 
   markAllRead: () =>
@@ -46,3 +93,4 @@ export const useNotificationStore = create<NotificationState & NotificationActio
 
   clearAll: () => set({ notifications: [], unreadCount: 0 }),
 }));
+
