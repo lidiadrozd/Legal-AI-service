@@ -1,0 +1,5 @@
+# Корневой compose: при необходимости подключите backend/docker-compose.yml (Compose 2.20+).
+# include:
+#   - path: backend/docker-compose.yml
+
+# .
