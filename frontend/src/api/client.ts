@@ -1,7 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { getRestApiBaseUrl } from '@/config/apiEnv';
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '@/utils/tokenStorage';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const BASE_URL = getRestApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -79,3 +80,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+
