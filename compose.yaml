@@ -1,5 +1,3 @@
-# Корневой compose: при необходимости подключите backend/docker-compose.yml (Compose 2.20+).
-# include:
-#   - path: backend/docker-compose.yml
-
-# .
+# Запуск из корня: docker compose up -d --build (Compose 2.20+)
+include:
+  - path: backend/docker-compose.yml
