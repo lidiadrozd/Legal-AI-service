@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     # ========================================
     GIGACHAT_CLIENT_ID: str = os.getenv('GIGACHAT_CLIENT_ID', "")  # ✅ Дефолт!
     GIGACHAT_CLIENT_SECRET: str = os.getenv('GIGACHAT_CLIENT_SECRET', "")  # ✅ Дефолт!
-    GIGACHAT_MODEL: str = "GigaChat-Pro"
-    GIGACHAT_SCOPE: str = "GIGACHAT_API_PERS"
+    GIGACHAT_MODEL: str = "GigaChat"
+    GIGACHAT_SCOPE: str = "GIGACHAT_API_B2B"
     
     # ========================================
     # RAG & Vector Store

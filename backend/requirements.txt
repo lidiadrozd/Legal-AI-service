@@ -23,11 +23,6 @@ bcrypt==4.0.1
 python-jose[cryptography]==3.3.0
 python-multipart==0.0.12
 
-# GigaChat + LangChain
-langchain==0.3.28
-langchain-community==0.3.31
-langchain-gigachat==0.3.12
-
 # Utils
 python-dotenv==1.0.1
 httpx==0.28.1

@@ -1,19 +1,22 @@
 """
-GigaChat Client с автоматическим обновлением токена
+GigaChat: OAuth и chat/completions через HTTP, как в официальных примерах Сбера
+(auth=(CLIENT_ID, CLIENT_SECRET), scope в form-data, Bearer к чату).
 """
-import asyncio
-import base64
-import requests
 import time
-from typing import Optional
 from threading import Lock
-import urllib3
 import uuid
+from typing import Any
+
+import httpx
+import urllib3
 
 from app.core.config import settings
 
-# Для dev-среды: отключаем warning при verify=False
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+_OAUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
+_CHAT_URL = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+
 
 class GigaChatAutoToken:
     def __init__(self):
@@ -22,32 +25,22 @@ class GigaChatAutoToken:
         self.lock = Lock()
         self.client_id = settings.GIGACHAT_CLIENT_ID
         self.client_secret = settings.GIGACHAT_CLIENT_SECRET
-        self.auth_header = self._encode_auth()
-        
-    def _encode_auth(self) -> str:
-        """Кодируем Client ID:Secret в Base64"""
-        credentials = f"{self.client_id}:{self.client_secret}"
-        return base64.b64encode(credentials.encode()).decode()
-    
+
     async def _get_new_token(self) -> str:
-        """Получаем новый токен"""
-        url = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
+        """OAuth: Basic через auth=(client_id, client_secret), scope в теле."""
         headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json',
-            'RqUID': str(uuid.uuid4()),  # Уникальный UUID запроса
-            'Authorization': f'Basic {self.auth_header}'
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json",
+            "RqUID": str(uuid.uuid4()),
         }
-        data = f"scope={settings.GIGACHAT_SCOPE}"
-        
         try:
-            response = requests.post(
-                url,
-                headers=headers,
-                data=data,
-                timeout=10,
-                verify=False,  # Для dev-среды (SSL цепочка может быть недоступна локально)
-            )
+            async with httpx.AsyncClient(verify=False, timeout=30.0) as http:
+                response = await http.post(
+                    _OAUTH_URL,
+                    headers=headers,
+                    auth=(self.client_id, self.client_secret),
+                    data={"scope": settings.GIGACHAT_SCOPE},
+                )
             response.raise_for_status()
             result = response.json()
             
@@ -71,20 +64,46 @@ class GigaChatAutoToken:
                     ttl_seconds = 1800
 
             self.expires_at = time.time() + ttl_seconds - 60  # Минус 1 минута
-            print(f"✅ Новый GigaChat токен получен, истекает: {time.ctime(self.expires_at)}")
+            print(f"OK GigaChat token until {time.ctime(self.expires_at)}")
             return self.access_token
-        except requests.HTTPError as e:
-            details = ""
-            try:
-                details = e.response.text
-            except Exception:
-                details = "<no response body>"
-            print(f"❌ Ошибка получения токена: {e}; body={details}")
+        except httpx.HTTPStatusError as e:
+            details = e.response.text if e.response is not None else "<no body>"
+            print(f"GigaChat OAuth HTTP error: {e}; body={details}")
             raise RuntimeError(f"{e}; body={details}") from e
         except Exception as e:
-            print(f"❌ Ошибка получения токена: {e}")
+            print(f"GigaChat OAuth error: {e}")
             raise
-    
+
+    async def chat_completion(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        model: str,
+        temperature: float = 0.1,
+    ) -> str:
+        """POST /v1/chat/completions с Bearer-токеном (как в curl/requests-примерах)."""
+        token = await self.get_valid_token()
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {token}",
+        }
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+        }
+        async with httpx.AsyncClient(verify=False, timeout=120.0) as http:
+            r = await http.post(_CHAT_URL, headers=headers, json=payload)
+        if r.status_code >= 400:
+            raise RuntimeError(f"GigaChat chat HTTP {r.status_code}: {r.text}")
+        data = r.json()
+        try:
+            content = data["choices"][0]["message"]["content"]
+            return content if isinstance(content, str) else str(content)
+        except (KeyError, IndexError, TypeError) as e:
+            raise RuntimeError(f"Unexpected GigaChat response: {data}") from e
+
     async def get_valid_token(self) -> str:
         """Возвращает валидный токен (обновляет при необходимости)"""
         with self.lock:
