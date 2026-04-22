@@ -12,10 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.api.court_filings import router as court_filings_router
 from app.api.deps import get_current_user
+from app.api.documents import router as documents_router
 from app.api.notifications import router as notifications_router
 from app.db.base_class import Base
 from app.db.session import get_db
+from app.models.chat import ChatSession, Message
 from app.models.court_filing import CourtFiling, CourtFilingDocument
+from app.models.document import Document
 from app.models.notification import Notification
 from app.models.user import User
 
@@ -44,9 +47,12 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
                 sync_conn,
                 tables=[
                     User.__table__,
+                    ChatSession.__table__,
+                    Message.__table__,
                     CourtFiling.__table__,
                     CourtFilingDocument.__table__,
                     Notification.__table__,
+                    Document.__table__,
                 ],
             )
         )
@@ -62,6 +68,7 @@ async def client(db_session: AsyncSession, test_user: User):
     app = FastAPI(title="Test API")
     app.include_router(court_filings_router)
     app.include_router(notifications_router)
+    app.include_router(documents_router)
 
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield db_session
