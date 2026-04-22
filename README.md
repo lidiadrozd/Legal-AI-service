@@ -46,3 +46,6 @@ docker compose --profile https up -d --build
 
 - Docker переопределяет `DATABASE_URL` / Redis на хосты `db` / `redis`.
 - Уведомления: Redis + WebSocket `/api/ws/notifications`; при недоступном Redis API не падает.
+- По умолчанию мониторинг использует открытый источник КонсультантПлюс (`https://www.consultant.ru/law/review/fed/updprof/`) и преобразует его в изменения законов.
+- При необходимости можно переопределить источники через `LAW_CHANGE_SOURCES` (через запятую). Поддерживается JSON-формат с полем `changes`.
+- Документы: поддержаны API `POST /documents/upload`, `GET /documents/templates`, `POST /documents/generate` (TXT/DOCX/PDF), `GET /documents`, `GET /documents/{id}/download`, `DELETE /documents/{id}`.
