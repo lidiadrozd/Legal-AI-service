@@ -1,0 +1,71 @@
+import asyncio
+import logging
+
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
+from jose import JWTError, jwt
+from sqlalchemy import select
+
+from app.core.config import settings
+from app.db.session import AsyncSessionLocal
+from app.models.user import User
+from app.services.notification_bus import stream_notifications
+
+router = APIRouter(prefix="/api/ws", tags=["Notifications WS"])
+logger = logging.getLogger(__name__)
+
+
+async def _get_user_from_ws_token(token: str | None) -> User | None:
+    if not token:
+        return None
+
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+    except JWTError:
+        return None
+
+    email = payload.get("sub")
+    if not email or not isinstance(email, str):
+        return None
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(User).where(User.email == email))
+        return result.scalar_one_or_none()
+
+
+@router.websocket("/notifications")
+async def notifications_ws(
+    websocket: WebSocket,
+    token: str | None = Query(default=None),
+):
+    user = await _get_user_from_ws_token(token)
+    if user is None:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Invalid token")
+        return
+
+    await websocket.accept()
+    logger.info("Notification WS connected: user_id=%s", user.id)
+
+    stop_event = asyncio.Event()
+
+    async def send_payload(payload: dict):
+        await websocket.send_json(payload)
+
+    stream_task = asyncio.create_task(stream_notifications(user.id, send_payload, stop_event))
+
+    try:
+        # Keep socket alive and detect disconnects from client side.
+        while True:
+            # Важно: не отправляем "ping" в виде уведомления (фронт может показывать это как пустое).
+            # Вместо этого просто ждём входящие сообщения с таймаутом.
+            # Если клиент молчит — продолжаем цикл без отправки данных.
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=60)
+            except asyncio.TimeoutError:
+                continue
+    except WebSocketDisconnect:
+        logger.info("Notification WS disconnected: user_id=%s", user.id)
+    finally:
+        stop_event.set()
+        for task in (stream_task,):
+            task.cancel()
+        await asyncio.gather(stream_task, return_exceptions=True)

@@ -1,5 +1,12 @@
 import apiClient from './client';
-import type { Document, UploadDocumentResponse } from '@/types/document.types';
+import type {
+  Document,
+  DocumentTemplateMeta,
+  GenerateDocumentRequest,
+  SuggestDocumentFieldsRequest,
+  SuggestDocumentFieldsResponse,
+  UploadDocumentResponse,
+} from '@/types/document.types';
 
 export const documentsApi = {
   upload: async (
@@ -17,6 +24,24 @@ export const documentsApi = {
         }
       },
     });
+    return response.data;
+  },
+
+  generate: async (payload: GenerateDocumentRequest): Promise<UploadDocumentResponse> => {
+    const response = await apiClient.post<UploadDocumentResponse>('/documents/generate', payload);
+    return response.data;
+  },
+
+  suggestFields: async (payload: SuggestDocumentFieldsRequest): Promise<SuggestDocumentFieldsResponse> => {
+    const response = await apiClient.post<SuggestDocumentFieldsResponse>(
+      '/documents/suggest-fields',
+      payload
+    );
+    return response.data;
+  },
+
+  listTemplates: async (): Promise<DocumentTemplateMeta[]> => {
+    const response = await apiClient.get<DocumentTemplateMeta[]>('/documents/templates');
     return response.data;
   },
 

@@ -3,6 +3,8 @@ import { formatTime } from '@/utils/formatDate';
 import { FeedbackButtons } from './FeedbackButtons';
 import type { Message } from '@/types/chat.types';
 import { Paperclip } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const Wrap = styled.div<{ $isUser: boolean }>`
   display: flex;
@@ -25,7 +27,44 @@ const Bubble = styled.div<{ $isUser: boolean }>`
   line-height: 1.65;
   border: ${({ $isUser }) => ($isUser ? 'none' : '1px solid var(--color-border)')};
   word-break: break-word;
-  white-space: pre-wrap;
+  user-select: text;
+  cursor: text;
+  ${({ $isUser }) =>
+    $isUser &&
+    `::selection { background: rgba(255,255,255,0.35); color: #fff; }`}
+`;
+
+const MarkdownContent = styled.div`
+  p {
+    margin: 0 0 8px;
+  }
+  p:last-child {
+    margin-bottom: 0;
+  }
+  h1, h2, h3, h4 {
+    margin: 8px 0 6px;
+    line-height: 1.4;
+  }
+  ul, ol {
+    margin: 6px 0 8px 18px;
+    padding: 0;
+  }
+  li {
+    margin: 2px 0;
+  }
+  code {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 0.92em;
+  }
+  pre {
+    overflow-x: auto;
+    padding: 8px 10px;
+    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.2);
+    margin: 8px 0;
+  }
 `;
 
 const Meta = styled.div<{ $isUser: boolean }>`
@@ -71,7 +110,15 @@ export function MessageBubble({ message }: Props) {
     <div>
       <Wrap $isUser={isUser}>
         <Bubble $isUser={isUser}>
-          {message.content}
+          {isUser ? (
+            message.content
+          ) : (
+            <MarkdownContent>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {message.content}
+              </ReactMarkdown>
+            </MarkdownContent>
+          )}
           {message.attachments && message.attachments.length > 0 && (
             <AttachmentList>
               {message.attachments.map((a) => (

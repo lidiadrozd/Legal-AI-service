@@ -1,12 +1,18 @@
-# Byte-compiled / optimized / DLL files
+# =============================================================================
+# OS
+# =============================================================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# =============================================================================
+# Python / backend
+# =============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -25,12 +31,10 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
-# PyInstaller
 *.manifest
 *.spec
+pip-wheel-metadata/
 
-# Unit test / coverage reports
 htmlcov/
 .tox/
 .nox/
@@ -44,99 +48,105 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-
-# Flask stuff:
 instance/
 .webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
 .ipynb_checkpoints
-
-# pyenv
 .python-version
-
-# pipenv
-Pipfile.lock
-
-# UV
-uv.lock
-
-# poetry
-poetry.lock
-poetry.toml
-
-# pdm
-pdm.lock
-.pdm-python
-.pdm-build/
-
-# pixi
-pixi.lock
-.pixi
-
-# PEP 582
 __pypackages__/
 
 # Celery
 celerybeat-schedule
+celerybeat-schedule.*
 celerybeat.pid
 
-# Environments
-.env
+# pyenv / pipenv / poetry / pdm / uv / pixi
+Pipfile.lock
+uv.lock
+poetry.lock
+poetry.toml
+pdm.lock
+.pdm-python
+.pdm-build/
+pixi.lock
+.pixi/
+
+# Virtual environments
 .envrc
-.venv
-env/
+.venv/
 venv/
 ENV/
+env/
 env.bak/
 venv.bak/
 
-# Docker
-.dockerignore
+# Local DB / dumps
+*.sqlite3
+*.db
 
-# IDE
-.vscode/settings.json
-.idea/
-*.swp
-*.swo
+# =============================================================================
+# Node / frontend (Vite + React)
+# =============================================================================
+node_modules/
+frontend/.vite/
+*.tsbuildinfo
+.npm/
+.eslintcache
+.stylelintcache
+.parcel-cache/
 
-# Logs
-*.log
-logs/
+# Vite: игнорируем только локальные оверрайды; демо .env* в репозитории
+frontend/.env.*.local
 
-# Temp files
-*.tmp
-*.temp
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Legal AI Service secrets
+# =============================================================================
+# Секреты и локальные настройки (корень и backend)
+# =============================================================================
+.env
+!backend/.env
 .env.prod
 .env.local
+.env.*.local
+!.env.example
+!**/.env.example
+!**/.env.docker.example
+
+# Прочее (не в репозиторий)
 claude.md
 architecture_plan.md
 
-# Node.js
-node_modules/
-frontend/node_modules/
+# =============================================================================
+# Docker (образы/кэш локально; .dockerignore в проекте коммитим)
+# =============================================================================
+
+# =============================================================================
+# IDE / редакторы
+# =============================================================================
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# =============================================================================
+# Логи и временные файлы
+# =============================================================================
+*.log
+logs/
+*.tmp
+*.temp
+
+# =============================================================================
+# Документация (сборка)
+# =============================================================================
+docs/_build/
+
+# =============================================================================
+# Прочее
+# =============================================================================
+.pybuilder/
+target/
+.scrapy
+MANIFEST

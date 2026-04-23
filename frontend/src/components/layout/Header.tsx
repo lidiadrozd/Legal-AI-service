@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/store/uiStore';
 import { useState, useRef } from 'react';
+import { NotificationBell } from '@/components/common/NotificationBell';
 
 const Bar = styled.header`
   height: var(--header-height);
@@ -108,6 +109,7 @@ export function Header() {
         <Menu size={20} />
       </BurgerBtn>
       <Title>Юридический ИИ-ассистент</Title>
+      <NotificationBell />
       <UserMenu ref={menuRef}>
         <UserBtn onClick={() => setOpen((v) => !v)}>
           <User size={16} />

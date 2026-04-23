@@ -1,0 +1,203 @@
+# Запуск: cd backend && docker compose up -d --build
+# HTTP API: http://localhost:8000 и http://87.242.87.53:8000 (порт открыть на сервере)
+# Профиль traefik: docker compose --profile traefik up -d
+# Профиль https (Let's Encrypt): docker compose --profile https up -d (нужен DNS на IP)
+
+x-app-environment: &app-environment
+  DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/legal_ai
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/1
+  CELERY_RESULT_BACKEND: redis://redis:6379/2
+  RAG_DOCS_PATH: /app/rag_docs
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: legal_ai_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: legal_ai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - legal_ai_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: legal_ai_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - legal_ai_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: legal_ai_api
+    env_file:
+      - .env
+    environment:
+      <<: *app-environment
+    volumes:
+      - ./rag_docs:/app/rag_docs
+    ports:
+      - "8000:8000"
+    networks:
+      - legal_ai_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.legal_ai_api_local.rule=Host(`localhost`)"
+      - "traefik.http.routers.legal_ai_api_local.entrypoints=web"
+      - "traefik.http.routers.legal_ai_api_local.service=legal_ai_api"
+      - "traefik.http.routers.legal_ai_api_secure.rule=Host(`${TRAEFIK_API_DOMAIN:-87-242-87-53.nip.io}`)"
+      - "traefik.http.routers.legal_ai_api_secure.entrypoints=websecure"
+      - "traefik.http.routers.legal_ai_api_secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.legal_ai_api_secure.service=legal_ai_api"
+      - "traefik.http.services.legal_ai_api.loadbalancer.server.port=8000"
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: legal_ai_celery
+    command: celery -A app.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    environment:
+      <<: *app-environment
+    volumes:
+      - ./rag_docs:/app/rag_docs
+    networks:
+      - legal_ai_network
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: legal_ai_beat
+    command: celery -A app.celery_app beat --loglevel=info
+    env_file:
+      - .env
+    environment:
+      <<: *app-environment
+    volumes:
+      - ./rag_docs:/app/rag_docs
+    networks:
+      - legal_ai_network
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: legal_ai_flower
+    command: celery -A app.celery_app flower --port=5555 --address=0.0.0.0
+    env_file:
+      - .env
+    environment:
+      <<: *app-environment
+    ports:
+      - "5555:5555"
+    networks:
+      - legal_ai_network
+    depends_on:
+      redis:
+        condition: service_healthy
+      celery_worker:
+        condition: service_started
+    restart: unless-stopped
+
+  traefik:
+    profiles:
+      - traefik
+    image: traefik:v2.10
+    container_name: legal_ai_traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - legal_ai_network
+    restart: unless-stopped
+
+  traefik_https:
+    profiles:
+      - https
+    image: traefik:v2.10
+    container_name: legal_ai_traefik_https
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    networks:
+      - legal_ai_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  traefik_letsencrypt:
+
+networks:
+  legal_ai_network:
+    driver: bridge

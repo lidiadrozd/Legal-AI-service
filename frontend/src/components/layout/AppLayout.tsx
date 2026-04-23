@@ -4,6 +4,8 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useUIStore } from '@/store/uiStore';
 import { ToastContainer } from '@/components/common/ToastContainer';
+import { useNotificationWS } from '@/hooks/useNotificationWS';
+import { useNotificationsHydrate } from '@/hooks/useNotificationsHydrate';
 
 interface AppLayoutProps {
   isAdmin?: boolean;
@@ -61,6 +63,8 @@ const Overlay = styled.div<{ $visible: boolean }>`
 
 export function AppLayout({ isAdmin = false }: AppLayoutProps) {
   const { sidebarOpen, setSidebarOpen } = useUIStore();
+  useNotificationsHydrate();
+  useNotificationWS();
 
   return (
     <Shell>
@@ -78,3 +82,4 @@ export function AppLayout({ isAdmin = false }: AppLayoutProps) {
     </Shell>
   );
 }
+

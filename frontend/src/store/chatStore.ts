@@ -20,6 +20,7 @@ interface ChatActions {
   startStreaming: () => void;
   appendStreamChunk: (chunk: string) => void;
   finishStreaming: (messageId: string) => void;
+  resetStreaming: () => void;
   setMessageFeedback: (messageId: string, rating: FeedbackRating) => void;
   clearMessages: () => void;
 }
@@ -77,6 +78,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       messages: [...messages, assistantMessage],
     });
   },
+
+  resetStreaming: () =>
+    set({ isStreaming: false, streamingContent: '', streamingMessageId: null }),
 
   setMessageFeedback: (messageId, rating) =>
     set((s) => ({

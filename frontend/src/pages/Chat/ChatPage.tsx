@@ -17,6 +17,8 @@ const Wrapper = styled.div`
 
 const WindowWrap = styled.div`
   flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   min-height: 0;
 `;
@@ -33,6 +35,7 @@ export default function ChatPage() {
   }, [loadChats]);
 
   useEffect(() => {
+    useChatStore.getState().resetStreaming();
     if (chatId) {
       openChat(chatId);
       const found = useChatStore.getState().chats.find((c) => c.id === chatId);
