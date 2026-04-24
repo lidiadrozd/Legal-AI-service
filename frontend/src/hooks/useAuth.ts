@@ -19,10 +19,20 @@ export function useAuth() {
     }
   };
 
-  const register = async (data: RegisterRequest) => {
+  const register = async (data: RegisterRequest, consentGiven = false) => {
     const result = await authApi.register(data);
     setAuth(result.user, result.access_token, result.refresh_token);
-    navigate('/consent');
+    if (consentGiven) {
+      await authApi.consent({
+        consent_data_processing: true,
+        consent_terms: true,
+        consent_ai_usage: true,
+      });
+      setConsentGiven();
+      navigate('/chat');
+    } else {
+      navigate('/consent');
+    }
   };
 
   const consent = async () => {

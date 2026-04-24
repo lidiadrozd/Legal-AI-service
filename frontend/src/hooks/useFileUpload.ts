@@ -1,83 +1,45 @@
-import { useEffect, useRef } from 'react';
-import { useAuthStore } from '@/store/authStore';
-import { useNotificationStore } from '@/store/notificationStore';
+import { useState, useCallback } from 'react';
+import { documentsApi } from '@/api/documents';
 import { useUIStore } from '@/store/uiStore';
+import type { UploadDocumentResponse } from '@/types/document.types';
+import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE_BYTES } from '@/types/document.types';
+import type { AllowedFileType } from '@/types/document.types';
 
-const RECONNECT_DELAY_MS = 3000;
-
-function getWsBaseUrl(): string {
-  const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-  return apiUrl.replace(/^https:\/\//, 'wss://').replace(/^http:\/\//, 'ws://');
-}
-
-export function useNotificationWS() {
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const addNotification = useNotificationStore((s) => s.addNotification);
+export function useFileUpload() {
+  const [isUploading, setIsUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const addToast = useUIStore((s) => s.addToast);
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const unmountedRef = useRef(false);
 
-  useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
-
-    unmountedRef.current = false;
-
-    function connect() {
-      if (unmountedRef.current) return;
-
-      const url = `${getWsBaseUrl()}/ws/notifications?token=${accessToken}`;
-      let ws: WebSocket;
-
-      try {
-        ws = new WebSocket(url);
-      } catch {
-        scheduleReconnect();
-        return;
-      }
-
-      wsRef.current = ws;
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          const notification = {
-            title: data.title ?? 'Уведомление',
-            body: data.body ?? '',
-            severity: data.severity ?? 'medium',
-            icon: data.icon ?? '🔔',
-          };
-          addNotification(notification);
-          if (notification.severity === 'high' || notification.severity === 'critical') {
-            addToast({ message: notification.title, type: 'warning' });
-          }
-        } catch {
-          // ignore malformed messages
-        }
-      };
-
-      ws.onclose = () => {
-        if (!unmountedRef.current) scheduleReconnect();
-      };
-
-      ws.onerror = () => {
-        ws.close();
-      };
+  const upload = useCallback(async (file: File): Promise<UploadDocumentResponse | null> => {
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      addToast({ message: 'Файл слишком большой (максимум 20 МБ)', type: 'error' });
+      return null;
     }
 
-    function scheduleReconnect() {
-      reconnectTimerRef.current = setTimeout(connect, RECONNECT_DELAY_MS);
+    if (!ALLOWED_FILE_TYPES.includes(file.type as AllowedFileType)) {
+      addToast({ message: 'Недопустимый тип файла. Разрешены: PDF, DOCX, TXT', type: 'error' });
+      return null;
     }
 
-    connect();
+    setIsUploading(true);
+    setProgress(0);
 
-    return () => {
-      unmountedRef.current = true;
-      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-      wsRef.current?.close();
-      wsRef.current = null;
-    };
-  }, [isAuthenticated, accessToken, addNotification, addToast]);
+    try {
+      const result = await documentsApi.upload(file, (pct) => setProgress(pct));
+      return result;
+    } catch {
+      addToast({ message: 'Не удалось загрузить файл', type: 'error' });
+      return null;
+    } finally {
+      setIsUploading(false);
+      setProgress(0);
+    }
+  }, [addToast]);
+
+  const reset = useCallback(() => {
+    setIsUploading(false);
+    setProgress(0);
+  }, []);
+
+  return { upload, isUploading, progress, reset };
 }
-
