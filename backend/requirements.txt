@@ -27,6 +27,7 @@ python-multipart==0.0.12
 python-dotenv==1.0.1
 httpx==0.28.1
 aiohttp==3.13.3
+urllib3
 python-dateutil==2.9.0
 celery[redis]==5.4.0
 flower==2.0.1
