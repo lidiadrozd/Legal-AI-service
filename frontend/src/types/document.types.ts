@@ -69,3 +69,13 @@ export interface SuggestDocumentFieldsResponse {
   sources: Record<string, string>;
   template_version: number;
 }
+
+export interface DocumentPlaceholdersResponse {
+  keys: string[];
+}
+
+export interface FillUploadedTemplateRequest {
+  template_document_id: string;
+  filename: string;
+  fields: Record<string, string>;
+}
