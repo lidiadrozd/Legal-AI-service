@@ -1,7 +1,9 @@
 import apiClient from './client';
 import type {
   Document,
+  DocumentPlaceholdersResponse,
   DocumentTemplateMeta,
+  FillUploadedTemplateRequest,
   GenerateDocumentRequest,
   SuggestDocumentFieldsRequest,
   SuggestDocumentFieldsResponse,
@@ -29,6 +31,23 @@ export const documentsApi = {
 
   generate: async (payload: GenerateDocumentRequest): Promise<UploadDocumentResponse> => {
     const response = await apiClient.post<UploadDocumentResponse>('/documents/generate', payload);
+    return response.data;
+  },
+
+  getPlaceholders: async (documentId: string): Promise<DocumentPlaceholdersResponse> => {
+    const response = await apiClient.get<DocumentPlaceholdersResponse>(
+      `/documents/${documentId}/placeholders`
+    );
+    return response.data;
+  },
+
+  fillUploadedTemplate: async (
+    payload: FillUploadedTemplateRequest
+  ): Promise<UploadDocumentResponse> => {
+    const response = await apiClient.post<UploadDocumentResponse>(
+      '/documents/fill-uploaded-template',
+      payload
+    );
     return response.data;
   },
 
