@@ -236,6 +236,13 @@ const ModalFooter = styled.div`
   gap: 8px;
 `;
 
+const Hint = styled.p`
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  line-height: 1.45;
+`;
+
 const Button = styled.button<{ $primary?: boolean }>`
   height: 36px;
   padding: 0 14px;
@@ -245,9 +252,21 @@ const Button = styled.button<{ $primary?: boolean }>`
   color: ${({ $primary }) => ($primary ? '#fff' : 'var(--color-text)')};
 `;
 
+type GenerateMode = 'builtin' | 'uploaded';
+
+function isUploadedDocx(doc: Document): boolean {
+  const title = (doc.title || '').toLowerCase();
+  const mime = (doc.mime_type || '').toLowerCase();
+  return title.endsWith('.docx') || mime.includes('wordprocessingml');
+}
+
 export default function DocumentsPage() {
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [generateMode, setGenerateMode] = useState<GenerateMode>('builtin');
+  const [uploadedTemplateId, setUploadedTemplateId] = useState('');
+  const [docxPlaceholderKeys, setDocxPlaceholderKeys] = useState<string[]>([]);
+  const [isScanningPlaceholders, setIsScanningPlaceholders] = useState(false);
   const [templateKey, setTemplateKey] = useState<GenerateDocumentRequest['template_key']>('statement_of_claim_arbitration');
   const [outputFormat, setOutputFormat] = useState<GenerateDocumentRequest['output_format']>('docx');
   const [filename, setFilename] = useState('document-draft');
@@ -308,6 +327,7 @@ export default function DocumentsPage() {
   };
 
   const handleSuggestFromContext = async () => {
+    if (generateMode !== 'builtin') return;
     try {
       setIsSuggesting(true);
       const res = await documentsApi.suggestFields({
@@ -332,9 +352,61 @@ export default function DocumentsPage() {
     }
   };
 
+  const handleScanDocxPlaceholders = async () => {
+    if (!uploadedTemplateId) {
+      addToast({ type: 'error', message: 'Выберите загруженный .docx' });
+      return;
+    }
+    try {
+      setIsScanningPlaceholders(true);
+      const res = await documentsApi.getPlaceholders(uploadedTemplateId);
+      setDocxPlaceholderKeys(res.keys);
+      setFieldValues((prev) => {
+        const next = { ...prev };
+        for (const key of res.keys) {
+          if (next[key] === undefined) next[key] = '';
+        }
+        return next;
+      });
+      if (!res.keys.length) {
+        addToast({ type: 'error', message: 'В файле не найдено {{полей}}. Используйте латиницу, например {{client_name}}' });
+      } else {
+        addToast({ type: 'success', message: `Найдено полей: ${res.keys.length}` });
+      }
+    } catch {
+      addToast({ type: 'error', message: 'Не удалось прочитать плейсхолдеры из файла' });
+    } finally {
+      setIsScanningPlaceholders(false);
+    }
+  };
+
   const handleGenerate = async () => {
     try {
       setIsGenerating(true);
+      if (generateMode === 'uploaded') {
+        if (!uploadedTemplateId) {
+          addToast({ type: 'error', message: 'Выберите документ-шаблон' });
+          setIsGenerating(false);
+          return;
+        }
+        const fields: Record<string, string> = {};
+        for (const key of docxPlaceholderKeys) {
+          fields[key] = fieldValues[key] ?? '';
+        }
+        const generated = await documentsApi.fillUploadedTemplate({
+          template_document_id: uploadedTemplateId,
+          filename: filename.trim() || 'filled-from-template',
+          fields,
+        });
+        await documentsApi.download(generated.document_id, generated.filename);
+        setShowGenerateModal(false);
+        setFieldValues({});
+        setDocxPlaceholderKeys([]);
+        setUploadedTemplateId('');
+        addToast({ type: 'success', message: 'Документ заполнен и скачан' });
+        queryClient.invalidateQueries({ queryKey: ['documents'] });
+        return;
+      }
       if (selectedTemplate) {
         for (const field of selectedTemplate.fields) {
           const value = fieldValues[field.key] ?? '';
@@ -353,7 +425,7 @@ export default function DocumentsPage() {
       }
       const chatIdNum = selectedChatId ? Number(selectedChatId) : undefined;
       const filingIdNum = selectedFilingId ? Number(selectedFilingId) : undefined;
-      await documentsApi.generate({
+      const generated = await documentsApi.generate({
         template_key: templateKey,
         filename: filename.trim() || 'generated-document',
         fields: fieldValues,
@@ -362,9 +434,10 @@ export default function DocumentsPage() {
         ...(chatIdNum ? { chat_id: chatIdNum } : {}),
         ...(filingIdNum ? { court_filing_id: filingIdNum } : {}),
       });
+      await documentsApi.download(generated.document_id, generated.filename);
       setShowGenerateModal(false);
       setFieldValues({});
-      addToast({ type: 'success', message: 'Документ сгенерирован' });
+      addToast({ type: 'success', message: 'Документ сгенерирован и скачан' });
       queryClient.invalidateQueries({ queryKey: ['documents'] });
     } catch {
       addToast({ type: 'error', message: 'Ошибка генерации документа' });
@@ -423,95 +496,188 @@ export default function DocumentsPage() {
       )}
 
       {showGenerateModal && (
-        <ModalOverlay onClick={() => setShowGenerateModal(false)}>
+        <ModalOverlay
+          onClick={() => {
+            setShowGenerateModal(false);
+            setGenerateMode('builtin');
+            setUploadedTemplateId('');
+            setDocxPlaceholderKeys([]);
+          }}
+        >
           <Modal onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>Генерация документа</ModalTitle>
-              <CloseBtn onClick={() => setShowGenerateModal(false)}>
+              <CloseBtn
+                onClick={() => {
+                  setShowGenerateModal(false);
+                  setGenerateMode('builtin');
+                  setUploadedTemplateId('');
+                  setDocxPlaceholderKeys([]);
+                }}
+              >
                 <X size={18} />
               </CloseBtn>
             </ModalHeader>
             <ModalBody>
               <Label>
-                Шаблон
-                <Select value={templateKey} onChange={(e) => setTemplateKey(e.target.value as GenerateDocumentRequest['template_key'])}>
-                  {templates?.map((tpl: DocumentTemplateMeta) => (
-                    <option key={tpl.key} value={tpl.key}>
-                      {tpl.title}
-                    </option>
-                  ))}
+                Режим
+                <Select
+                  value={generateMode}
+                  onChange={(e) => {
+                    const v = e.target.value as GenerateMode;
+                    setGenerateMode(v);
+                    setDocxPlaceholderKeys([]);
+                    if (v === 'builtin') setUploadedTemplateId('');
+                  }}
+                >
+                  <option value="builtin">Встроенный шаблон</option>
+                  <option value="uploaded">Мой Word (.docx) с плейсхолдерами</option>
                 </Select>
               </Label>
-              <Label>
-                Формат
-                <Select value={outputFormat} onChange={(e) => setOutputFormat(e.target.value as GenerateDocumentRequest['output_format'])}>
-                  <option value="docx">DOCX (с форматированием)</option>
-                  <option value="pdf">PDF</option>
-                  <option value="txt">TXT</option>
-                </Select>
-              </Label>
+              {generateMode === 'builtin' ? (
+                <>
+                  <Label>
+                    Шаблон
+                    <Select value={templateKey} onChange={(e) => setTemplateKey(e.target.value as GenerateDocumentRequest['template_key'])}>
+                      {templates?.map((tpl: DocumentTemplateMeta) => (
+                        <option key={tpl.key} value={tpl.key}>
+                          {tpl.title}
+                        </option>
+                      ))}
+                    </Select>
+                  </Label>
+                  <Label>
+                    Формат
+                    <Select value={outputFormat} onChange={(e) => setOutputFormat(e.target.value as GenerateDocumentRequest['output_format'])}>
+                      <option value="docx">DOCX (с форматированием)</option>
+                      <option value="pdf">PDF</option>
+                      <option value="txt">TXT</option>
+                    </Select>
+                  </Label>
+                </>
+              ) : (
+                <>
+                  <Label>
+                    Документ-шаблон (.docx)
+                    <Select
+                      value={uploadedTemplateId}
+                      onChange={(e) => {
+                        setUploadedTemplateId(e.target.value);
+                        setDocxPlaceholderKeys([]);
+                      }}
+                    >
+                      <option value="">— выберите загруженный файл —</option>
+                      {data?.filter(isUploadedDocx).map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.title}
+                        </option>
+                      ))}
+                    </Select>
+                  </Label>
+                  <Hint>
+                    {`В Word вставьте плейсхолдеры вида {{client_name}} — только латиница, цифры и знак подчёркивания в имени поля. Затем нажмите «Найти поля в файле».`}
+                  </Hint>
+                  <GenerateBtn
+                    type="button"
+                    onClick={handleScanDocxPlaceholders}
+                    disabled={isScanningPlaceholders || !uploadedTemplateId}
+                  >
+                    <Sparkles size={16} />
+                    {isScanningPlaceholders ? 'Поиск…' : 'Найти поля в файле'}
+                  </GenerateBtn>
+                </>
+              )}
               <Label>
                 Имя файла
                 <Input value={filename} onChange={(e) => setFilename(e.target.value)} placeholder="my-document" />
               </Label>
-              <Label>
-                Чат (опционально)
-                <Select value={selectedChatId} onChange={(e) => setSelectedChatId(e.target.value)}>
-                  <option value="">— не использовать —</option>
-                  {chats?.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title}
-                    </option>
-                  ))}
-                </Select>
-              </Label>
-              <Label>
-                Подача в суд (опционально)
-                <Select value={selectedFilingId} onChange={(e) => setSelectedFilingId(e.target.value)}>
-                  <option value="">— не использовать —</option>
-                  {filings?.map((f) => (
-                    <option key={f.id} value={String(f.id)}>
-                      {f.case_number} — {f.court_name}
-                    </option>
-                  ))}
-                </Select>
-              </Label>
-              <GenerateBtn type="button" onClick={handleSuggestFromContext} disabled={isSuggesting}>
-                <Sparkles size={16} />
-                {isSuggesting ? 'Подстановка…' : 'Подставить из чата / подачи'}
-              </GenerateBtn>
-              {selectedTemplate?.fields.map((field) => (
-                <Label key={field.key}>
-                  {field.label}
-                  {field.pattern && <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>Формат: {field.pattern}</span>}
-                  {field.multiline ? (
+              {generateMode === 'builtin' && (
+                <>
+                  <Label>
+                    Чат (опционально)
+                    <Select value={selectedChatId} onChange={(e) => setSelectedChatId(e.target.value)}>
+                      <option value="">— не использовать —</option>
+                      {chats?.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.title}
+                        </option>
+                      ))}
+                    </Select>
+                  </Label>
+                  <Label>
+                    Подача в суд (опционально)
+                    <Select value={selectedFilingId} onChange={(e) => setSelectedFilingId(e.target.value)}>
+                      <option value="">— не использовать —</option>
+                      {filings?.map((f) => (
+                        <option key={f.id} value={String(f.id)}>
+                          {f.case_number} — {f.court_name}
+                        </option>
+                      ))}
+                    </Select>
+                  </Label>
+                  <GenerateBtn type="button" onClick={handleSuggestFromContext} disabled={isSuggesting}>
+                    <Sparkles size={16} />
+                    {isSuggesting ? 'Подстановка…' : 'Подставить из чата / подачи'}
+                  </GenerateBtn>
+                </>
+              )}
+              {generateMode === 'builtin' &&
+                selectedTemplate?.fields.map((field) => (
+                  <Label key={field.key}>
+                    {field.label}
+                    {field.pattern && <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>Формат: {field.pattern}</span>}
+                    {field.multiline ? (
+                      <TextArea
+                        value={fieldValues[field.key] ?? ''}
+                        onChange={(e) =>
+                          setFieldValues((prev) => ({
+                            ...prev,
+                            [field.key]: e.target.value,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <Input
+                        value={fieldValues[field.key] ?? ''}
+                        onChange={(e) =>
+                          setFieldValues((prev) => ({
+                            ...prev,
+                            [field.key]: e.target.value,
+                          }))
+                        }
+                      />
+                    )}
+                  </Label>
+                ))}
+              {generateMode === 'uploaded' &&
+                docxPlaceholderKeys.map((key) => (
+                  <Label key={key}>
+                    {`{{${key}}}`}
                     <TextArea
-                      value={fieldValues[field.key] ?? ''}
+                      value={fieldValues[key] ?? ''}
                       onChange={(e) =>
                         setFieldValues((prev) => ({
                           ...prev,
-                          [field.key]: e.target.value,
+                          [key]: e.target.value,
                         }))
                       }
                     />
-                  ) : (
-                    <Input
-                      value={fieldValues[field.key] ?? ''}
-                      onChange={(e) =>
-                        setFieldValues((prev) => ({
-                          ...prev,
-                          [field.key]: e.target.value,
-                        }))
-                      }
-                    />
-                  )}
-                </Label>
-              ))}
+                  </Label>
+                ))}
             </ModalBody>
             <ModalFooter>
-              <Button onClick={() => setShowGenerateModal(false)}>Отмена</Button>
+              <Button
+                onClick={() => {
+                  setShowGenerateModal(false);
+                  setGenerateMode('builtin');
+                  setUploadedTemplateId('');
+                  setDocxPlaceholderKeys([]);
+                }}
+              >
+                Отмена
+              </Button>
               <Button $primary onClick={handleGenerate} disabled={isGenerating}>
-                {isGenerating ? 'Генерация...' : 'Сгенерировать'}
+                {isGenerating ? 'Генерация...' : generateMode === 'uploaded' ? 'Заполнить и скачать' : 'Сгенерировать'}
               </Button>
             </ModalFooter>
           </Modal>
