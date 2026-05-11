@@ -16,6 +16,16 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // FormData: убрать Content-Type, иначе axios/json ломает boundary multipart.
+  if (config.data instanceof FormData && config.headers) {
+    const h = config.headers as { delete?: (key: string) => void } & Record<string, unknown>;
+    if (typeof h.delete === 'function') {
+      h.delete('Content-Type');
+    } else {
+      delete h['Content-Type'];
+      delete h['content-type'];
+    }
+  }
   return config;
 });
 
