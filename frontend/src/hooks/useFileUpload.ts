@@ -1,45 +1,70 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { documentsApi } from '@/api/documents';
 import { useUIStore } from '@/store/uiStore';
-import type { UploadDocumentResponse } from '@/types/document.types';
-import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE_BYTES } from '@/types/document.types';
-import type { AllowedFileType } from '@/types/document.types';
+import {
+  ALLOWED_FILE_TYPES,
+  MAX_FILE_SIZE_BYTES,
+  type AllowedFileType,
+  type UploadDocumentResponse,
+} from '@/types/document.types';
 
-export function useFileUpload() {
-  const [isUploading, setIsUploading] = useState(false);
+function effectiveMime(file: File): string {
+  if (file.type && file.type !== 'application/octet-stream') {
+    return file.type;
+  }
+  const n = file.name.toLowerCase();
+  if (n.endsWith('.pdf')) return 'application/pdf';
+  if (n.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (n.endsWith('.txt')) return 'text/plain';
+  return '';
+}
+
+interface UseFileUploadResult {
+  upload: (file: File) => Promise<UploadDocumentResponse | null>;
+  progress: number;
+  isUploading: boolean;
+  reset: () => void;
+}
+
+export function useFileUpload(): UseFileUploadResult {
   const [progress, setProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
   const addToast = useUIStore((s) => s.addToast);
 
-  const upload = useCallback(async (file: File): Promise<UploadDocumentResponse | null> => {
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      addToast({ message: 'Файл слишком большой (максимум 20 МБ)', type: 'error' });
-      return null;
-    }
-
-    if (!ALLOWED_FILE_TYPES.includes(file.type as AllowedFileType)) {
-      addToast({ message: 'Недопустимый тип файла. Разрешены: PDF, DOCX, TXT', type: 'error' });
-      return null;
-    }
-
-    setIsUploading(true);
+  const reset = () => {
     setProgress(0);
+    setIsUploading(false);
+  };
+
+  const upload = async (file: File): Promise<UploadDocumentResponse | null> => {
+    const mime = effectiveMime(file);
+    if (!ALLOWED_FILE_TYPES.includes(mime as AllowedFileType)) {
+      addToast({ type: 'error', message: 'Неподдерживаемый тип файла (нужны PDF, DOCX или TXT)' });
+      return null;
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      addToast({ type: 'error', message: 'Файл превышает 20 МБ' });
+      return null;
+    }
 
     try {
-      const result = await documentsApi.upload(file, (pct) => setProgress(pct));
+      setIsUploading(true);
+      setProgress(0);
+      const result = await documentsApi.upload(file, setProgress);
+      setProgress(100);
       return result;
     } catch {
-      addToast({ message: 'Не удалось загрузить файл', type: 'error' });
+      addToast({ type: 'error', message: 'Не удалось загрузить файл' });
       return null;
     } finally {
       setIsUploading(false);
-      setProgress(0);
     }
-  }, [addToast]);
+  };
 
-  const reset = useCallback(() => {
-    setIsUploading(false);
-    setProgress(0);
-  }, []);
-
-  return { upload, isUploading, progress, reset };
+  return {
+    upload,
+    progress,
+    isUploading,
+    reset,
+  };
 }
