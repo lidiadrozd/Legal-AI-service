@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
+import { FileText } from 'lucide-react';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { MessageInput } from '@/components/chat/MessageInput';
 import { useChat } from '@/hooks/useChat';
@@ -21,6 +22,41 @@ const WindowWrap = styled.div`
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
+`;
+
+const DocsBar = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 24px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-card);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast);
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-muted);
+  }
+`;
+
+const DocsBarTitle = styled.span`
+  font-weight: 600;
+  color: var(--color-text);
+`;
+
+const DocsBarHint = styled.span`
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  font-weight: 400;
 `;
 
 export default function ChatPage() {
@@ -89,11 +125,28 @@ export default function ChatPage() {
     [handleSend],
   );
 
+  const currentChatId = activeChat?.id ?? chatId ?? '';
+  const documentsHref = currentChatId
+    ? `/documents?chatId=${encodeURIComponent(currentChatId)}&openGenerate=1`
+    : '/documents?openGenerate=1';
+
   return (
     <Wrapper>
       <WindowWrap>
         <ChatWindow onSuggestionClick={handleSuggestion} />
       </WindowWrap>
+      <DocsBar to={documentsHref}>
+        <FileText size={18} aria-hidden />
+        <span>
+          <DocsBarTitle>Документы Word / PDF / TXT</DocsBarTitle>
+          {' — '}
+          <DocsBarHint>
+            {currentChatId
+              ? 'откроется генерация с подстановкой из этого чата'
+              : 'начните чат или откройте существующий — тогда подставится его контекст'}
+          </DocsBarHint>
+        </span>
+      </DocsBar>
       <MessageInput onSend={handleSend} onStopStreaming={cancel} />
     </Wrapper>
   );

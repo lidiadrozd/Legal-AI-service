@@ -16,7 +16,9 @@ from app.models.document import Document
 from app.models.user import User
 from app.schemas.document import (
     DocumentOut,
+    DocumentPlaceholdersResponse,
     DocumentTemplateOut,
+    FillUploadedTemplateRequest,
     GenerateDocumentRequest,
     SuggestDocumentFieldsRequest,
     SuggestDocumentFieldsResponse,
@@ -30,11 +32,22 @@ from app.services.document_templates import (
     list_templates_meta,
     render_template,
 )
+from app.services.docx_fill import collect_placeholder_keys_from_docx, fill_docx_template
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
 ALLOWED_UPLOAD_SUFFIXES = {".pdf", ".docx", ".txt", ".doc"}
+
+
+def _is_docx_document(document: Document) -> bool:
+    if document.file_path and Path(document.file_path).suffix.lower() == ".docx":
+        return True
+    title = (document.title or "").lower()
+    if title.endswith(".docx"):
+        return True
+    mt = (document.mime_type or "").lower()
+    return "wordprocessingml" in mt
 
 
 def _storage_root() -> Path:
@@ -199,6 +212,74 @@ async def generate_document(
     return UploadDocumentResponse(document_id=document.id, filename=document.title, status=document.status)
 
 
+@router.post("/fill-uploaded-template", response_model=UploadDocumentResponse, status_code=status.HTTP_201_CREATED)
+async def fill_uploaded_docx_template(
+    payload: FillUploadedTemplateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Заполняет загруженный .docx: в файле используйте плейсхолдеры {{field_name}} (латиница, цифры, _)."""
+    res = await db.execute(
+        select(Document).where(
+            Document.id == payload.template_document_id,
+            Document.user_id == current_user.id,
+        )
+    )
+    template_doc = res.scalar_one_or_none()
+    if template_doc is None:
+        raise HTTPException(status_code=404, detail="Template document not found")
+    if not template_doc.file_path:
+        raise HTTPException(status_code=422, detail="Template document has no file")
+    if not _is_docx_document(template_doc):
+        raise HTTPException(status_code=422, detail="Template must be a .docx file")
+
+    src_path = Path(template_doc.file_path)
+    if not src_path.exists():
+        raise HTTPException(status_code=404, detail="Template file is missing on disk")
+
+    filename = _sanitize_filename(payload.filename)
+    if not filename.lower().endswith(".docx"):
+        filename = f"{filename}.docx"
+
+    try:
+        body = fill_docx_template(src_path, payload.fields)
+    except Exception as exc:
+        logger.exception("fill_uploaded_docx_template failed")
+        raise HTTPException(status_code=422, detail=f"Failed to process DOCX: {exc}") from exc
+
+    document_id = str(uuid4())
+    storage_path = _storage_root() / f"{document_id}_{filename}"
+    storage_path.write_bytes(body)
+
+    generation_meta = {
+        "source": "uploaded_docx_template",
+        "template_document_id": payload.template_document_id,
+        "placeholders_filled": list(payload.fields.keys()),
+    }
+
+    document = Document(
+        id=document_id,
+        user_id=current_user.id,
+        title=filename,
+        type="generated",
+        status="ready",
+        file_path=str(storage_path),
+        file_size=len(body),
+        mime_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        generation_meta=generation_meta,
+    )
+    db.add(document)
+    await db.commit()
+
+    logger.info(
+        "Document filled from uploaded template: document_id=%s user_id=%s template_id=%s",
+        document.id,
+        current_user.id,
+        payload.template_document_id,
+    )
+    return UploadDocumentResponse(document_id=document.id, filename=document.title, status=document.status)
+
+
 @router.post("/suggest-fields", response_model=SuggestDocumentFieldsResponse)
 async def suggest_document_fields(
     payload: SuggestDocumentFieldsRequest,
@@ -247,6 +328,36 @@ async def list_documents(
         select(Document).where(Document.user_id == current_user.id).order_by(Document.created_at.desc())
     )
     return list(result.scalars().all())
+
+
+@router.get("/{document_id}/placeholders", response_model=DocumentPlaceholdersResponse)
+async def get_docx_template_placeholders(
+    document_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Document).where(Document.id == document_id, Document.user_id == current_user.id)
+    )
+    document = result.scalar_one_or_none()
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if not document.file_path:
+        raise HTTPException(status_code=422, detail="Document has no file")
+    if not _is_docx_document(document):
+        raise HTTPException(status_code=422, detail="Only .docx templates support placeholder scan")
+
+    path = Path(document.file_path)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Document file is missing on disk")
+
+    try:
+        keys = collect_placeholder_keys_from_docx(path)
+    except Exception as exc:
+        logger.exception("get_docx_template_placeholders failed")
+        raise HTTPException(status_code=422, detail=f"Failed to read DOCX: {exc}") from exc
+
+    return DocumentPlaceholdersResponse(keys=keys)
 
 
 @router.get("/{document_id}", response_model=DocumentOut)

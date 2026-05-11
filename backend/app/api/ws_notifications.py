@@ -10,7 +10,7 @@ from app.db.session import AsyncSessionLocal
 from app.models.user import User
 from app.services.notification_bus import stream_notifications
 
-router = APIRouter(prefix="/api/ws", tags=["Notifications WS"])
+router = APIRouter(prefix="/ws", tags=["Notifications WS"])
 logger = logging.getLogger(__name__)
 
 

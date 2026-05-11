@@ -17,7 +17,7 @@ from app.db.session import get_db
 from app.models.chat import ChatSession, Message
 from app.models.law_changes import LawChange
 from app.models.user import User
-from app.schemas.chat import ChatResponse, MessageCreate, Message as MessageSchema
+from app.schemas.chat import ChatResponse, FeedbackCreate, MessageCreate, Message as MessageSchema
 from app.db.base_class import get_crud
 from app.api.deps import get_current_user
 from app.services.nlp_service import NLPService
@@ -188,6 +188,8 @@ async def send_message_stream(
     # 5. Реальный ответ от GigaChat + SSE стриминг
     async def generate_stream():
         try:
+            yield f"data: {json.dumps({'message_id': assistant_message.id}, ensure_ascii=False)}\n\n"
+
             # История диалога нужна модели, чтобы НЕ повторять вопросы и использовать уже данные факты.
             # Берём последние сообщения (включая только что сохранённое сообщение пользователя).
             history_limit = 20
@@ -247,28 +249,27 @@ async def send_message_stream(
 
 @router.post("/feedback")
 async def submit_feedback(
-    message_id: int,
-    rating: str,  # "up" or "down"
+    payload: FeedbackCreate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Оценка ответа ИИ"""
-    from app.models.chat import Message
-    
+    """Оценка ответа ИИ (JSON: message_id, rating)."""
     result = await db.execute(
-        select(Message).where(Message.id == message_id)
+        select(Message)
+        .join(ChatSession, Message.chat_id == ChatSession.id)
+        .where(
+            Message.id == payload.message_id,
+            ChatSession.user_id == current_user.id,
+        )
     )
     message = result.scalar_one_or_none()
-    
+
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
-    
-    if rating not in ["up", "down"]:
-        raise HTTPException(status_code=400, detail="Rating must be 'up' or 'down'")
-    
-    message.rating = rating
+
+    message.rating = payload.rating
     db.add(message)
     await db.commit()
-    
-    return {"message": f"Feedback '{rating}' submitted successfully"}
+
+    return {"message": f"Feedback '{payload.rating}' submitted successfully"}
 

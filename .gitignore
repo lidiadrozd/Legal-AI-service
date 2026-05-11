@@ -53,6 +53,7 @@ cover/
 .dmypy.json
 
 instance/
+backend/storage/
 .webassets-cache
 .ipynb_checkpoints
 .python-version
@@ -105,7 +106,6 @@ frontend/.env.*.local
 # Секреты и локальные настройки (корень и backend)
 # =============================================================================
 .env
-!backend/.env
 .env.prod
 .env.local
 .env.*.local

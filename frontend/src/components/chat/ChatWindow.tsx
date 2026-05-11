@@ -92,7 +92,7 @@ export function ChatWindow({ onSuggestionClick }: ChatWindowProps) {
         <Empty>
           <EmptyTitle>Задайте юридический вопрос</EmptyTitle>
           <EmptyHint>
-            Я помогу с вопросами трудового, гражданского, жилищного и других отраслей права.
+            Я помогу с вопросами трудового, гражданского, жилищного и других отраслей права. Готовые файлы (Word, PDF) — ссылка «Документы Word / PDF / TXT» под полем ввода.
           </EmptyHint>
           <SuggestionGrid>
             {SUGGESTIONS.map((s) => (

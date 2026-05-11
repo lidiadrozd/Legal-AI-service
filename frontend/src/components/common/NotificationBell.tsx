@@ -159,7 +159,7 @@ export function NotificationBell() {
   const { notifications, unreadCount, markAllRead } = useNotificationStore();
 
   const handleMarkRead = () => {
-    markAllRead();
+    void markAllRead();
   };
 
   return (

@@ -17,7 +17,7 @@ from app.db.session import engine, get_db, AsyncSessionLocal
 from app.db.base_class import Base
 from app import models  # noqa: F401 - регистрирует модели в metadata
 
-from app.api import auth, chat, admin, court_filings, notifications, ws_notifications
+from app.api import auth, chat, admin, court_filings, documents, notifications, ws_notifications
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +89,7 @@ app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(admin.router)
 app.include_router(court_filings.router)
+app.include_router(documents.router)
 app.include_router(notifications.router)
 app.include_router(ws_notifications.router)
 
@@ -109,7 +110,7 @@ async def root():
                 "/court-filings/submissions/{filing_id}",
                 "/court-filings/submissions/{filing_id}/status",
             ],
-            "notifications": ["/notifications", "/notifications/{notification_id}/read", "/api/ws/notifications?token=..."],
+            "notifications": ["/notifications", "/notifications/{notification_id}/read", "/ws/notifications?token=..."],
             "docs": "/docs",
             "health": "/health"
         },

@@ -9,6 +9,7 @@ x-app-environment: &app-environment
   CELERY_BROKER_URL: redis://redis:6379/1
   CELERY_RESULT_BACKEND: redis://redis:6379/2
   RAG_DOCS_PATH: /app/rag_docs
+  DOCUMENTS_STORAGE_DIR: /app/storage/documents
 
 services:
   db:
@@ -59,6 +60,7 @@ services:
       <<: *app-environment
     volumes:
       - ./rag_docs:/app/rag_docs
+      - ./storage/documents:/app/storage/documents
     ports:
       - "8000:8000"
     networks:

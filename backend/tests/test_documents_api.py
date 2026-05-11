@@ -1,7 +1,60 @@
 import pytest
+from io import BytesIO
+
+from docx import Document as DocxBuilder
 
 from app.core.config import settings
 from app.models.chat import ChatSession, Message
+
+
+@pytest.mark.asyncio
+async def test_fill_uploaded_docx_placeholders_and_download(client, tmp_path):
+    settings.DOCUMENTS_STORAGE_DIR = str(tmp_path)
+
+    buf = BytesIO()
+    doc = DocxBuilder()
+    doc.add_paragraph("Уважаемый {{client_name}}, дело {{case_no}}")
+    doc.save(buf)
+    content = buf.getvalue()
+
+    upload_resp = await client.post(
+        "/documents/upload",
+        files={
+            "file": (
+                "tpl.docx",
+                content,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        },
+    )
+    assert upload_resp.status_code == 201
+    tpl_id = upload_resp.json()["document_id"]
+
+    ph_resp = await client.get(f"/documents/{tpl_id}/placeholders")
+    assert ph_resp.status_code == 200
+    assert set(ph_resp.json()["keys"]) == {"case_no", "client_name"}
+
+    fill_resp = await client.post(
+        "/documents/fill-uploaded-template",
+        json={
+            "template_document_id": tpl_id,
+            "filename": "filled-output",
+            "fields": {"client_name": "Иванов И.И.", "case_no": "А40-1/2026"},
+        },
+    )
+    assert fill_resp.status_code == 201
+    new_id = fill_resp.json()["document_id"]
+
+    dl = await client.get(f"/documents/{new_id}/download")
+    assert dl.status_code == 200
+    assert dl.headers["content-type"].startswith(
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    filled = DocxBuilder(BytesIO(dl.content))
+    joined = "\n".join(p.text for p in filled.paragraphs)
+    assert "Иванов И.И." in joined
+    assert "А40-1/2026" in joined
+    assert "{{client_name}}" not in joined
 
 
 @pytest.mark.asyncio
