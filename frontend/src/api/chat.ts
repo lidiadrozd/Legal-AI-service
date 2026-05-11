@@ -43,6 +43,7 @@ export const chatApi = {
         chat_id: number;
         role: 'user' | 'assistant';
         content: string;
+        rating?: 'up' | 'down' | null;
         created_at: string;
       }>
     >(`/chat/${chatId}/history`);
@@ -53,6 +54,9 @@ export const chatApi = {
       role: message.role,
       content: message.content,
       created_at: message.created_at,
+      ...(message.rating === 'up' || message.rating === 'down'
+        ? { feedback: message.rating }
+        : {}),
     }));
   },
 
@@ -128,9 +132,13 @@ export const chatApi = {
           }
 
           try {
-            const parsed = JSON.parse(payload);
-            if (parsed.message_id) messageId = parsed.message_id;
-            if (typeof parsed.content === 'string') onChunk(parsed.content);
+            const parsed = JSON.parse(payload) as { message_id?: unknown; content?: unknown };
+            if (parsed.message_id != null && parsed.message_id !== '') {
+              messageId = String(parsed.message_id);
+            }
+            if (typeof parsed.content === 'string' && parsed.content.length > 0) {
+              onChunk(parsed.content);
+            }
           } catch {
             // Совместимость со старым plain-text форматом
             onChunk(payload);
