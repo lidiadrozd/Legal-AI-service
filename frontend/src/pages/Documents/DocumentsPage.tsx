@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import styled from 'styled-components';
 import { Upload, FileText, Sparkles, X } from 'lucide-react';
@@ -261,6 +262,7 @@ function isUploadedDocx(doc: Document): boolean {
 }
 
 export default function DocumentsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generateMode, setGenerateMode] = useState<GenerateMode>('builtin');
@@ -313,6 +315,29 @@ export default function DocumentsPage() {
       return next;
     });
   }, [selectedTemplate]);
+
+  useEffect(() => {
+    const chat = searchParams.get('chatId');
+    const openGen = searchParams.get('openGenerate');
+    if (!chat && openGen !== '1') return;
+
+    if (chat && /^\d+$/.test(chat)) {
+      setSelectedChatId(chat);
+    }
+    if (openGen === '1') {
+      setShowGenerateModal(true);
+    }
+
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('chatId');
+        next.delete('openGenerate');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [searchParams, setSearchParams]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
