@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { notificationsApi } from '@/api/notifications';
 
 export interface Notification {
   id: string;
@@ -37,7 +38,7 @@ export type IncomingNotification = {
 interface NotificationActions {
   addNotification: (n: IncomingNotification) => void;
   hydrateFromServer: (rows: ServerNotificationRow[]) => void;
-  markAllRead: () => void;
+  markAllRead: () => Promise<void>;
   clearAll: () => void;
 }
 
@@ -85,11 +86,25 @@ export const useNotificationStore = create<NotificationState & NotificationActio
     set({ notifications, unreadCount });
   },
 
-  markAllRead: () =>
+  markAllRead: async () => {
+    const unread = useNotificationStore
+      .getState()
+      .notifications.filter((n) => !n.read && n.id.startsWith('db-'));
+
     set((s) => ({
       notifications: s.notifications.map((n) => ({ ...n, read: true })),
       unreadCount: 0,
-    })),
+    }));
+
+    await Promise.allSettled(
+      unread.map((n) => {
+        const numericId = Number(n.id.slice(3));
+        return Number.isFinite(numericId)
+          ? notificationsApi.markAsRead(numericId)
+          : Promise.resolve();
+      })
+    );
+  },
 
   clearAll: () => set({ notifications: [], unreadCount: 0 }),
 }));

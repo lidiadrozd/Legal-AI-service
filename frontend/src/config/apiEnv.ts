@@ -20,7 +20,6 @@ export function getNotificationWebSocketUrl(accessToken: string): string {
     return `${proto}//${host}/api/ws/notifications?token=${token}`;
   }
   const baseHttp = raw.replace(/\/$/, '');
-  const withApi = baseHttp.endsWith('/api') ? baseHttp : `${baseHttp}/api`;
-  const wsBase = withApi.replace(/^https:\/\//i, 'wss://').replace(/^http:\/\//i, 'ws://');
+  const wsBase = baseHttp.replace(/^https:\/\//i, 'wss://').replace(/^http:\/\//i, 'ws://');
   return `${wsBase}/ws/notifications?token=${token}`;
 }

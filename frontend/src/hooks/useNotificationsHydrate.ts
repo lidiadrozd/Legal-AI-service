@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import apiClient from '@/api/client';
+import { notificationsApi } from '@/api/notifications';
 import { useAuthStore } from '@/store/authStore';
-import { useNotificationStore, type ServerNotificationRow } from '@/store/notificationStore';
+import { useNotificationStore } from '@/store/notificationStore';
 
 export function useNotificationsHydrate() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -15,10 +15,10 @@ export function useNotificationsHydrate() {
     }
 
     let cancelled = false;
-    apiClient
-      .get<ServerNotificationRow[]>('/notifications', { params: { limit: 100 } })
-      .then((res) => {
-        if (!cancelled) hydrateFromServer(res.data);
+    notificationsApi
+      .list({ limit: 100 })
+      .then((rows) => {
+        if (!cancelled) hydrateFromServer(rows);
       })
       .catch(() => {});
 

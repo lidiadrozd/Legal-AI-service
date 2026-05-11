@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     # RAG & Vector Store
     # ========================================
     RAG_DOCS_PATH: str = "/app/rag_docs"
+    DOCUMENTS_STORAGE_DIR: str = "/app/storage/documents"
     EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     VECTOR_DB_TYPE: str = "pgvector"
     ENABLE_PGVECTOR: bool = True  # ✅ Обязательно!
