@@ -1,6 +1,6 @@
 
 from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
+from typing import List, Literal, Optional
 from datetime import datetime
 
 # ========================================
@@ -67,7 +67,7 @@ class ChatListResponse(BaseModel):
 class FeedbackCreate(BaseModel):
     """Оценка сообщения"""
     message_id: int
-    rating: str  # "up" or "down"
+    rating: Literal["up", "down"]
 
 # ========================================
 # ЭКСПОРТ (без конфликтов с моделями)
