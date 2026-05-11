@@ -65,7 +65,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return;
     }
     const assistantMessage: Message = {
-      id: messageId || crypto.randomUUID(),
+      id: messageId ? String(messageId) : crypto.randomUUID(),
       chat_id: get().activeChat?.id || '',
       role: 'assistant',
       content: streamingContent,
