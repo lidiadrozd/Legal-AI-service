@@ -17,13 +17,14 @@ export function useNotificationWS() {
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) return;
+    const authToken: string = accessToken;
 
     unmountedRef.current = false;
 
     function connect() {
       if (unmountedRef.current) return;
 
-      const url = getNotificationWebSocketUrl(accessToken);
+      const url = getNotificationWebSocketUrl(authToken);
       let ws: WebSocket;
 
       try {
