@@ -68,6 +68,12 @@ class Settings(BaseSettings):
     # ========================================
     CELERY_TASK_ALWAYS_EAGER: bool = False
     CELERY_TASK_TIME_LIMIT: int = 300
+    LAW_CHANGE_SOURCES: str = "https://www.consultant.ru/law/review/fed/updprof/"
+    LAW_CHANGE_HTTP_TIMEOUT: int = 30
+    LAW_CHANGE_MAX_CATEGORIES: int = 40
+
+    def law_change_source_list(self) -> list[str]:
+        return [item.strip() for item in self.LAW_CHANGE_SOURCES.split(",") if item.strip()]
     
     model_config = SettingsConfigDict(
         env_file=".env",
