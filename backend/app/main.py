@@ -160,6 +160,7 @@ async def law_monitoring_status(db: AsyncSession = Depends(get_db)):
             "service": "law_monitoring",
             "status": "active",
             "total_changes": count,
+            "sources": settings.law_change_source_list(),
             "celery_tasks": "http://localhost:5555"
         }
     except Exception as e:
