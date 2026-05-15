@@ -36,6 +36,13 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             return None
         return user_obj
 
+    async def update_password(self, db: AsyncSession, *, user_obj: User, new_password: str) -> User:
+        user_obj.hashed_password = get_password_hash(new_password)
+        db.add(user_obj)
+        await db.commit()
+        await db.refresh(user_obj)
+        return user_obj
+
     def is_active(self, user: User) -> bool:
         return bool(user.is_active)
 

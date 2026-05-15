@@ -64,6 +64,16 @@ class Settings(BaseSettings):
     RATE_LIMIT_WINDOW: int = 3600
     
     # ========================================
+    # SMTP / Email
+    # ========================================
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.yandex.ru")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM: str = os.getenv("SMTP_FROM", "")
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+    # ========================================
     # CELERY
     # ========================================
     CELERY_TASK_ALWAYS_EAGER: bool = False

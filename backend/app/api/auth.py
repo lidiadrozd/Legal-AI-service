@@ -1,7 +1,12 @@
 # backend/app/api/auth.py - Роутер авторизации
+import secrets
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from redis.asyncio import Redis as AsyncRedis
 
+from app.core.config import settings
 from app.db.session import get_db
 from app.core.security import create_access_token, create_refresh_token, verify_token
 from app.crud.user import user
@@ -10,10 +15,17 @@ from app.schemas.auth import (
     LoginRequest,
     RefreshTokenBody,
     ConsentRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
 )
 from app.schemas.user import UserCreate, UserUpdate, UserPublic, user_to_public
 from app.api.deps import get_current_user
 from app.models.user import User
+from app.services.email_service import send_reset_password_email
+
+logger = logging.getLogger(__name__)
+
+_RESET_TOKEN_TTL = 3600  # 1 hour
 
 router = APIRouter(prefix="/auth", tags=["🔐 Auth"])
 
@@ -90,3 +102,49 @@ async def give_consent(
         db, db_obj=current_user, obj_in=UserUpdate(consent_given=True)
     )
     return {"message": "Consent accepted"}
+
+
+@router.post("/forgot-password")
+async def forgot_password(body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+    user_obj = await user.get_by_email(db, email=body.email)
+    # Always return 200 to prevent email enumeration attacks
+    if not user_obj or not user_obj.is_active:
+        return {"message": "Если аккаунт существует, письмо с инструкциями отправлено"}
+
+    token = secrets.token_urlsafe(32)
+    redis = AsyncRedis.from_url(settings.REDIS_URL, decode_responses=True)
+    try:
+        await redis.setex(f"password_reset:{token}", _RESET_TOKEN_TTL, user_obj.email)
+    finally:
+        await redis.aclose()
+
+    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+    try:
+        await send_reset_password_email(user_obj.email, reset_url)
+    except Exception:
+        logger.exception("Failed to send reset password email to %s", user_obj.email)
+        raise HTTPException(status_code=500, detail="Не удалось отправить письмо. Попробуйте позже.")
+
+    return {"message": "Если аккаунт существует, письмо с инструкциями отправлено"}
+
+
+@router.post("/reset-password")
+async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    if len(body.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Пароль должен содержать не менее 8 символов")
+
+    redis = AsyncRedis.from_url(settings.REDIS_URL, decode_responses=True)
+    try:
+        email = await redis.get(f"password_reset:{body.token}")
+        if not email:
+            raise HTTPException(status_code=400, detail="Ссылка недействительна или истекла")
+        await redis.delete(f"password_reset:{body.token}")
+    finally:
+        await redis.aclose()
+
+    user_obj = await user.get_by_email(db, email=email)
+    if not user_obj:
+        raise HTTPException(status_code=400, detail="Пользователь не найден")
+
+    await user.update_password(db, user_obj=user_obj, new_password=body.new_password)
+    return {"message": "Пароль успешно изменён"}

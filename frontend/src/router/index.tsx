@@ -9,6 +9,8 @@ import styled from 'styled-components';
 const LandingPage = lazy(() => import('@/pages/Landing/LandingPage'));
 const LoginPage = lazy(() => import('@/pages/Auth/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/Auth/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('@/pages/Auth/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('@/pages/Auth/ResetPasswordPage'));
 const ConsentPage = lazy(() => import('@/pages/Consent/ConsentPage'));
 const ChatPage = lazy(() => import('@/pages/Chat/ChatPage'));
 const DocumentsPage = lazy(() => import('@/pages/Documents/DocumentsPage'));
@@ -44,6 +46,8 @@ export function AppRouter() {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
 
         {/* Согласие (требует авторизации, до chat) */}

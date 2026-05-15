@@ -1,14 +1,14 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { useAuth } from '@/hooks/useAuth';
+import { authApi } from '@/api/auth';
 import { getApiErrorMessage } from '@/utils/apiError';
 
 const schema = z.object({
   email: z.string().email('Некорректный email'),
-  password: z.string().min(1, 'Введите пароль'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -84,6 +84,16 @@ const ServerError = styled.div`
   color: var(--color-error);
 `;
 
+const SuccessBox = styled.div`
+  padding: 16px;
+  background: var(--color-success-muted, #f0fdf4);
+  border: 1px solid var(--color-success, #22c55e);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-success, #16a34a);
+  line-height: 1.5;
+`;
+
 const Footer = styled.div`
   text-align: center;
   font-size: var(--font-size-sm);
@@ -91,8 +101,8 @@ const Footer = styled.div`
   margin-top: 8px;
 `;
 
-export default function LoginPage() {
-  const { login } = useAuth();
+export default function ForgotPasswordPage() {
+  const [sent, setSent] = useState(false);
   const {
     register,
     handleSubmit,
@@ -102,18 +112,34 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      await login(data);
+      await authApi.forgotPassword(data.email);
+      setSent(true);
     } catch (err) {
       setError('root', {
-        message: getApiErrorMessage(err, 'Неверный email или пароль'),
+        message: getApiErrorMessage(err, 'Произошла ошибка. Попробуйте позже.'),
       });
     }
   };
 
+  if (sent) {
+    return (
+      <>
+        <Title>Письмо отправлено</Title>
+        <SuccessBox>
+          Если аккаунт с таким email существует, мы отправили инструкции по сбросу пароля.
+          Проверьте папку «Входящие» и «Спам».
+        </SuccessBox>
+        <Footer style={{ marginTop: 24 }}>
+          <Link to="/login">Вернуться ко входу</Link>
+        </Footer>
+      </>
+    );
+  }
+
   return (
     <>
-      <Title>Вход</Title>
-      <Sub>Введите данные вашего аккаунта</Sub>
+      <Title>Забыли пароль?</Title>
+      <Sub>Введите ваш email и мы отправим ссылку для сброса пароля</Sub>
       <Form onSubmit={handleSubmit(onSubmit)}>
         {errors.root && <ServerError>{errors.root.message}</ServerError>}
         <Field>
@@ -127,26 +153,12 @@ export default function LoginPage() {
           />
           {errors.email && <ErrorText>{errors.email.message}</ErrorText>}
         </Field>
-        <Field>
-          <Label>Пароль</Label>
-          <Input
-            {...register('password')}
-            type="password"
-            placeholder="••••••••"
-            $error={!!errors.password}
-            autoComplete="current-password"
-          />
-          {errors.password && <ErrorText>{errors.password.message}</ErrorText>}
-        </Field>
         <Btn type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Вход...' : 'Войти'}
+          {isSubmitting ? 'Отправка...' : 'Отправить ссылку'}
         </Btn>
       </Form>
       <Footer>
-        <Link to="/forgot-password">Забыли пароль?</Link>
-      </Footer>
-      <Footer>
-        Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
+        <Link to="/login">Вернуться ко входу</Link>
       </Footer>
     </>
   );
