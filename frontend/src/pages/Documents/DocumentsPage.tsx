@@ -161,6 +161,9 @@ const ModalOverlay = styled.div`
 const Modal = styled.div`
   width: 100%;
   max-width: 560px;
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
   background: var(--color-surface-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
@@ -192,6 +195,8 @@ const ModalBody = styled.div`
   padding: 18px 20px;
   display: grid;
   gap: 10px;
+  overflow-y: auto;
+  flex: 1;
 `;
 
 const Label = styled.label`
