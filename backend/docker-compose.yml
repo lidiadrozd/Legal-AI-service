@@ -62,7 +62,8 @@ services:
       - ./rag_docs:/app/rag_docs
       - ./storage/documents:/app/storage/documents
     ports:
-      - "8000:8000"
+      # Только localhost: Nginx на :80/:443 проксирует /api → 8000
+      - "127.0.0.1:8000:8000"
     networks:
       - legal_ai_network
     depends_on:
