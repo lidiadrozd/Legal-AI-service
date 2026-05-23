@@ -11,6 +11,7 @@ import { DocumentViewer } from '@/components/documents/DocumentViewer';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUIStore } from '@/store/uiStore';
 import type {
+  AiDocumentType,
   Document,
   DocumentTemplateMeta,
   GenerateDocumentRequest,
@@ -258,7 +259,19 @@ const Button = styled.button<{ $primary?: boolean }>`
   color: ${({ $primary }) => ($primary ? '#fff' : 'var(--color-text)')};
 `;
 
-type GenerateMode = 'builtin' | 'uploaded';
+type GenerateMode = 'builtin' | 'uploaded' | 'ai';
+
+const AI_DOC_TYPES: { value: AiDocumentType | ''; label: string }[] = [
+  { value: '', label: '— определить автоматически —' },
+  { value: 'pretense', label: 'Досудебная претензия' },
+  { value: 'claim', label: 'Исковое заявление' },
+  { value: 'complaint', label: 'Жалоба' },
+  { value: 'contract', label: 'Договор' },
+  { value: 'motion', label: 'Ходатайство' },
+  { value: 'appeal', label: 'Апелляционная жалоба' },
+  { value: 'power_of_attorney', label: 'Доверенность' },
+  { value: 'other', label: 'Другое' },
+];
 
 function isUploadedDocx(doc: Document): boolean {
   const title = (doc.title || '').toLowerCase();
@@ -282,6 +295,9 @@ export default function DocumentsPage() {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState('');
   const [selectedFilingId, setSelectedFilingId] = useState('');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiDocType, setAiDocType] = useState<AiDocumentType | ''>('');
+  const [aiTitle, setAiTitle] = useState('');
   const addToast = useUIStore((s) => s.addToast);
   const queryClient = useQueryClient();
 
@@ -413,6 +429,30 @@ export default function DocumentsPage() {
   const handleGenerate = async () => {
     try {
       setIsGenerating(true);
+      if (generateMode === 'ai') {
+        const prompt = aiPrompt.trim();
+        if (prompt.length < 10) {
+          addToast({ type: 'error', message: 'Опишите запрос подробнее (минимум 10 символов)' });
+          setIsGenerating(false);
+          return;
+        }
+        const generated = await documentsApi.generateAi({
+          prompt,
+          filename: filename.trim() || 'ai-document',
+          output_format: outputFormat,
+          ...(aiTitle.trim() ? { title: aiTitle.trim() } : {}),
+          ...(aiDocType ? { document_type: aiDocType } : {}),
+          ...(selectedChatId ? { chat_id: Number(selectedChatId) } : {}),
+        });
+        await documentsApi.download(generated.document_id, generated.filename);
+        setShowGenerateModal(false);
+        setAiPrompt('');
+        setAiDocType('');
+        setAiTitle('');
+        addToast({ type: 'success', message: 'Документ сгенерирован и скачан' });
+        queryClient.invalidateQueries({ queryKey: ['documents'] });
+        return;
+      }
       if (generateMode === 'uploaded') {
         if (!uploadedTemplateId) {
           addToast({ type: 'error', message: 'Выберите документ-шаблон' });
@@ -560,10 +600,73 @@ export default function DocumentsPage() {
                     if (v === 'builtin') setUploadedTemplateId('');
                   }}
                 >
+                  <option value="ai">Сгенерировать с ИИ (по описанию)</option>
                   <option value="builtin">Встроенный шаблон</option>
                   <option value="uploaded">Мой Word (.docx) с плейсхолдерами</option>
                 </Select>
               </Label>
+              {(generateMode === 'builtin' || generateMode === 'ai') && (
+                <Label>
+                  Формат
+                  <Select
+                    value={outputFormat}
+                    onChange={(e) => setOutputFormat(e.target.value as GenerateDocumentRequest['output_format'])}
+                  >
+                    <option value="docx">DOCX (с форматированием)</option>
+                    <option value="pdf">PDF</option>
+                    <option value="txt">TXT</option>
+                  </Select>
+                </Label>
+              )}
+              {generateMode === 'ai' && (
+                <>
+                  <Label>
+                    Тип документа (подсказка для ИИ)
+                    <Select
+                      value={aiDocType}
+                      onChange={(e) => setAiDocType(e.target.value as AiDocumentType | '')}
+                    >
+                      {AI_DOC_TYPES.map((t) => (
+                        <option key={t.value || 'auto'} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </Label>
+                  <Label>
+                    Название документа (необязательно)
+                    <Input
+                      value={aiTitle}
+                      onChange={(e) => setAiTitle(e.target.value)}
+                      placeholder="Например: Претензия о взыскании задолженности"
+                    />
+                  </Label>
+                  <Label>
+                    Опишите, какой документ нужен
+                    <TextArea
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      placeholder="Например: досудебная претензия к ООО «Ромашка» о взыскании 150 000 руб. по договору поставки от 01.2025, срок оплаты истёк 15.03.2026"
+                      style={{ minHeight: 120 }}
+                    />
+                  </Label>
+                  <Hint>
+                    ИИ составит черновик по законодательству РФ. Укажите стороны, суммы, даты и суть спора.
+                    Недостающие данные будут отмечены как [плейсхолдеры]. Перед подачей проверьте текст у юриста.
+                  </Hint>
+                  <Label>
+                    Контекст из чата (опционально)
+                    <Select value={selectedChatId} onChange={(e) => setSelectedChatId(e.target.value)}>
+                      <option value="">— не использовать —</option>
+                      {chats?.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.title}
+                        </option>
+                      ))}
+                    </Select>
+                  </Label>
+                </>
+              )}
               {generateMode === 'builtin' ? (
                 <>
                   <Label>
@@ -576,16 +679,8 @@ export default function DocumentsPage() {
                       ))}
                     </Select>
                   </Label>
-                  <Label>
-                    Формат
-                    <Select value={outputFormat} onChange={(e) => setOutputFormat(e.target.value as GenerateDocumentRequest['output_format'])}>
-                      <option value="docx">DOCX (с форматированием)</option>
-                      <option value="pdf">PDF</option>
-                      <option value="txt">TXT</option>
-                    </Select>
-                  </Label>
                 </>
-              ) : (
+              ) : generateMode === 'uploaded' ? (
                 <>
                   <Label>
                     Документ-шаблон (.docx)
@@ -616,7 +711,7 @@ export default function DocumentsPage() {
                     {isScanningPlaceholders ? 'Поиск…' : 'Найти поля в файле'}
                   </GenerateBtn>
                 </>
-              )}
+              ) : null}
               <Label>
                 Имя файла
                 <Input value={filename} onChange={(e) => setFilename(e.target.value)} placeholder="my-document" />
@@ -707,7 +802,13 @@ export default function DocumentsPage() {
                 Отмена
               </Button>
               <Button $primary onClick={handleGenerate} disabled={isGenerating}>
-                {isGenerating ? 'Генерация...' : generateMode === 'uploaded' ? 'Заполнить и скачать' : 'Сгенерировать'}
+                {isGenerating
+                  ? 'Генерация...'
+                  : generateMode === 'ai'
+                    ? 'Сгенерировать с ИИ'
+                    : generateMode === 'uploaded'
+                      ? 'Заполнить и скачать'
+                      : 'Сгенерировать'}
               </Button>
             </ModalFooter>
           </Modal>

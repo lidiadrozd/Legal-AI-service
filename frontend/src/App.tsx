@@ -1,7 +1,13 @@
 import { AppRouter } from './router';
+import { CookieBanner } from '@/components/common/CookieBanner';
 
 function App() {
-  return <AppRouter />;
+  return (
+    <>
+      <AppRouter />
+      <CookieBanner />
+    </>
+  );
 }
 
 export default App;

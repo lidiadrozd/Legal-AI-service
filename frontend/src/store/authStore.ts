@@ -12,7 +12,7 @@ interface AuthState {
 }
 
 interface AuthActions {
-  setAuth: (user: User, access: string, refresh: string) => void;
+  setAuth: (user: User, access: string, refresh: string, remember?: boolean) => void;
   setConsentGiven: () => void;
   updateUser: (user: User) => void;
   logout: () => void;
@@ -27,8 +27,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       isConsentGiven: false,
       isAuthenticated: false,
 
-      setAuth: (user, access, refresh) => {
-        setTokens(access, refresh);
+      setAuth: (user, access, refresh, remember = true) => {
+        setTokens(access, refresh, remember);
         set({
           user,
           accessToken: access,

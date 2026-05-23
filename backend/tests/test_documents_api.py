@@ -312,3 +312,50 @@ async def test_generate_rejects_wrong_template_version(client, tmp_path):
     response = await client.post("/documents/generate", json=payload)
     assert response.status_code == 422
     assert "version mismatch" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_generate_ai_document_and_download(client, tmp_path, monkeypatch):
+    settings.DOCUMENTS_STORAGE_DIR = str(tmp_path)
+
+    async def _fake_ai(_user_prompt: str, **_kwargs):
+        return (
+            "Претензия о взыскании задолженности",
+            "В адрес ООО «Ромашка»\n\nПРЕТЕНЗИЯ\n\nПрошу погасить задолженность.\n\nЧерновик сформирован ИИ.",
+        )
+
+    monkeypatch.setattr(
+        "app.api.documents.generate_ai_document_text",
+        _fake_ai,
+    )
+
+    payload = {
+        "prompt": "Составь досудебную претензию о взыскании 150000 руб. с ООО Ромашка",
+        "filename": "pretense-ai",
+        "output_format": "txt",
+        "document_type": "pretense",
+    }
+    create_resp = await client.post("/documents/generate-ai", json=payload)
+    assert create_resp.status_code == 201
+    document_id = create_resp.json()["document_id"]
+
+    meta_resp = await client.get(f"/documents/{document_id}")
+    assert meta_resp.status_code == 200
+    meta = meta_resp.json()["generation_meta"]
+    assert meta["source"] == "ai_generated"
+
+    download_resp = await client.get(f"/documents/{document_id}/download")
+    assert download_resp.status_code == 200
+    content = download_resp.content.decode("utf-8")
+    assert "ПРЕТЕНЗИЯ" in content
+    assert "Ромашка" in content
+
+
+@pytest.mark.asyncio
+async def test_generate_ai_requires_prompt(client, tmp_path):
+    settings.DOCUMENTS_STORAGE_DIR = str(tmp_path)
+    response = await client.post(
+        "/documents/generate-ai",
+        json={"prompt": "коротко", "filename": "x.txt", "output_format": "txt"},
+    )
+    assert response.status_code == 422

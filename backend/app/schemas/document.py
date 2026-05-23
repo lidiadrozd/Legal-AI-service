@@ -42,6 +42,20 @@ class DocumentPlaceholdersResponse(BaseModel):
     keys: list[str]
 
 
+class GenerateAiDocumentRequest(BaseModel):
+    """Генерация текста документа по свободному запросу (GigaChat)."""
+
+    prompt: str = Field(..., min_length=10, max_length=8000)
+    filename: str = Field(..., min_length=3, max_length=255)
+    output_format: str = Field(default="docx", pattern="^(docx|txt|pdf)$")
+    title: str | None = Field(default=None, max_length=200)
+    document_type: str | None = Field(
+        default=None,
+        pattern="^(claim|pretense|complaint|contract|motion|appeal|power_of_attorney|other)$",
+    )
+    chat_id: int | None = Field(default=None, ge=1)
+
+
 class FillUploadedTemplateRequest(BaseModel):
     """Заполнение ранее загруженного .docx по плейсхолдерам {{key}}."""
 

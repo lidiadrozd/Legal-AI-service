@@ -79,3 +79,22 @@ export interface FillUploadedTemplateRequest {
   filename: string;
   fields: Record<string, string>;
 }
+
+export type AiDocumentType =
+  | 'claim'
+  | 'pretense'
+  | 'complaint'
+  | 'contract'
+  | 'motion'
+  | 'appeal'
+  | 'power_of_attorney'
+  | 'other';
+
+export interface GenerateAiDocumentRequest {
+  prompt: string;
+  filename: string;
+  output_format: 'docx' | 'txt' | 'pdf';
+  title?: string;
+  document_type?: AiDocumentType;
+  chat_id?: number;
+}

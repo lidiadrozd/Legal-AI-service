@@ -9,9 +9,9 @@ export function useAuth() {
   const { setAuth, setConsentGiven, logout: storeLogout } = useAuthStore();
   const addToast = useUIStore((s) => s.addToast);
 
-  const login = async (data: LoginRequest) => {
+  const login = async (data: LoginRequest, remember = true) => {
     const result = await authApi.login(data);
-    setAuth(result.user, result.access_token, result.refresh_token);
+    setAuth(result.user, result.access_token, result.refresh_token, remember);
     if (!result.user.is_consent_given) {
       navigate('/consent');
     } else {

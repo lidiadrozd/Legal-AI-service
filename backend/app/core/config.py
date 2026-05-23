@@ -33,6 +33,15 @@ class Settings(BaseSettings):
     GIGACHAT_CLIENT_SECRET: str = os.getenv('GIGACHAT_CLIENT_SECRET', "")  # ✅ Дефолт!
     GIGACHAT_MODEL: str = "GigaChat"
     GIGACHAT_SCOPE: str = "GIGACHAT_API_B2B"
+
+    # ========================================
+    # SaluteSpeech (распознавание речи)
+    # ========================================
+    SALUTE_SPEECH_CLIENT_ID: str = os.getenv("SALUTE_SPEECH_CLIENT_ID", "")
+    SALUTE_SPEECH_CLIENT_SECRET: str = os.getenv("SALUTE_SPEECH_CLIENT_SECRET", "")
+    # SALUTE_SPEECH_PERS — физлица; SALUTE_SPEECH_CORP / B2B — по договору в кабинете Сбера
+    SALUTE_SPEECH_SCOPE: str = os.getenv("SALUTE_SPEECH_SCOPE", "SALUTE_SPEECH_PERS")
+    SALUTE_SPEECH_SAMPLE_RATE: int = int(os.getenv("SALUTE_SPEECH_SAMPLE_RATE", "16000"))
     
     # ========================================
     # RAG & Vector Store

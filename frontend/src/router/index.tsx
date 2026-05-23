@@ -1,9 +1,10 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { AdminRoute } from '@/components/common/AdminRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthLayout } from '@/components/layout/AuthLayout';
+import { PublicLayout } from '@/components/layout/PublicLayout';
 import styled from 'styled-components';
 
 const LandingPage = lazy(() => import('@/pages/Landing/LandingPage'));
@@ -20,6 +21,13 @@ const UsersPage = lazy(() => import('@/pages/Admin/UsersPage'));
 const ChatsPage = lazy(() => import('@/pages/Admin/ChatsPage'));
 const FeedbackPage = lazy(() => import('@/pages/Admin/FeedbackPage'));
 const StatsPage = lazy(() => import('@/pages/Admin/StatsPage'));
+const PrivacyPage = lazy(() => import('@/pages/Static/PrivacyPage'));
+const TermsPage = lazy(() => import('@/pages/Static/TermsPage'));
+const ContactsPage = lazy(() => import('@/pages/Static/ContactsPage'));
+const PricingPage = lazy(() => import('@/pages/Static/PricingPage'));
+const FaqPage = lazy(() => import('@/pages/Static/FaqPage'));
+const AboutPage = lazy(() => import('@/pages/Static/AboutPage'));
+const NotFoundPage = lazy(() => import('@/pages/Static/NotFoundPage'));
 
 const PageLoader = styled.div`
   display: flex;
@@ -39,10 +47,18 @@ export function AppRouter() {
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
-        {/* Публичный лендинг */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* Авторизация */}
+        <Route element={<PublicLayout />}>
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/contacts" element={<ContactsPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/faq" element={<FaqPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -50,7 +66,6 @@ export function AppRouter() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
 
-        {/* Согласие (требует авторизации, до chat) */}
         <Route
           path="/consent"
           element={
@@ -60,7 +75,6 @@ export function AppRouter() {
           }
         />
 
-        {/* Защищённые страницы */}
         <Route
           element={
             <ProtectedRoute>
@@ -74,7 +88,6 @@ export function AppRouter() {
           <Route path="/documents/:docId" element={<DocumentDetailPage />} />
         </Route>
 
-        {/* Панель администратора */}
         <Route
           path="/admin"
           element={
@@ -90,8 +103,6 @@ export function AppRouter() {
           <Route path="stats" element={<StatsPage />} />
         </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );
