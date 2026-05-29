@@ -1,9 +1,12 @@
 import { useRef, useState, useCallback } from 'react';
 import styled from 'styled-components';
-import { Send, Paperclip, X, StopCircle } from 'lucide-react';
+import { Send, Paperclip, X, StopCircle, Mic } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
+import { useUIStore } from '@/store/uiStore';
 import { ALLOWED_EXTENSIONS } from '@/types/document.types';
+import { LEGAL_DISCLAIMER } from '@/constants/legal';
 import { useFileUpload } from '@/hooks/useFileUpload';
+import { useSpeechToText } from '@/hooks/useSpeechToText';
 
 const Wrap = styled.div`
   padding: 12px 24px 20px;
@@ -69,7 +72,7 @@ const TextArea = styled.textarea`
   &::placeholder { color: var(--color-text-tertiary); }
 `;
 
-const IconBtn = styled.button<{ $primary?: boolean }>`
+const IconBtn = styled.button<{ $primary?: boolean; $active?: boolean }>`
   flex-shrink: 0;
   width: 36px;
   height: 36px;
@@ -78,10 +81,14 @@ const IconBtn = styled.button<{ $primary?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${({ $primary }) => ($primary ? 'var(--color-primary)' : 'var(--color-surface-hover)')};
-  color: ${({ $primary }) => ($primary ? '#fff' : 'var(--color-text-secondary)')};
+  background: ${({ $primary, $active }) =>
+    $active ? 'var(--color-error)' : $primary ? 'var(--color-primary)' : 'var(--color-surface-hover)'};
+  color: ${({ $primary, $active }) => ($primary || $active ? '#fff' : 'var(--color-text-secondary)')};
   transition: background var(--transition-fast), opacity var(--transition-fast);
-  &:hover { background: ${({ $primary }) => ($primary ? 'var(--color-primary-hover)' : 'var(--color-border)')}; }
+  &:hover {
+    background: ${({ $primary, $active }) =>
+      $active ? 'var(--color-error)' : $primary ? 'var(--color-primary-hover)' : 'var(--color-border)'};
+  }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 `;
 
@@ -108,7 +115,32 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isStreaming = useChatStore((s) => s.isStreaming);
+  const addToast = useUIStore((s) => s.addToast);
   const { upload, isUploading, progress, reset } = useFileUpload();
+
+  const appendTranscript = useCallback((chunk: string) => {
+    setText((prev) => {
+      const next = prev ? `${prev.trimEnd()} ${chunk}` : chunk;
+      return next;
+    });
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`;
+        textareaRef.current.focus();
+      }
+    });
+  }, []);
+
+  const {
+    isSupported: isSpeechSupported,
+    isListening,
+    toggle: toggleSpeech,
+    stop: stopSpeech,
+  } = useSpeechToText({
+    onFinalTranscript: appendTranscript,
+    onError: (message) => addToast({ type: 'error', message }),
+  });
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -118,6 +150,7 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
   };
 
   const handleSend = () => {
+    if (isListening) stopSpeech();
     const content = text.trim();
     if (!content || isStreaming) return;
     onSend(content, attachedId ?? undefined);
@@ -185,6 +218,17 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
         >
           <Paperclip size={16} />
         </IconBtn>
+        {isSpeechSupported && (
+          <IconBtn
+            type="button"
+            title={isListening ? 'Остановить запись' : 'Голосовой ввод'}
+            $active={isListening}
+            disabled={isStreaming || isUploading}
+            onClick={toggleSpeech}
+          >
+            <Mic size={16} />
+          </IconBtn>
+        )}
         <TextArea
           ref={textareaRef}
           value={text}
@@ -210,7 +254,12 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
           </IconBtn>
         )}
       </InputRow>
-      <Hint>Enter — отправить · Shift+Enter — новая строка</Hint>
+      <Hint>
+        Enter — отправить · Shift+Enter — новая строка
+        {isSpeechSupported ? ' · Микрофон — диктовка' : ''}
+        {' · '}
+        {LEGAL_DISCLAIMER}
+      </Hint>
     </Wrap>
   );
 }

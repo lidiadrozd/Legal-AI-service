@@ -3,6 +3,7 @@ GigaChat: OAuth и chat/completions через HTTP, как в официаль�
 (auth=(CLIENT_ID, CLIENT_SECRET), scope в form-data, Bearer к чату).
 """
 import time
+from dataclasses import dataclass
 from threading import Lock
 import uuid
 from typing import Any
@@ -11,11 +12,18 @@ import httpx
 import urllib3
 
 from app.core.config import settings
+from app.services.llm_cost import TokenUsage, estimate_usage
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 _OAUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
 _CHAT_URL = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+
+
+@dataclass(frozen=True)
+class ChatCompletionResult:
+    content: str
+    usage: TokenUsage
 
 
 class GigaChatAutoToken:
@@ -80,7 +88,7 @@ class GigaChatAutoToken:
         *,
         model: str,
         temperature: float = 0.1,
-    ) -> str:
+    ) -> ChatCompletionResult:
         """POST /v1/chat/completions с Bearer-токеном (как в curl/requests-примерах)."""
         token = await self.get_valid_token()
         headers = {
@@ -100,9 +108,27 @@ class GigaChatAutoToken:
         data = r.json()
         try:
             content = data["choices"][0]["message"]["content"]
-            return content if isinstance(content, str) else str(content)
+            text = content if isinstance(content, str) else str(content)
         except (KeyError, IndexError, TypeError) as e:
             raise RuntimeError(f"Unexpected GigaChat response: {data}") from e
+
+        usage_payload = data.get("usage") if isinstance(data.get("usage"), dict) else {}
+        prompt_tokens = int(usage_payload.get("prompt_tokens") or 0)
+        completion_tokens = int(usage_payload.get("completion_tokens") or 0)
+        total_tokens = int(usage_payload.get("total_tokens") or 0)
+        if total_tokens <= 0 and prompt_tokens <= 0 and completion_tokens <= 0:
+            prompt_text = "\n".join(message.get("content", "") for message in messages)
+            usage = estimate_usage(prompt_text=prompt_text, completion_text=text)
+        else:
+            if total_tokens <= 0:
+                total_tokens = prompt_tokens + completion_tokens
+            usage = TokenUsage(
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=total_tokens,
+                usage_estimated=False,
+            )
+        return ChatCompletionResult(content=text, usage=usage)
 
     async def get_valid_token(self) -> str:
         """Возвращает валидный токен (обновляет при необходимости)"""

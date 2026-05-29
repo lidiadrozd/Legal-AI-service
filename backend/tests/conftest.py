@@ -20,6 +20,7 @@ from app.models.chat import ChatSession, Message
 from app.models.court_filing import CourtFiling, CourtFilingDocument
 from app.models.document import Document
 from app.models.notification import Notification
+from app.models.llm_usage import LlmUsageEvent
 from app.models.user import User
 
 
@@ -53,6 +54,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
                     CourtFilingDocument.__table__,
                     Notification.__table__,
                     Document.__table__,
+                    LlmUsageEvent.__table__,
                 ],
             )
         )

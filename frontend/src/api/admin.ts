@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { AdminUser, AdminChat, AdminFeedbackItem, AdminStats } from '@/types/admin.types';
+import type { AdminUser, AdminChat, AdminFeedbackItem, AdminStats, CogsSummary } from '@/types/admin.types';
 
 export const adminApi = {
   getUsers: async (search?: string): Promise<AdminUser[]> => {
@@ -33,6 +33,11 @@ export const adminApi = {
 
   getStats: async (): Promise<AdminStats> => {
     const response = await apiClient.get<AdminStats>('/admin/stats');
+    return response.data;
+  },
+
+  getCogs: async (): Promise<CogsSummary> => {
+    const response = await apiClient.get<CogsSummary>('/admin/cogs');
     return response.data;
   },
 

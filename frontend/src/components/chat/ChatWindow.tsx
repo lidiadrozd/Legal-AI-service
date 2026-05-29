@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import { LEGAL_DISCLAIMER } from '@/constants/legal';
 import { useChatStore } from '@/store/chatStore';
 import { MessageBubble } from './MessageBubble';
 import { StreamingMessage } from './StreamingMessage';
@@ -35,6 +36,14 @@ const EmptyHint = styled.div`
   font-size: var(--font-size-sm);
   max-width: 320px;
   line-height: 1.6;
+`;
+
+const Disclaimer = styled.div`
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  max-width: 420px;
+  line-height: 1.5;
 `;
 
 const SuggestionGrid = styled.div`
@@ -94,6 +103,7 @@ export function ChatWindow({ onSuggestionClick }: ChatWindowProps) {
           <EmptyHint>
             Я помогу с вопросами трудового, гражданского, жилищного и других отраслей права. Готовые файлы (Word, PDF) — ссылка «Документы Word / PDF / TXT» под полем ввода.
           </EmptyHint>
+          <Disclaimer>{LEGAL_DISCLAIMER}</Disclaimer>
           <SuggestionGrid>
             {SUGGESTIONS.map((s) => (
               <SuggestionCard key={s} onClick={() => onSuggestionClick?.(s)}>

@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import styled from 'styled-components';
-import { Users, MessageSquare, ThumbsUp, Activity } from 'lucide-react';
+import { Users, MessageSquare, ThumbsUp, Activity, Coins, Database } from 'lucide-react';
 import { adminApi } from '@/api/admin';
 import { StatsChart } from '@/components/admin/StatsChart';
+import { formatRub } from '@/utils/formatMoney';
 
 const Page = styled.div`
   padding: 32px;
@@ -99,6 +100,8 @@ const kpis = [
   { key: 'total_chats' as const, label: 'Чатов', icon: MessageSquare, color: '#4A90E2' },
   { key: 'messages_today' as const, label: 'Сообщений сегодня', icon: Activity, color: '#FF9500' },
   { key: 'avg_rating' as const, label: 'Средняя оценка', icon: ThumbsUp, color: '#30D158', format: (v: number) => `${(v * 100).toFixed(0)}%` },
+  { key: 'total_cogs_rub' as const, label: 'COGS LLM', icon: Coins, color: '#FF453A', format: (v: number) => formatRub(v) },
+  { key: 'total_tokens' as const, label: 'Токены LLM', icon: Database, color: '#BF5AF2', format: (v: number) => v.toLocaleString('ru-RU') },
 ];
 
 export default function DashboardPage() {

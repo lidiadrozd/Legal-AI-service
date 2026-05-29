@@ -4,6 +4,10 @@ import type { FeedbackRating } from './chat.types';
 export interface AdminUser extends User {
   chat_count: number;
   last_active?: string;
+  tokens_used?: number;
+  cogs_rub?: number;
+  llm_requests?: number;
+  cache_hits?: number;
 }
 
 export interface AdminChat {
@@ -34,6 +38,9 @@ export interface DashboardStats {
   messages_today: number;
   avg_rating: number;
   active_users_today: number;
+  total_tokens?: number;
+  total_cogs_rub?: number;
+  cache_hits?: number;
 }
 
 export interface DailyStatPoint {
@@ -41,6 +48,26 @@ export interface DailyStatPoint {
   users: number;
   messages: number;
   tokens_used: number;
+  cogs_rub?: number;
+}
+
+export interface UserCogsRow {
+  user_id: string;
+  email: string;
+  full_name: string;
+  tokens_used: number;
+  cogs_rub: number;
+  llm_requests: number;
+  cache_hits: number;
+}
+
+export interface CogsSummary {
+  total_tokens: number;
+  total_cogs_rub: number;
+  llm_requests: number;
+  cache_hits: number;
+  price_per_1k_tokens: number;
+  users: UserCogsRow[];
 }
 
 export interface AdminStats {

@@ -11,6 +11,8 @@ from sqlalchemy import select
 
 from app.models.notification import Notification
 from app.models.user import User
+from app.core.legal_disclaimer import with_legal_disclaimer
+from app.services.law_change_publication import assess_law_change_publishability
 from app.services.notification_bus import publish_notification
 
 logger = logging.getLogger(__name__)
@@ -44,21 +46,40 @@ def monitor_law_changes(self):
                         changes = resp.json().get('changes', [])
                         
                         for change in changes:
+                            title = (change.get("title") or "").strip()
+                            raw_date = change.get("date")
+                            description = (change.get("description") or "").strip()
+                            new_version = (change.get("text") or "").strip()
+                            source_url = (change.get("source_url") or source).strip()
+                            if not title or raw_date is None:
+                                continue
+                            if len(description) < 20 and len(new_version) < 20:
+                                continue
+
                             # Проверяем дубли
                             existing = await db.execute(
                                 select(LawChange).where(
-                                    LawChange.change_title == change['title']
+                                    LawChange.change_title == title
                                 )
                             )
                             if not existing.scalar():
-                                new_change = LawChange(
+                                candidate = LawChange(
                                     document_id=1,  # TODO: match document
-                                    change_title=change['title'],
-                                    change_date=datetime.fromisoformat(change['date']),
-                                    description=change.get('description', ''),
-                                    new_version=change.get('text', '')
+                                    change_title=title,
+                                    change_date=datetime.fromisoformat(str(raw_date)),
+                                    description=description,
+                                    new_version=new_version,
+                                    source_url=source_url,
                                 )
-                                db.add(new_change)
+                                publishable, reason = assess_law_change_publishability(candidate)
+                                if not publishable:
+                                    logger.warning(
+                                        "Skip law change from source %s: %s",
+                                        source,
+                                        reason,
+                                    )
+                                    continue
+                                db.add(candidate)
                         await db.commit()
                 except Exception as e:
                     self.update_state(state='FAILURE', meta={'exc': str(e)})
@@ -91,6 +112,15 @@ def send_notifications():
             created_count = 0
 
             for change in changes:
+                publishable, reason = assess_law_change_publishability(change)
+                if not publishable:
+                    logger.info(
+                        "Skip law_change notification id=%s: %s",
+                        change.id,
+                        reason,
+                    )
+                    continue
+
                 change_title = (change.change_title or "").strip() or "Изменение законодательства"
                 # Детерминированный заголовок: позволяет легко не дублировать уведомления.
                 title = f"LAW_CHANGE#{change.id}: {change_title}"
@@ -116,7 +146,9 @@ def send_notifications():
                     "Что изменилось:",
                     description,
                 ]
-                message = "\n".join([line for line in message_lines if line is not None]).strip()
+                message = with_legal_disclaimer(
+                    "\n".join([line for line in message_lines if line is not None]).strip()
+                )
 
                 for user in users:
                     # Идемпотентность: если такое уведомление уже есть — не создаём повторно.

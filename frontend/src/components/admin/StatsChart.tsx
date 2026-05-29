@@ -73,9 +73,10 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 interface Props {
   data: DailyStatPoint[];
   title?: string;
+  showUsageMetrics?: boolean;
 }
 
-export function StatsChart({ data, title = 'Активность за последние 30 дней' }: Props) {
+export function StatsChart({ data, title = 'Активность за последние 30 дней', showUsageMetrics = false }: Props) {
   const formatted = data.map((d) => ({
     ...d,
     label: formatShortDate(d.date),
@@ -123,6 +124,28 @@ export function StatsChart({ data, title = 'Активность за после
             dot={false}
             activeDot={{ r: 4, strokeWidth: 0 }}
           />
+          {showUsageMetrics && (
+            <>
+              <Line
+                type="monotone"
+                dataKey="tokens_used"
+                name="Токены"
+                stroke="#FF9500"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 0 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="cogs_rub"
+                name="COGS, ₽"
+                stroke="#FF453A"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 0 }}
+              />
+            </>
+          )}
         </LineChart>
       </ResponsiveContainer>
     </Wrap>

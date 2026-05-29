@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     GIGACHAT_CLIENT_SECRET: str = os.getenv('GIGACHAT_CLIENT_SECRET', "")  # ✅ Дефолт!
     GIGACHAT_MODEL: str = "GigaChat"
     GIGACHAT_SCOPE: str = "GIGACHAT_API_B2B"
+    GIGACHAT_PRICE_PER_1K_TOKENS: float = 0.065
     
     # ========================================
     # RAG & Vector Store
@@ -42,6 +43,18 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     VECTOR_DB_TYPE: str = "pgvector"
     ENABLE_PGVECTOR: bool = True  # ✅ Обязательно!
+    RAG_ENABLED: bool = True
+    RAG_VECTOR_TOP_K: int = 3
+    RAG_RERANK_THRESHOLD: float = 0.7
+    RAG_MAX_CONTEXT_CHUNKS: int = 2
+    RAG_CHUNK_MAX_CHARS: int = 2000
+
+    # ========================================
+    # Chat response cache
+    # ========================================
+    CHAT_RESPONSE_CACHE_ENABLED: bool = True
+    CHAT_RESPONSE_CACHE_TTL_SECONDS: int = 86400
+    CHAT_RESPONSE_CACHE_HISTORY_CHARS: int = 6000
     
     # ========================================
     # APP SETTINGS

@@ -20,7 +20,10 @@ from app.models.user import User
 from app.schemas.chat import ChatResponse, FeedbackCreate, MessageCreate, Message as MessageSchema
 from app.db.base_class import get_crud
 from app.api.deps import get_current_user
+from app.core.config import settings
+from app.services.llm_cost import record_llm_usage
 from app.services.nlp_service import NLPService
+from app.services.rag_context import build_rag_context
 
 router = APIRouter(prefix="/chat", tags=["💬 Chat"])
 
@@ -165,13 +168,12 @@ async def send_message_stream(
         await db.refresh(assistant_message)
 
         # 4. RAG контекст. Если таблицы/данные пока не готовы, используем fallback.
-        context = {"docs": [], "law_db_size": 0}
+        context = {"docs": [], "rag": "", "law_db_size": 0}
         try:
+            context["rag"] = build_rag_context(message_in.content)
             recent_laws = await _law_change_crud.get_multi(db, limit=3)
-            context = {
-                "docs": [f"Изменение: {law.change_title}" for law in recent_laws],
-                "law_db_size": await _law_change_crud.count(db)
-            }
+            context["docs"] = [f"Изменение: {law.change_title}" for law in recent_laws]
+            context["law_db_size"] = await _law_change_crud.count(db)
         except Exception as context_error:
             # Не валим чат, если контекстный источник временно недоступен.
             print(f"⚠️ RAG context unavailable: {context_error}")
@@ -206,10 +208,20 @@ async def send_message_stream(
                 if (m.content or "").strip()
             )
 
-            full_response = await _nlp_service.generate_response(
+            nlp_result = await _nlp_service.generate_response(
                 user_query=message_in.content,
                 context=context,
                 chat_history=chat_history,
+            )
+            full_response = nlp_result.text
+            await record_llm_usage(
+                db,
+                user_id=current_user.id,
+                chat_id=chat_id,
+                message_id=assistant_message.id,
+                model=settings.GIGACHAT_MODEL,
+                cached=nlp_result.cached,
+                usage=nlp_result.usage,
             )
 
             # Стриминг по символам-блокам с сохранением пробелов и переносов

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import { ChevronUp, ChevronDown, Search } from 'lucide-react';
 import { formatDateTime } from '@/utils/formatDate';
+import { formatRub } from '@/utils/formatMoney';
 import type { AdminUser } from '@/types/admin.types';
 
 const Wrap = styled.div`
@@ -87,7 +88,7 @@ const RoleBadge = styled.span`
   font-weight: 500;
 `;
 
-type SortField = 'email' | 'created_at' | 'chat_count';
+type SortField = 'email' | 'created_at' | 'chat_count' | 'cogs_rub';
 
 interface Props {
   users: AdminUser[];
@@ -113,6 +114,7 @@ export function UserTable({ users, onUserClick }: Props) {
       const mul = sortAsc ? 1 : -1;
       if (sortField === 'email') return mul * a.email.localeCompare(b.email);
       if (sortField === 'chat_count') return mul * ((a.chat_count ?? 0) - (b.chat_count ?? 0));
+      if (sortField === 'cogs_rub') return mul * ((a.cogs_rub ?? 0) - (b.cogs_rub ?? 0));
       return mul * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     });
 
@@ -144,6 +146,10 @@ export function UserTable({ users, onUserClick }: Props) {
             <Th onClick={() => handleSort('chat_count')}>
               <ThInner>Чатов <SortIcon field="chat_count" /></ThInner>
             </Th>
+            <Th onClick={() => handleSort('cogs_rub')}>
+              <ThInner>COGS <SortIcon field="cogs_rub" /></ThInner>
+            </Th>
+            <Th>Токены</Th>
             <Th>Роль</Th>
             <Th>Статус</Th>
           </tr>
@@ -151,7 +157,7 @@ export function UserTable({ users, onUserClick }: Props) {
         <tbody>
           {filtered.length === 0 && (
             <tr>
-              <Td colSpan={6} style={{ textAlign: 'center', color: 'var(--color-text-tertiary)' }}>
+              <Td colSpan={8} style={{ textAlign: 'center', color: 'var(--color-text-tertiary)' }}>
                 Пользователей не найдено
               </Td>
             </tr>
@@ -162,6 +168,10 @@ export function UserTable({ users, onUserClick }: Props) {
               <Td>{user.full_name}</Td>
               <Td style={{ color: 'var(--color-text-secondary)' }}>{formatDateTime(user.created_at)}</Td>
               <Td>{user.chat_count ?? 0}</Td>
+              <Td>{formatRub(user.cogs_rub ?? 0)}</Td>
+              <Td style={{ color: 'var(--color-text-secondary)' }}>
+                {(user.tokens_used ?? 0).toLocaleString('ru-RU')}
+              </Td>
               <Td><RoleBadge>{user.role === 'super_admin' ? 'Администратор' : 'Пользователь'}</RoleBadge></Td>
               <Td>
                 <StatusDot $active={user.is_active} />
