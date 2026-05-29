@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -5,6 +6,8 @@ import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/utils/apiError';
+import { PasswordField } from '@/components/auth/PasswordField';
+import { PageMeta } from '@/components/common/PageMeta';
 
 const schema = z.object({
   email: z.string().email('Некорректный email'),
@@ -62,6 +65,24 @@ const ErrorText = styled.span`
   color: var(--color-error);
 `;
 
+const Row = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--font-size-sm);
+`;
+
+const RememberRow = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+
+  input { accent-color: var(--color-primary); }
+`;
+
 const Btn = styled.button`
   padding: 12px;
   background: var(--color-primary);
@@ -93,16 +114,20 @@ const Footer = styled.div`
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const [remember, setRemember] = useState(true);
   const {
     register,
     handleSubmit,
+    watch,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
+  const password = watch('password', '');
+
   const onSubmit = async (data: FormData) => {
     try {
-      await login(data);
+      await login(data, remember);
     } catch (err) {
       setError('root', {
         message: getApiErrorMessage(err, 'Неверный email или пароль'),
@@ -112,33 +137,47 @@ export default function LoginPage() {
 
   return (
     <>
+      <PageMeta title="Вход" description="Вход в личный кабинет ИИ-Юрист" />
       <Title>Вход</Title>
       <Sub>Введите данные вашего аккаунта</Sub>
-      <Form onSubmit={handleSubmit(onSubmit)}>
-        {errors.root && <ServerError>{errors.root.message}</ServerError>}
+      <Form onSubmit={handleSubmit(onSubmit)} noValidate>
+        {errors.root && <ServerError role="alert">{errors.root.message}</ServerError>}
         <Field>
-          <Label>Email</Label>
+          <Label htmlFor="email">Email</Label>
           <Input
+            id="email"
             {...register('email')}
             type="email"
             placeholder="you@example.com"
             $error={!!errors.email}
             autoComplete="email"
+            required
+            aria-invalid={!!errors.email}
           />
-          {errors.email && <ErrorText>{errors.email.message}</ErrorText>}
+          {errors.email && <ErrorText role="alert">{errors.email.message}</ErrorText>}
         </Field>
-        <Field>
-          <Label>Пароль</Label>
-          <Input
-            {...register('password')}
-            type="password"
-            placeholder="••••••••"
-            $error={!!errors.password}
-            autoComplete="current-password"
-          />
-          {errors.password && <ErrorText>{errors.password.message}</ErrorText>}
-        </Field>
-        <Btn type="submit" disabled={isSubmitting}>
+        <PasswordField
+          id="password"
+          label="Пароль"
+          registration={register('password')}
+          error={errors.password}
+          placeholder="••••••••"
+          autoComplete="current-password"
+          value={password}
+        />
+        <Row>
+          <RememberRow>
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              id="remember"
+            />
+            Запомнить меня
+          </RememberRow>
+          <Link to="/forgot-password">Забыли пароль?</Link>
+        </Row>
+        <Btn type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
           {isSubmitting ? 'Вход...' : 'Войти'}
         </Btn>
       </Form>

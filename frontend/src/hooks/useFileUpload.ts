@@ -23,6 +23,11 @@ function effectiveMime(file: File): string {
   if (ext === '.pdf') return 'application/pdf';
   if (ext === '.docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
   if (ext === '.txt') return 'text/plain';
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  if (ext === '.png') return 'image/png';
+  if (ext === '.webp') return 'image/webp';
+  if (ext === '.bmp') return 'image/bmp';
+  if (ext === '.tif' || ext === '.tiff') return 'image/tiff';
   return '';
 }
 

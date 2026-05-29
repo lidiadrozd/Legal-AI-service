@@ -6,11 +6,10 @@ from dataclasses import dataclass
 
 from app.core.config import settings
 from app.core.legal_disclaimer import with_legal_disclaimer
-from app.core.prompts import get_system_prompt
+from app.core.prompts import format_chat_context, get_system_prompt
 from app.services.document_draft_validator import process_document_response
 from app.services.gigachat_client import get_gigachat_client
 from app.services.llm_cost import TokenUsage
-from app.services.rag_context import serialize_chat_context
 from app.services.response_cache import build_cache_key, response_cache
 
 
@@ -52,8 +51,9 @@ class NLPService:
             )
 
         client = await get_gigachat_client()
+        context_str = format_chat_context(context)
         system_prompt = get_system_prompt(
-            serialize_chat_context(context),
+            context_str,
             history_tail,
             user_query,
             dialog_state=dialog_state,
@@ -69,7 +69,9 @@ class NLPService:
             model=settings.GIGACHAT_MODEL,
             temperature=self.temperature,
         )
-        final_response = with_legal_disclaimer(process_document_response(user_query, completion.content))
+        final_response = with_legal_disclaimer(
+            process_document_response(user_query, completion.content)
+        )
         await response_cache.set(cache_key, final_response)
         return NLPGenerateResult(
             text=final_response,

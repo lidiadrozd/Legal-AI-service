@@ -85,7 +85,12 @@ export const chatApi = {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ content: request.content }),
+        body: JSON.stringify({
+          content: request.content,
+          ...(request.attachment_ids?.length
+            ? { attachment_ids: request.attachment_ids }
+            : {}),
+        }),
         signal,
       });
     } catch (err) {

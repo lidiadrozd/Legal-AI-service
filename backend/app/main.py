@@ -17,7 +17,7 @@ from app.db.session import engine, get_db, AsyncSessionLocal
 from app.db.base_class import Base
 from app import models  # noqa: F401 - регистрирует модели в metadata
 
-from app.api import auth, chat, admin, court_filings, documents, notifications, ws_notifications
+from app.api import auth, chat, admin, court_filings, documents, notifications, speech, ws_notifications
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +90,7 @@ app.include_router(chat.router)
 app.include_router(admin.router)
 app.include_router(court_filings.router)
 app.include_router(documents.router)
+app.include_router(speech.router)
 app.include_router(notifications.router)
 app.include_router(ws_notifications.router)
 
@@ -160,6 +161,7 @@ async def law_monitoring_status(db: AsyncSession = Depends(get_db)):
             "service": "law_monitoring",
             "status": "active",
             "total_changes": count,
+            "sources": settings.law_change_source_list(),
             "celery_tasks": "http://localhost:5555"
         }
     except Exception as e:

@@ -2,11 +2,11 @@ import { useRef, useState, useCallback } from 'react';
 import styled from 'styled-components';
 import { Send, Paperclip, X, StopCircle, Mic } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
-import { useUIStore } from '@/store/uiStore';
 import { ALLOWED_EXTENSIONS } from '@/types/document.types';
 import { LEGAL_DISCLAIMER } from '@/constants/legal';
 import { useFileUpload } from '@/hooks/useFileUpload';
-import { useSpeechToText } from '@/hooks/useSpeechToText';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { useUIStore } from '@/store/uiStore';
 
 const Wrap = styled.div`
   padding: 12px 24px 20px;
@@ -72,7 +72,7 @@ const TextArea = styled.textarea`
   &::placeholder { color: var(--color-text-tertiary); }
 `;
 
-const IconBtn = styled.button<{ $primary?: boolean; $active?: boolean }>`
+const IconBtn = styled.button<{ $primary?: boolean; $recording?: boolean }>`
   flex-shrink: 0;
   width: 36px;
   height: 36px;
@@ -81,13 +81,13 @@ const IconBtn = styled.button<{ $primary?: boolean; $active?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${({ $primary, $active }) =>
-    $active ? 'var(--color-error)' : $primary ? 'var(--color-primary)' : 'var(--color-surface-hover)'};
-  color: ${({ $primary, $active }) => ($primary || $active ? '#fff' : 'var(--color-text-secondary)')};
+  background: ${({ $primary, $recording }) =>
+    $recording ? 'var(--color-error)' : $primary ? 'var(--color-primary)' : 'var(--color-surface-hover)'};
+  color: ${({ $primary, $recording }) => ($primary || $recording ? '#fff' : 'var(--color-text-secondary)')};
   transition: background var(--transition-fast), opacity var(--transition-fast);
   &:hover {
-    background: ${({ $primary, $active }) =>
-      $active ? 'var(--color-error)' : $primary ? 'var(--color-primary-hover)' : 'var(--color-border)'};
+    background: ${({ $primary, $recording }) =>
+      $recording ? '#dc2626' : $primary ? 'var(--color-primary-hover)' : 'var(--color-border)'};
   }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 `;
@@ -115,32 +115,9 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isStreaming = useChatStore((s) => s.isStreaming);
-  const addToast = useUIStore((s) => s.addToast);
   const { upload, isUploading, progress, reset } = useFileUpload();
-
-  const appendTranscript = useCallback((chunk: string) => {
-    setText((prev) => {
-      const next = prev ? `${prev.trimEnd()} ${chunk}` : chunk;
-      return next;
-    });
-    requestAnimationFrame(() => {
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`;
-        textareaRef.current.focus();
-      }
-    });
-  }, []);
-
-  const {
-    isSupported: isSpeechSupported,
-    isListening,
-    toggle: toggleSpeech,
-    stop: stopSpeech,
-  } = useSpeechToText({
-    onFinalTranscript: appendTranscript,
-    onError: (message) => addToast({ type: 'error', message }),
-  });
+  const addToast = useUIStore((s) => s.addToast);
+  const voice = useVoiceInput();
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -150,7 +127,6 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
   };
 
   const handleSend = () => {
-    if (isListening) stopSpeech();
     const content = text.trim();
     if (!content || isStreaming) return;
     onSend(content, attachedId ?? undefined);
@@ -186,6 +162,18 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
     if (f) handleFile(f);
   };
 
+  const handleVoice = async () => {
+    voice.clearError();
+    const transcript = await voice.toggleRecording();
+    if (transcript) {
+      setText((prev) => (prev ? `${prev.trimEnd()} ${transcript}` : transcript));
+      autoResize();
+      addToast({ type: 'success', message: 'Речь распознана' });
+    } else if (voice.error) {
+      addToast({ type: 'error', message: voice.error });
+    }
+  };
+
   return (
     <Wrap>
       {isUploading && <ProgressBar $pct={progress} />}
@@ -213,18 +201,26 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
         <IconBtn
           type="button"
           title="Прикрепить файл"
-          disabled={isStreaming || isUploading}
+          disabled={isStreaming || isUploading || voice.isBusy}
           onClick={() => fileInputRef.current?.click()}
         >
           <Paperclip size={16} />
         </IconBtn>
-        {isSpeechSupported && (
+        {voice.isSupported && (
           <IconBtn
             type="button"
-            title={isListening ? 'Остановить запись' : 'Голосовой ввод'}
-            $active={isListening}
-            disabled={isStreaming || isUploading}
-            onClick={toggleSpeech}
+            title={
+              voice.isTranscribing
+                ? 'Распознавание...'
+                : voice.isRecording
+                  ? 'Остановить и вставить текст'
+                  : 'Голосовой ввод (SaluteSpeech)'
+            }
+            $recording={voice.isRecording}
+            disabled={isStreaming || isUploading || voice.isTranscribing}
+            onClick={handleVoice}
+            aria-pressed={voice.isRecording}
+            aria-label="Голосовой ввод"
           >
             <Mic size={16} />
           </IconBtn>
@@ -236,7 +232,7 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
           onKeyDown={handleKeyDown}
           placeholder="Задайте юридический вопрос..."
           rows={1}
-          disabled={isStreaming}
+          disabled={isStreaming || voice.isBusy}
         />
         {isStreaming ? (
           <IconBtn type="button" onClick={onStopStreaming} title="Остановить">
@@ -255,8 +251,8 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
         )}
       </InputRow>
       <Hint>
-        Enter — отправить · Shift+Enter — новая строка
-        {isSpeechSupported ? ' · Микрофон — диктовка' : ''}
+        Enter — отправить · Shift+Enter — новая строка · Скрепка: PDF, DOCX, TXT, фото (JPG/PNG)
+        {voice.isSupported ? ' · 🎤 — голосовой ввод (до 1 мин)' : ''}
         {' · '}
         {LEGAL_DISCLAIMER}
       </Hint>

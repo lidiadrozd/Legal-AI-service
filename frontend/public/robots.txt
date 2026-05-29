@@ -3,3 +3,6 @@ Allow: /
 Disallow: /admin/
 Disallow: /chat/
 Disallow: /documents/
+Disallow: /consent/
+
+Sitemap: https://legalai-service.ru/sitemap.xml

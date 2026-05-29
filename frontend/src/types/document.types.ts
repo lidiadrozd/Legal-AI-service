@@ -1,13 +1,26 @@
 export type DocumentStatus = 'pending' | 'processing' | 'ready' | 'error';
 export type DocumentType = 'upload' | 'generated' | 'template';
-export type AllowedFileType = 'application/pdf' | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' | 'text/plain';
+export type AllowedFileType =
+  | 'application/pdf'
+  | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  | 'text/plain'
+  | 'image/jpeg'
+  | 'image/png'
+  | 'image/webp'
+  | 'image/bmp'
+  | 'image/tiff';
 
 export const ALLOWED_FILE_TYPES: AllowedFileType[] = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/plain',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/bmp',
+  'image/tiff',
 ];
-export const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.txt'];
+export const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tif', '.tiff'];
 export const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 МБ
 
 export interface Document {
@@ -78,4 +91,23 @@ export interface FillUploadedTemplateRequest {
   template_document_id: string;
   filename: string;
   fields: Record<string, string>;
+}
+
+export type AiDocumentType =
+  | 'claim'
+  | 'pretense'
+  | 'complaint'
+  | 'contract'
+  | 'motion'
+  | 'appeal'
+  | 'power_of_attorney'
+  | 'other';
+
+export interface GenerateAiDocumentRequest {
+  prompt: string;
+  filename: string;
+  output_format: 'docx' | 'txt' | 'pdf';
+  title?: string;
+  document_type?: AiDocumentType;
+  chat_id?: number;
 }

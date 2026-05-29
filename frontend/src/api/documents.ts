@@ -4,6 +4,7 @@ import type {
   DocumentPlaceholdersResponse,
   DocumentTemplateMeta,
   FillUploadedTemplateRequest,
+  GenerateAiDocumentRequest,
   GenerateDocumentRequest,
   SuggestDocumentFieldsRequest,
   SuggestDocumentFieldsResponse,
@@ -36,6 +37,11 @@ export const documentsApi = {
 
   generate: async (payload: GenerateDocumentRequest): Promise<UploadDocumentResponse> => {
     const response = await apiClient.post<UploadDocumentResponse>('/documents/generate', payload);
+    return response.data;
+  },
+
+  generateAi: async (payload: GenerateAiDocumentRequest): Promise<UploadDocumentResponse> => {
+    const response = await apiClient.post<UploadDocumentResponse>('/documents/generate-ai', payload);
     return response.data;
   },
 

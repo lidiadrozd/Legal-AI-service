@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { getRestApiBaseUrl } from '@/config/apiEnv';
-import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '@/utils/tokenStorage';
+import { getAccessToken, getRefreshToken, getRememberMe, setTokens, clearTokens } from '@/utils/tokenStorage';
 
 const BASE_URL = getRestApiBaseUrl();
 
@@ -71,7 +71,7 @@ apiClient.interceptors.response.use(
         const newAccessToken = data.access_token;
         const newRefreshToken = data.refresh_token ?? refreshToken;
 
-        setTokens(newAccessToken, newRefreshToken);
+        setTokens(newAccessToken, newRefreshToken, getRememberMe());
         processQueue(newAccessToken);
 
         original.headers.Authorization = `Bearer ${newAccessToken}`;

@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { Scale, MessageSquare, FileText, Search, Shield, ArrowRight, CheckCircle } from 'lucide-react';
+import { SiteFooter } from '@/components/layout/SiteFooter';
+import { PageMeta } from '@/components/common/PageMeta';
 
 const fadeUp = keyframes`
   from { opacity: 0; transform: translateY(20px); }
@@ -32,10 +34,11 @@ const Nav = styled.nav`
   @media (max-width: 768px) { padding: 0 20px; }
 `;
 
-const NavLogo = styled.span`
+const NavLogo = styled(Link)`
   font-size: 20px;
   font-weight: 700;
   color: var(--color-text);
+  text-decoration: none;
   span { color: var(--color-primary); }
 `;
 
@@ -342,33 +345,19 @@ const CheckItem = styled.div`
   color: var(--color-text-secondary);
 `;
 
-// --- Footer ---
-
-const Footer = styled.footer`
-  border-top: 1px solid var(--color-border);
-  padding: 24px 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--color-text-tertiary);
-  font-size: 12px;
-
-  @media (max-width: 640px) {
-    flex-direction: column;
-    gap: 8px;
-    padding: 20px;
-    text-align: center;
-  }
-`;
-
 export default function LandingPage() {
   return (
     <Page>
-      <Nav>
-        <NavLogo>ИИ<span>-Юрист</span></NavLogo>
+      <PageMeta />
+      <Nav aria-label="Основная навигация">
+        <NavLogo to="/" aria-label="ИИ-Юрист — на главную">
+          ИИ<span>-Юрист</span>
+        </NavLogo>
         <NavLinks>
           <NavLink to="#features">Возможности</NavLink>
           <NavLink to="#how">Как работает</NavLink>
+          <NavLink to="/pricing">Тарифы</NavLink>
+          <NavLink to="/contacts">Контакты</NavLink>
         </NavLinks>
         <div style={{ display: 'flex', gap: 8 }}>
           <NavLink to="/login">Войти</NavLink>
@@ -382,8 +371,8 @@ export default function LandingPage() {
           Юридическая помощь<br />на основе <span>искусственного интеллекта</span>
         </HeroTitle>
         <HeroSub>
-          Получите профессиональную юридическую консультацию, сгенерируйте документы и найдите
-          актуальную судебную практику за секунды.
+          Получите справочную юридическую информацию на основе ИИ, подготовьте черновики документов
+          и найдите актуальные нормы законодательства РФ. Не заменяет консультацию адвоката.
         </HeroSub>
         <HeroCtas>
           <PrimaryBtn to="/register">
@@ -450,10 +439,7 @@ export default function LandingPage() {
         </CTABox>
       </CTABanner>
 
-      <Footer>
-        <span>© 2026 ИИ-Юрист. Все права защищены.</span>
-        <span>Не является юридической консультацией.</span>
-      </Footer>
+      <SiteFooter />
     </Page>
   );
 }

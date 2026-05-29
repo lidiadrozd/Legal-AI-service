@@ -17,10 +17,12 @@ from app.db.session import get_db
 from app.models.chat import ChatSession, Message
 from app.models.law_changes import LawChange
 from app.models.user import User
+from app.services.law_topic_service import get_relevant_law_changes_for_user, sync_user_interests_from_message
 from app.schemas.chat import ChatResponse, FeedbackCreate, MessageCreate, Message as MessageSchema
 from app.db.base_class import get_crud
 from app.api.deps import get_current_user
 from app.core.config import settings
+from app.services.chat_document_context import load_user_documents_text
 from app.services.llm_cost import record_llm_usage
 from app.services.nlp_service import NLPService
 from app.services.rag_context import build_rag_context
@@ -33,6 +35,7 @@ _nlp_service = NLPService()
 
 class SendStreamRequest(BaseModel):
     content: str
+    attachment_ids: list[str] | None = None
 
 
 @router.post("/new", response_model=ChatResponse)
@@ -157,6 +160,16 @@ async def send_message_stream(
         await db.commit()
         await db.refresh(user_message)
 
+        try:
+            await sync_user_interests_from_message(
+                db,
+                user_id=current_user.id,
+                chat_id=chat_id,
+                text=message_in.content,
+            )
+        except Exception as interest_error:
+            print(f"⚠️ Interest sync unavailable: {interest_error}")
+
         # 3. Создаем пустое сообщение ассистента
         assistant_message = Message(
             chat_id=chat_id,
@@ -167,16 +180,33 @@ async def send_message_stream(
         await db.commit()
         await db.refresh(assistant_message)
 
-        # 4. RAG контекст. Если таблицы/данные пока не готовы, используем fallback.
-        context = {"docs": [], "rag": "", "law_db_size": 0}
+        # 4. RAG контекст + изменения законов + прикреплённые документы.
+        context = {"docs": [], "rag": "", "law_db_size": 0, "attached_documents": []}
         try:
             context["rag"] = build_rag_context(message_in.content)
-            recent_laws = await _law_change_crud.get_multi(db, limit=3)
-            context["docs"] = [f"Изменение: {law.change_title}" for law in recent_laws]
+            relevant_laws = await get_relevant_law_changes_for_user(
+                db,
+                user_id=current_user.id,
+                chat_id=chat_id,
+                limit=3,
+            )
+            if not relevant_laws:
+                relevant_laws = await _law_change_crud.get_multi(db, limit=3)
+            context["docs"] = [f"Изменение: {law.change_title}" for law in relevant_laws]
             context["law_db_size"] = await _law_change_crud.count(db)
         except Exception as context_error:
             # Не валим чат, если контекстный источник временно недоступен.
             print(f"⚠️ RAG context unavailable: {context_error}")
+
+        if message_in.attachment_ids:
+            try:
+                context["attached_documents"] = await load_user_documents_text(
+                    db,
+                    user_id=current_user.id,
+                    document_ids=message_in.attachment_ids,
+                )
+            except Exception as attachment_error:
+                print(f"⚠️ Attached documents unavailable: {attachment_error}")
     except HTTPException:
         raise
     except Exception as pre_stream_error:

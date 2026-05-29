@@ -19,14 +19,17 @@ from app.schemas.document import (
     DocumentPlaceholdersResponse,
     DocumentTemplateOut,
     FillUploadedTemplateRequest,
+    GenerateAiDocumentRequest,
     GenerateDocumentRequest,
     SuggestDocumentFieldsRequest,
     SuggestDocumentFieldsResponse,
     UploadDocumentResponse,
 )
+from app.services.document_ai_generator import generate_ai_document_text
 from app.services.document_field_context import merge_user_over_suggested, suggest_fields_for_template
 from app.services.document_templates import (
     TEMPLATES,
+    RenderedTemplate,
     build_docx_bytes,
     build_pdf_bytes,
     list_templates_meta,
@@ -37,7 +40,19 @@ from app.services.docx_fill import collect_placeholder_keys_from_docx, fill_docx
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
-ALLOWED_UPLOAD_SUFFIXES = {".pdf", ".docx", ".txt", ".doc"}
+ALLOWED_UPLOAD_SUFFIXES = {
+    ".pdf",
+    ".docx",
+    ".txt",
+    ".doc",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+    ".bmp",
+    ".tif",
+    ".tiff",
+}
 
 
 def _is_docx_document(document: Document) -> bool:
@@ -208,6 +223,91 @@ async def generate_document(
         document.id,
         current_user.id,
         payload.template_key,
+    )
+    return UploadDocumentResponse(document_id=document.id, filename=document.title, status=document.status)
+
+
+@router.post("/generate-ai", response_model=UploadDocumentResponse, status_code=status.HTTP_201_CREATED)
+async def generate_ai_document(
+    payload: GenerateAiDocumentRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Сгенерировать документ по текстовому запросу пользователя (GigaChat)."""
+    context_text = ""
+    if payload.chat_id is not None:
+        context_text = await _chat_context_text(db, user_id=current_user.id, chat_id=payload.chat_id)
+
+    try:
+        doc_title, doc_body = await generate_ai_document_text(
+            payload.prompt,
+            context_text=context_text,
+            document_type_hint=payload.document_type,
+            title_hint=payload.title,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("generate_ai_document failed")
+        raise HTTPException(status_code=502, detail="Не удалось сгенерировать документ. Попробуйте позже.") from exc
+
+    rendered = RenderedTemplate(
+        key="ai_generated",
+        title=doc_title,
+        description="Сгенерировано ИИ по запросу пользователя",
+        rendered_text=doc_body,
+    )
+
+    filename = _sanitize_filename(payload.filename)
+    if payload.output_format == "docx":
+        if not filename.lower().endswith(".docx"):
+            filename = f"{filename}.docx"
+        body = build_docx_bytes(rendered)
+        mime_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif payload.output_format == "pdf":
+        if not filename.lower().endswith(".pdf"):
+            filename = f"{filename}.pdf"
+        body = build_pdf_bytes(rendered)
+        mime_type = "application/pdf"
+    else:
+        if not filename.lower().endswith(".txt"):
+            filename = f"{filename}.txt"
+        body = doc_body.encode("utf-8")
+        mime_type = "text/plain"
+
+    document_id = str(uuid4())
+    storage_path = _storage_root() / f"{document_id}_{filename}"
+    storage_path.write_bytes(body)
+
+    generation_meta = {
+        "source": "ai_generated",
+        "document_title": doc_title,
+        "document_type": payload.document_type,
+        "chat_id": payload.chat_id,
+        "prompt_preview": payload.prompt[:500],
+    }
+
+    document = Document(
+        id=document_id,
+        user_id=current_user.id,
+        title=filename,
+        type="generated",
+        status="ready",
+        file_path=str(storage_path),
+        file_size=len(body),
+        mime_type=mime_type,
+        generation_meta=generation_meta,
+    )
+    db.add(document)
+    await db.commit()
+
+    logger.info(
+        "AI document generated: document_id=%s user_id=%s title=%s",
+        document.id,
+        current_user.id,
+        doc_title,
     )
     return UploadDocumentResponse(document_id=document.id, filename=document.title, status=document.status)
 
