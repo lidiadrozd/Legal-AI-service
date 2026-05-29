@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     # ========================================
     RAG_DOCS_PATH: str = "/app/rag_docs"
     DOCUMENTS_STORAGE_DIR: str = "/app/storage/documents"
+    OCR_LANGS: str = os.getenv("OCR_LANGS", "rus+eng")
+    OCR_MAX_PDF_PAGES: int = int(os.getenv("OCR_MAX_PDF_PAGES", "15"))
     EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     VECTOR_DB_TYPE: str = "pgvector"
     ENABLE_PGVECTOR: bool = True  # ✅ Обязательно!

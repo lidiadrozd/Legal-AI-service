@@ -1,13 +1,26 @@
 export type DocumentStatus = 'pending' | 'processing' | 'ready' | 'error';
 export type DocumentType = 'upload' | 'generated' | 'template';
-export type AllowedFileType = 'application/pdf' | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' | 'text/plain';
+export type AllowedFileType =
+  | 'application/pdf'
+  | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  | 'text/plain'
+  | 'image/jpeg'
+  | 'image/png'
+  | 'image/webp'
+  | 'image/bmp'
+  | 'image/tiff';
 
 export const ALLOWED_FILE_TYPES: AllowedFileType[] = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/plain',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/bmp',
+  'image/tiff',
 ];
-export const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.txt'];
+export const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tif', '.tiff'];
 export const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 МБ
 
 export interface Document {

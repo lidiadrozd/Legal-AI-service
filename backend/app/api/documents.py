@@ -40,7 +40,19 @@ from app.services.docx_fill import collect_placeholder_keys_from_docx, fill_docx
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
-ALLOWED_UPLOAD_SUFFIXES = {".pdf", ".docx", ".txt", ".doc"}
+ALLOWED_UPLOAD_SUFFIXES = {
+    ".pdf",
+    ".docx",
+    ".txt",
+    ".doc",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+    ".bmp",
+    ".tif",
+    ".tiff",
+}
 
 
 def _is_docx_document(document: Document) -> bool:

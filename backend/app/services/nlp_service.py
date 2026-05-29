@@ -3,7 +3,7 @@ NLP Service: GigaChat через REST chat/completions (OAuth как в прим
 """
 
 from app.core.config import settings
-from app.core.prompts import get_system_prompt
+from app.core.prompts import format_chat_context, get_system_prompt
 from app.services.gigachat_client import get_gigachat_client
 
 
@@ -24,8 +24,9 @@ class NLPService:
         """Генерация ответа с автообновлением токена"""
         client = await get_gigachat_client()
         history_tail = (chat_history or "")[-self.max_history_chars :]
+        context_str = format_chat_context(context)
         system_prompt = get_system_prompt(
-            context or {}, history_tail, user_query, dialog_state=dialog_state
+            context_str, history_tail, user_query, dialog_state=dialog_state
         )
 
         messages = [

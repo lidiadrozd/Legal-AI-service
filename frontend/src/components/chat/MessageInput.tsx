@@ -250,7 +250,7 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
         )}
       </InputRow>
       <Hint>
-        Enter — отправить · Shift+Enter — новая строка
+        Enter — отправить · Shift+Enter — новая строка · Скрепка: PDF, DOCX, TXT, фото (JPG/PNG)
         {voice.isSupported ? ' · 🎤 — голосовой ввод (до 1 мин)' : ''}
       </Hint>
     </Wrap>

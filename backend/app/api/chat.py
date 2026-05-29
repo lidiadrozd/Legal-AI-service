@@ -21,6 +21,7 @@ from app.services.law_topic_service import get_relevant_law_changes_for_user, sy
 from app.schemas.chat import ChatResponse, FeedbackCreate, MessageCreate, Message as MessageSchema
 from app.db.base_class import get_crud
 from app.api.deps import get_current_user
+from app.services.chat_document_context import load_user_documents_text
 from app.services.nlp_service import NLPService
 
 router = APIRouter(prefix="/chat", tags=["💬 Chat"])
@@ -31,6 +32,7 @@ _nlp_service = NLPService()
 
 class SendStreamRequest(BaseModel):
     content: str
+    attachment_ids: list[str] | None = None
 
 
 @router.post("/new", response_model=ChatResponse)
@@ -175,8 +177,8 @@ async def send_message_stream(
         await db.commit()
         await db.refresh(assistant_message)
 
-        # 4. RAG контекст. Если таблицы/данные пока не готовы, используем fallback.
-        context = {"docs": [], "law_db_size": 0}
+        # 4. RAG контекст + прикреплённые документы.
+        context = {"docs": [], "law_db_size": 0, "attached_documents": []}
         try:
             relevant_laws = await get_relevant_law_changes_for_user(
                 db,
@@ -189,10 +191,21 @@ async def send_message_stream(
             context = {
                 "docs": [f"Изменение: {law.change_title}" for law in relevant_laws],
                 "law_db_size": await _law_change_crud.count(db),
+                "attached_documents": [],
             }
         except Exception as context_error:
             # Не валим чат, если контекстный источник временно недоступен.
             print(f"⚠️ RAG context unavailable: {context_error}")
+
+        if message_in.attachment_ids:
+            try:
+                context["attached_documents"] = await load_user_documents_text(
+                    db,
+                    user_id=current_user.id,
+                    document_ids=message_in.attachment_ids,
+                )
+            except Exception as attachment_error:
+                print(f"⚠️ Attached documents unavailable: {attachment_error}")
     except HTTPException:
         raise
     except Exception as pre_stream_error:
