@@ -247,6 +247,7 @@ def build_pdf_bytes(rendered: RenderedTemplate) -> bytes:
     pdf = canvas.Canvas(buf, pagesize=A4)
     width, height = A4
     x_margin = 48
+    usable_width = width - (x_margin * 2)
     y = height - 56
 
     pdf.setFont(font_name, 14)
@@ -255,16 +256,41 @@ def build_pdf_bytes(rendered: RenderedTemplate) -> bytes:
     y -= 28
 
     pdf.setFont(font_name, 11)
-    for original_line in rendered.rendered_text.splitlines():
-        line = original_line.strip() or " "
+    def normalize(line: str) -> str:
+        normalized = line.rstrip("\n")
+        if not normalized.strip():
+            return " "
         if not has_unicode_font:
-            line = line.encode("latin-1", errors="replace").decode("latin-1")
-        if y < 50:
-            pdf.showPage()
-            pdf.setFont(font_name, 11)
-            y = height - 56
-        pdf.drawString(x_margin, y, line[:130])
-        y -= 16
+            return normalized.encode("latin-1", errors="replace").decode("latin-1")
+        return normalized
+
+    def wrap_to_width(text: str) -> list[str]:
+        # Мягкий перенос по словам под ширину страницы.
+        words = text.split()
+        if not words:
+            return [" "]
+        lines: list[str] = []
+        current = words[0]
+        for word in words[1:]:
+            candidate = f"{current} {word}"
+            if pdfmetrics.stringWidth(candidate, font_name, 11) <= usable_width:
+                current = candidate
+            else:
+                lines.append(current)
+                current = word
+        lines.append(current)
+        return lines
+
+    for original_line in rendered.rendered_text.splitlines():
+        line = normalize(original_line)
+        wrapped = [line] if line == " " else wrap_to_width(line)
+        for chunk in wrapped:
+            if y < 50:
+                pdf.showPage()
+                pdf.setFont(font_name, 11)
+                y = height - 56
+            pdf.drawString(x_margin, y, chunk)
+            y -= 16
 
     pdf.save()
     return buf.getvalue()

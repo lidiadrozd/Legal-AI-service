@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
-import { MessageSquare, Plus, Trash2, LayoutDashboard, Users, MessageCircle, Star, BarChart3, FileText } from 'lucide-react';
+import { MessageSquare, Plus, Trash2, LayoutDashboard, Users, MessageCircle, Star, BarChart3, FileText, Pencil } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
 import { chatApi } from '@/api/chat';
 import { formatRelative } from '@/utils/formatDate';
@@ -137,7 +137,7 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
   const { chatId } = useParams();
   const navigate = useNavigate();
   const addToast = useUIStore((s) => s.addToast);
-  const { chats, removeChat, setActiveChat, clearMessages, addChat } = useChatStore();
+  const { chats, removeChat, setActiveChat, clearMessages, addChat, updateChatTitle } = useChatStore();
 
   const handleNewChat = async () => {
     try {
@@ -168,6 +168,22 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
       if (chatId === id) navigate('/chat');
     } catch {
       addToast({ message: 'Не удалось удалить чат', type: 'error' });
+    }
+  };
+
+  const handleRename = async (e: React.MouseEvent, id: string, currentTitle: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = window.prompt('Название чата', currentTitle || 'Новый чат');
+    if (next == null) return;
+    const title = next.trim();
+    if (!title) return;
+    try {
+      const updated = await chatApi.updateChatTitle(id, title);
+      updateChatTitle(id, updated.title);
+      addToast({ message: 'Название чата обновлено', type: 'success' });
+    } catch {
+      addToast({ message: 'Не удалось переименовать чат', type: 'error' });
     }
   };
 
@@ -216,6 +232,9 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
               <ChatTitle>{chat.title}</ChatTitle>
               <ChatDate>{formatRelative(chat.updated_at)}</ChatDate>
             </ChatItemText>
+            <DeleteBtn onClick={(e) => handleRename(e, chat.id, chat.title)} title="Переименовать">
+              <Pencil size={13} />
+            </DeleteBtn>
             <DeleteBtn onClick={(e) => handleDelete(e, chat.id)}>
               <Trash2 size={13} />
             </DeleteBtn>

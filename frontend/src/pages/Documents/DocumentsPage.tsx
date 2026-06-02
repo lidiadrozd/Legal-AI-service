@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import styled from 'styled-components';
 import { Upload, FileText, Sparkles, X } from 'lucide-react';
 import { chatApi } from '@/api/chat';
-import { courtFilingsApi } from '@/api/courtFilings';
 import { documentsApi } from '@/api/documents';
 import { DocumentCard } from '@/components/documents/DocumentCard';
 import { DocumentViewer } from '@/components/documents/DocumentViewer';
@@ -294,7 +293,6 @@ export default function DocumentsPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState('');
-  const [selectedFilingId, setSelectedFilingId] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiDocType, setAiDocType] = useState<AiDocumentType | ''>('');
   const [aiTitle, setAiTitle] = useState('');
@@ -312,11 +310,6 @@ export default function DocumentsPage() {
   const { data: chats } = useQuery({
     queryKey: ['chats'],
     queryFn: chatApi.getChats,
-    enabled: showGenerateModal,
-  });
-  const { data: filings } = useQuery({
-    queryKey: ['court-filings-submissions'],
-    queryFn: courtFilingsApi.list,
     enabled: showGenerateModal,
   });
 
@@ -379,7 +372,6 @@ export default function DocumentsPage() {
       const res = await documentsApi.suggestFields({
         template_key: templateKey,
         ...(selectedChatId ? { chat_id: Number(selectedChatId) } : {}),
-        ...(selectedFilingId ? { court_filing_id: Number(selectedFilingId) } : {}),
       });
       setFieldValues((prev) => {
         const next: Record<string, string> = { ...prev };
@@ -494,7 +486,6 @@ export default function DocumentsPage() {
         }
       }
       const chatIdNum = selectedChatId ? Number(selectedChatId) : undefined;
-      const filingIdNum = selectedFilingId ? Number(selectedFilingId) : undefined;
       const generated = await documentsApi.generate({
         template_key: templateKey,
         filename: filename.trim() || 'generated-document',
@@ -502,7 +493,6 @@ export default function DocumentsPage() {
         output_format: outputFormat,
         template_version: selectedTemplate?.version,
         ...(chatIdNum ? { chat_id: chatIdNum } : {}),
-        ...(filingIdNum ? { court_filing_id: filingIdNum } : {}),
       });
       await documentsApi.download(generated.document_id, generated.filename);
       setShowGenerateModal(false);
@@ -533,7 +523,7 @@ export default function DocumentsPage() {
             Загрузить документ
             <input
               type="file"
-              accept=".pdf,.docx,.txt,.doc"
+              accept=".pdf,.docx,.txt,.doc,.jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff"
               onChange={handleFileChange}
               disabled={isUploading}
             />
@@ -551,7 +541,7 @@ export default function DocumentsPage() {
         <EmptyState>
           <EmptyIcon><FileText size={28} /></EmptyIcon>
           <EmptyTitle>Документов пока нет</EmptyTitle>
-          <EmptySub>Загрузите файл PDF, DOCX или TXT для анализа</EmptySub>
+          <EmptySub>Загрузите PDF, DOCX, TXT или фото/скан (JPG/PNG), чтобы ИИ мог проанализировать текст</EmptySub>
         </EmptyState>
       ) : (
         <Grid>
@@ -729,20 +719,9 @@ export default function DocumentsPage() {
                       ))}
                     </Select>
                   </Label>
-                  <Label>
-                    Подача в суд (опционально)
-                    <Select value={selectedFilingId} onChange={(e) => setSelectedFilingId(e.target.value)}>
-                      <option value="">— не использовать —</option>
-                      {filings?.map((f) => (
-                        <option key={f.id} value={String(f.id)}>
-                          {f.case_number} — {f.court_name}
-                        </option>
-                      ))}
-                    </Select>
-                  </Label>
                   <GenerateBtn type="button" onClick={handleSuggestFromContext} disabled={isSuggesting}>
                     <Sparkles size={16} />
-                    {isSuggesting ? 'Подстановка…' : 'Подставить из чата / подачи'}
+                    {isSuggesting ? 'Подстановка…' : 'Подставить из выбранного чата'}
                   </GenerateBtn>
                 </>
               )}

@@ -64,6 +64,26 @@ export const chatApi = {
     await apiClient.delete(`/chat/${chatId}`);
   },
 
+  updateChatTitle: async (chatId: string, title: string): Promise<Chat> => {
+    const response = await apiClient.patch<{
+      id: number;
+      user_id: number | null;
+      title: string | null;
+      message_count?: number;
+      created_at: string;
+      last_message_at?: string | null;
+    }>(`/chat/${chatId}/title`, { title });
+
+    return {
+      id: String(response.data.id),
+      user_id: response.data.user_id ? String(response.data.user_id) : '',
+      title: response.data.title ?? 'Новый чат',
+      message_count: response.data.message_count ?? 0,
+      created_at: response.data.created_at,
+      updated_at: response.data.last_message_at ?? response.data.created_at,
+    };
+  },
+
   /**
    * Отправить сообщение со стримингом ответа (fetch + ReadableStream).
    * Каждый чанк вызывает onChunk, по завершению — onDone.

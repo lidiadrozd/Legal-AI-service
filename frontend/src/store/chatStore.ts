@@ -14,6 +14,7 @@ interface ChatActions {
   setChats: (chats: Chat[]) => void;
   addChat: (chat: Chat) => void;
   removeChat: (chatId: string) => void;
+  updateChatTitle: (chatId: string, title: string) => void;
   setActiveChat: (chat: Chat | null) => void;
   setMessages: (messages: Message[]) => void;
   appendMessage: (message: Message) => void;
@@ -41,6 +42,12 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     set((s) => ({
       chats: s.chats.filter((c) => c.id !== chatId),
       activeChat: s.activeChat?.id === chatId ? null : s.activeChat,
+    })),
+
+  updateChatTitle: (chatId, title) =>
+    set((s) => ({
+      chats: s.chats.map((c) => (c.id === chatId ? { ...c, title } : c)),
+      activeChat: s.activeChat?.id === chatId ? { ...s.activeChat, title } : s.activeChat,
     })),
 
   setActiveChat: (chat) => set({ activeChat: chat }),

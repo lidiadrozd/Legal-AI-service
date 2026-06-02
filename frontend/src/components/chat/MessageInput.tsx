@@ -1,12 +1,14 @@
-import { useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import styled from 'styled-components';
-import { Send, Paperclip, X, StopCircle, Mic } from 'lucide-react';
+import { Send, Paperclip, X, StopCircle, Mic, FolderOpen } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
 import { ALLOWED_EXTENSIONS } from '@/types/document.types';
 import { LEGAL_DISCLAIMER } from '@/constants/legal';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useUIStore } from '@/store/uiStore';
+import { documentsApi } from '@/api/documents';
+import type { Document } from '@/types/document.types';
 
 const Wrap = styled.div`
   padding: 12px 24px 20px;
@@ -96,6 +98,78 @@ const HiddenInput = styled.input`
   display: none;
 `;
 
+const PickerBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+`;
+
+const PickerModal = styled.div`
+  width: min(640px, calc(100vw - 32px));
+  max-height: min(70vh, 520px);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+`;
+
+const PickerHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border);
+`;
+
+const PickerTitle = styled.div`
+  font-weight: 700;
+  color: var(--color-text);
+  font-size: 13px;
+  flex: 1;
+`;
+
+const PickerSearch = styled.input`
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  outline: none;
+  background: var(--color-surface-card);
+  color: var(--color-text);
+  font-size: 13px;
+`;
+
+const PickerList = styled.div`
+  overflow: auto;
+  padding: 8px;
+`;
+
+const PickerItem = styled.button`
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-card);
+  color: var(--color-text);
+  cursor: pointer;
+  margin-bottom: 8px;
+  &:hover { border-color: var(--color-primary); }
+`;
+
+const PickerItemSub = styled.div`
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+`;
+
 const Hint = styled.div`
   text-align: center;
   font-size: 11px;
@@ -112,12 +186,29 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
   const [text, setText] = useState('');
   const [attachedId, setAttachedId] = useState<string | null>(null);
   const [attachedName, setAttachedName] = useState<string | null>(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [pickerQuery, setPickerQuery] = useState('');
+  const [pickerDocs, setPickerDocs] = useState<Document[]>([]);
+  const [isPickerLoading, setIsPickerLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isStreaming = useChatStore((s) => s.isStreaming);
   const { upload, isUploading, progress, reset } = useFileUpload();
   const addToast = useUIStore((s) => s.addToast);
   const voice = useVoiceInput();
+
+  useEffect(() => {
+    if (!isPickerOpen) return;
+    setIsPickerLoading(true);
+    documentsApi
+      .list()
+      .then((docs) => setPickerDocs(docs))
+      .catch(() => {
+        addToast({ type: 'error', message: 'Не удалось загрузить список документов' });
+        setPickerDocs([]);
+      })
+      .finally(() => setIsPickerLoading(false));
+  }, [isPickerOpen, addToast]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -160,6 +251,12 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) handleFile(f);
+  };
+
+  const pickDoc = (doc: Document) => {
+    setAttachedId(doc.id);
+    setAttachedName(doc.title);
+    setIsPickerOpen(false);
   };
 
   const handleVoice = async () => {
@@ -205,6 +302,17 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
           onClick={() => fileInputRef.current?.click()}
         >
           <Paperclip size={16} />
+        </IconBtn>
+        <IconBtn
+          type="button"
+          title="Прикрепить из «Мои документы»"
+          disabled={isStreaming || isUploading || voice.isBusy}
+          onClick={() => {
+            setPickerQuery('');
+            setIsPickerOpen(true);
+          }}
+        >
+          <FolderOpen size={16} />
         </IconBtn>
         {voice.isSupported && (
           <IconBtn
@@ -256,6 +364,49 @@ export function MessageInput({ onSend, onStopStreaming }: Props) {
         {' · '}
         {LEGAL_DISCLAIMER}
       </Hint>
+      {isPickerOpen && (
+        <PickerBackdrop onClick={() => setIsPickerOpen(false)} role="dialog" aria-modal="true">
+          <PickerModal onClick={(e) => e.stopPropagation()}>
+            <PickerHeader>
+              <PickerTitle>Прикрепить документ из «Мои документы»</PickerTitle>
+              <button
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-tertiary)', padding: 2 }}
+                onClick={() => setIsPickerOpen(false)}
+              >
+                <X size={16} />
+              </button>
+            </PickerHeader>
+            <PickerSearch
+              value={pickerQuery}
+              onChange={(e) => setPickerQuery(e.target.value)}
+              placeholder="Поиск по названию…"
+              autoFocus
+            />
+            <PickerList>
+              {isPickerLoading ? (
+                <div style={{ padding: 12, color: 'var(--color-text-tertiary)', fontSize: 13 }}>Загрузка…</div>
+              ) : (
+                pickerDocs
+                  .filter((d) => (d.title || '').toLowerCase().includes(pickerQuery.trim().toLowerCase()))
+                  .slice(0, 50)
+                  .map((d) => (
+                    <PickerItem key={d.id} onClick={() => pickDoc(d)}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{d.title}</div>
+                      <PickerItemSub>id: {d.id}</PickerItemSub>
+                    </PickerItem>
+                  ))
+              )}
+              {!isPickerLoading &&
+                pickerDocs.filter((d) => (d.title || '').toLowerCase().includes(pickerQuery.trim().toLowerCase()))
+                  .length === 0 && (
+                  <div style={{ padding: 12, color: 'var(--color-text-tertiary)', fontSize: 13 }}>
+                    Ничего не найдено
+                  </div>
+                )}
+            </PickerList>
+          </PickerModal>
+        </PickerBackdrop>
+      )}
     </Wrap>
   );
 }

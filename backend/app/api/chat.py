@@ -38,6 +38,10 @@ class SendStreamRequest(BaseModel):
     attachment_ids: list[str] | None = None
 
 
+class UpdateChatTitleRequest(BaseModel):
+    title: str
+
+
 @router.post("/new", response_model=ChatResponse)
 async def create_chat(
     current_user: User = Depends(get_current_user),
@@ -121,6 +125,34 @@ async def delete_chat(
     await db.commit()
     return {"message": "Chat deleted"}
 
+
+@router.patch("/{chat_id}/title", response_model=ChatResponse)
+async def update_chat_title(
+    chat_id: int,
+    payload: UpdateChatTitleRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    title = (payload.title or "").strip()
+    if not title:
+        raise HTTPException(status_code=422, detail="Title cannot be empty")
+
+    result = await db.execute(
+        select(ChatSession).where(
+            ChatSession.id == chat_id,
+            ChatSession.user_id == current_user.id,
+        )
+    )
+    chat_obj = result.scalar_one_or_none()
+    if not chat_obj:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    chat_obj.title = title[:200]
+    db.add(chat_obj)
+    await db.commit()
+    await db.refresh(chat_obj)
+    return ChatResponse.model_validate(chat_obj)
+
 @router.post("/{chat_id}/send_stream")
 async def send_message_stream(
     chat_id: int,
@@ -159,6 +191,18 @@ async def send_message_stream(
         db.add(user_message)
         await db.commit()
         await db.refresh(user_message)
+
+        # Авто-тайтл: если чат ещё не назван, берём краткий смысл из первого сообщения.
+        try:
+            if not (chat_obj.title or "").strip() or (chat_obj.title or "").strip().lower() == "новый чат":
+                title = (message_in.content or "").strip().replace("\n", " ")
+                if len(title) > 64:
+                    title = title[:64].rstrip() + "…"
+                chat_obj.title = title or "Новый чат"
+                db.add(chat_obj)
+                await db.commit()
+        except Exception as title_error:
+            print(f"⚠️ Chat title update unavailable: {title_error}")
 
         try:
             await sync_user_interests_from_message(
