@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Check, X } from 'lucide-react'; // Добавил иконки для наглядности
 import type { FieldError, UseFormRegisterReturn } from 'react-hook-form';
 
 const Field = styled.div`
@@ -50,6 +50,7 @@ const ToggleBtn = styled.button`
 const ErrorText = styled.span`
   font-size: 12px;
   color: var(--color-error);
+  margin-top: 4px;
 `;
 
 const StrengthBar = styled.div`
@@ -57,6 +58,7 @@ const StrengthBar = styled.div`
   background: var(--color-border);
   border-radius: 2px;
   overflow: hidden;
+  margin-top: 8px;
 `;
 
 const StrengthFill = styled.div<{ $level: number }>`
@@ -67,9 +69,25 @@ const StrengthFill = styled.div<{ $level: number }>`
   transition: width 0.2s ease;
 `;
 
-const StrengthHint = styled.span`
+const Requirements = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-sm);
+`;
+
+const ReqItem = styled.div<{ $met: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
-  color: var(--color-text-tertiary);
+  color: ${({ $met }) => ($met ? 'var(--color-primary)' : 'var(--color-text-tertiary)')};
+  transition: color 0.2s ease;
+
+  svg { flex-shrink: 0; }
 `;
 
 function passwordStrength(value: string): number {
@@ -106,6 +124,13 @@ export function PasswordField({
   const [visible, setVisible] = useState(false);
   const strength = passwordStrength(value);
 
+  // Проверки для списка требований
+  const checks = {
+    length: value.length >= 8,
+    upper: /[A-Z]/.test(value),
+    number: /[0-9]/.test(value),
+  };
+
   return (
     <Field>
       <Label htmlFor={id}>{label}</Label>
@@ -113,12 +138,11 @@ export function PasswordField({
         <Input
           id={id}
           type={visible ? 'text' : 'password'}
-          placeholder={placeholder}
+          placeholder="Введите пароль" // Сделали коротким
           $error={!!error}
           autoComplete={autoComplete}
           required
           aria-invalid={!!error}
-          aria-describedby={showStrength ? `${id}-strength` : undefined}
           {...registration}
         />
         <ToggleBtn
@@ -130,20 +154,32 @@ export function PasswordField({
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
         </ToggleBtn>
       </InputWrap>
-      {showStrength && value && (
+
+      {showStrength && (
         <>
-          <StrengthBar id={`${id}-strength`} aria-hidden>
-            <StrengthFill $level={strength} />
-          </StrengthBar>
-          <StrengthHint>
-            {strength < 50
-              ? 'Слабый пароль: минимум 8 символов, заглавная буква и цифра'
-              : strength < 100
-                ? 'Средний пароль'
-                : 'Надёжный пароль'}
-          </StrengthHint>
+          {value && (
+            <StrengthBar id={`${id}-strength`}>
+              <StrengthFill $level={strength} />
+            </StrengthBar>
+          )}
+          
+          <Requirements>
+            <ReqItem $met={checks.length}>
+              {checks.length ? <Check size={12} /> : <X size={12} />}
+              Минимум 8 символов
+            </ReqItem>
+            <ReqItem $met={checks.upper}>
+              {checks.upper ? <Check size={12} /> : <X size={12} />}
+              Одна заглавная буква
+            </ReqItem>
+            <ReqItem $met={checks.number}>
+              {checks.number ? <Check size={12} /> : <X size={12} />}
+              Одна цифра
+            </ReqItem>
+          </Requirements>
         </>
       )}
+      
       {error && <ErrorText role="alert">{error.message}</ErrorText>}
     </Field>
   );

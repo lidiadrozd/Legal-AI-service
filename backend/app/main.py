@@ -25,14 +25,19 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """✅ АСИНХРОННЫЙ Lifecycle"""
     
-    # 🔥 АСИНХРОННАЯ ИНИЦИАЛИЗАЦИЯ БД
+    # 🔥 ИНИЦИАЛИЗАЦИЯ БД (Возвращаем!)
     print("🔄 Инициализация базы данных...")
+    import asyncio # Добавь этот импорт сверху, если его нет
+    await asyncio.sleep(2) # Даем базе 2 секунды "проснуться"
+    
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         print("✅ База данных инициализирована АСИНХРОННО!")
     except Exception as e:
-        print(f"❌ Ошибка БД: {e}")
+        import traceback
+        print("❌ Ошибка БД при создании таблиц:")
+        traceback.print_exc()
 
     # Автосоздание суперадмина из переменных окружения.
     async with AsyncSessionLocal() as db:

@@ -11,10 +11,15 @@ const Bar = styled.header`
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
-  padding: 0 20px;
-  gap: 12px;
+  padding: 0 12px; /* Уменьшил отступы для мобилок */
+  gap: 8px; /* Уменьшил зазор между кнопками */
   background: var(--color-surface);
   flex-shrink: 0;
+
+  @media (min-width: 768px) {
+    padding: 0 20px;
+    gap: 12px;
+  }
 `;
 
 const BurgerBtn = styled.button`
@@ -30,9 +35,16 @@ const BurgerBtn = styled.button`
 
 const Title = styled.div`
   flex: 1;
-  font-size: var(--font-size-md);
+  font-size: 14px; /* Меньше на мобилках */
   font-weight: 600;
   color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Обрезает текст многоточием, если не влезает */
+
+  @media (min-width: 480px) {
+    font-size: var(--font-size-md);
+  }
 `;
 
 const UserMenu = styled.div`
@@ -42,15 +54,20 @@ const UserMenu = styled.div`
 const UserBtn = styled.button`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: var(--color-surface-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  padding: 6px 12px 6px 8px;
+  padding: 4px 8px; /* Компактнее на мобилках */
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   transition: border-color var(--transition-fast), color var(--transition-fast);
   &:hover { border-color: var(--color-border-hover); color: var(--color-text); }
+
+  @media (min-width: 768px) {
+    padding: 6px 12px 6px 8px;
+    gap: 8px;
+  }
 `;
 
 const Dropdown = styled.div<{ $open: boolean }>`
@@ -85,10 +102,18 @@ const DropdownItem = styled.button`
 `;
 
 const UserName = styled.span`
-  max-width: 140px;
+  max-width: 60px; /* Очень узко на мобилках */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  @media (min-width: 480px) {
+    max-width: 140px;
+  }
+  
+  @media (max-width: 360px) {
+    display: none; /* Скрываем имя на совсем маленьких экранах */
+  }
 `;
 
 export function Header() {
