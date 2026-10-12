@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import logging
@@ -10,22 +11,37 @@ from app.models.law_changes import LawChange
 from app.models.notification import Notification
 from app.models.user import User
 from app.models.user_law_interest import UserLawInterest
-from app.services.law_topic_service import build_change_search_text, change_matches_interest
+from app.services.law_topic_service import (
+    build_change_search_text,
+    change_matches_interest,
+)
 from app.services.notification_bus import publish_notification
 
 logger = logging.getLogger(__name__)
 
 
-def _format_law_change_message(change: LawChange, topic_label: str) -> str:
-    change_title = (change.change_title or "").strip() or "Изменение законодательства"
+def _format_law_change_message(
+    change: LawChange,
+    topic_label: str,
+) -> str:
+    change_title = (
+        (change.change_title or "").strip()
+        or "Изменение законодательства"
+    )
+
     date_str = None
     if change.change_date is not None:
         try:
             date_str = change.change_date.date().isoformat()
         except Exception:
             date_str = None
-    description = (change.description or "").strip() or "Описание изменения не предоставлено источником."
+
+    description = (
+        (change.description or "").strip()
+        or "Описание изменения не предоставлено источником."
+    )
     link = (change.source_url or "").strip()
+
     lines = [
         f"По теме «{topic_label}» обнаружено изменение законодательства.",
         f"📄 {change_title}",
@@ -35,40 +51,66 @@ def _format_law_change_message(change: LawChange, topic_label: str) -> str:
         "Что изменилось:",
         description,
     ]
-    return "\n".join(line for line in lines if line is not None).strip()
+
+    return "\n".join(
+        line for line in lines if line is not None
+    ).strip()
 
 
-async def dispatch_law_change_notifications(db: AsyncSession, *, lookback_days: int = 2) -> int:
+async def dispatch_law_change_notifications(
+    db: AsyncSession,
+    *,
+    lookback_days: int = 2,
+) -> int:
     since = datetime.utcnow() - timedelta(days=lookback_days)
+
     changes_result = await db.execute(
-        select(LawChange).where(LawChange.created_at >= since).order_by(LawChange.created_at.asc())
+        select(LawChange)
+        .where(LawChange.created_at >= since)
+        .order_by(LawChange.created_at.asc())
     )
     changes = list(changes_result.scalars().all())
+
     if not changes:
         return 0
 
     interests_result = await db.execute(select(UserLawInterest))
     interests = list(interests_result.scalars().all())
+
     if not interests:
         return 0
 
-    users_result = await db.execute(select(User).where(User.is_active == True))  # noqa: E712
-    active_users = {user.id: user for user in users_result.scalars().all()}
+    users_result = await db.execute(
+        select(User).where(User.is_active == True)  # noqa: E712
+    )
+    active_users = {
+        user.id: user
+        for user in users_result.scalars().all()
+    }
+
     created_count = 0
+    pending_publications: list[tuple[int, dict]] = []
 
     for change in changes:
         category = None
         if isinstance(change.diff, dict):
             category = change.diff.get("category")
+
         change_text = build_change_search_text(
             title=change.change_title,
             description=change.description,
             category=category,
         )
+
         matched_users: dict[int, UserLawInterest] = {}
+
         for interest in interests:
-            if not change_matches_interest(change_text, interest.keywords):
+            if not change_matches_interest(
+                change_text,
+                interest.keywords,
+            ):
                 continue
+
             if interest.user_id not in matched_users:
                 matched_users[interest.user_id] = interest
 
@@ -77,8 +119,12 @@ async def dispatch_law_change_notifications(db: AsyncSession, *, lookback_days: 
             if user is None:
                 continue
 
-            change_title = (change.change_title or "").strip() or "Изменение законодательства"
+            change_title = (
+                (change.change_title or "").strip()
+                or "Изменение законодательства"
+            )
             title = f"LAW_CHANGE#{change.id}: {change_title}"
+
             exists_result = await db.execute(
                 select(Notification.id).where(
                     Notification.user_id == user.id,
@@ -86,10 +132,15 @@ async def dispatch_law_change_notifications(db: AsyncSession, *, lookback_days: 
                     Notification.title == title,
                 )
             )
+
             if exists_result.scalar_one_or_none() is not None:
                 continue
 
-            message = _format_law_change_message(change, interest.topic_label)
+            message = _format_law_change_message(
+                change,
+                interest.topic_label,
+            )
+
             notification = Notification(
                 user_id=user.id,
                 title=title,
@@ -98,12 +149,14 @@ async def dispatch_law_change_notifications(db: AsyncSession, *, lookback_days: 
                 severity="medium",
                 is_read=False,
             )
+
             db.add(notification)
             await db.flush()
             created_count += 1
 
-            try:
-                publish_notification(
+            pending_publications.append(
+                (
+                    user.id,
                     {
                         "title": title,
                         "message": message,
@@ -117,14 +170,26 @@ async def dispatch_law_change_notifications(db: AsyncSession, *, lookback_days: 
                             "topic_label": interest.topic_label,
                         },
                     },
-                    user_id=user.id,
                 )
-            except Exception:
-                logger.exception(
-                    "Redis publish failed for law_change notification user_id=%s",
-                    user.id,
-                )
+            )
 
     if created_count > 0:
+        # Сначала сохраняем уведомления в PostgreSQL.
         await db.commit()
+
+        # Только после успешного commit публикуем события в Redis.
+        for user_id, payload in pending_publications:
+            try:
+                publish_notification(
+                    payload,
+                    user_id=user_id,
+                )
+            except Exception:
+                # Ошибка Redis не отменяет уже сохранённую запись.
+                logger.exception(
+                    "Redis publish failed for law_change "
+                    "notification user_id=%s",
+                    user_id,
+                )
+
     return created_count
