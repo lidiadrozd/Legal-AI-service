@@ -1,6 +1,8 @@
 from datetime import datetime
 from pathlib import Path
 
+import pytest
+
 from app.services.law_change_parser import (
     parse_consultant_category,
     parse_consultant_index,
@@ -61,3 +63,48 @@ def test_topic_extraction_and_matching():
         "о внесении изменений в жилищный кодекс российской федерации",
         topics[0].keywords,
     )
+
+
+def test_json_revisions_preserve_paragraphs_and_ignore_non_text():
+    parsed = parse_json_changes({"changes": [
+        {"title": "Поправка", "old_version": "  Срок 5 дней.\nВторая часть.  ",
+         "new_version": "Срок 10 дней.\nВторая часть."},
+        {"title": "Обзор", "description": "Краткое описание", "old_version": {},
+         "new_version": ["Не текст редакции"]},
+    ]}, "https://example.org/changes")
+    assert parsed[0].old_version == "Срок 5 дней.\nВторая часть."
+    assert parsed[0].new_version == "Срок 10 дней.\nВторая часть."
+    assert parsed[1].old_version is None
+    assert parsed[1].new_version is None
+
+
+@pytest.mark.asyncio
+async def test_import_preserves_revisions_without_inventing_them(db_session):
+    from app.models.law_changes import LawChange, LawDocument
+    from app.services.law_change_monitor import persist_parsed_changes
+
+    connection = await db_session.connection()
+    await connection.run_sync(lambda conn: LawDocument.__table__.create(conn))
+    await connection.run_sync(lambda conn: LawChange.__table__.create(conn))
+    parsed = parse_json_changes({"changes": [
+        {"title": "Поправка со сравнением", "description": "Обзор изменения срока",
+         "old_version": "Срок 5 дней.", "new_version": "Срок 10 дней.",
+         "document_number": "DEMO-1"},
+        {"title": "Поправка только с обзором", "description": "Описание без редакции",
+         "document_number": "DEMO-2"},
+    ]}, "https://example.org/changes")
+    created = await persist_parsed_changes(db_session, parsed)
+    assert len(created) == 2
+    await db_session.refresh(created[0])
+    assert created[0].old_version == "Срок 5 дней."
+    assert created[0].new_version == "Срок 10 дней."
+    assert created[0].description == "Обзор изменения срока"
+    assert created[1].old_version is None
+    assert created[1].new_version is None
+    assert await persist_parsed_changes(db_session, parsed) == []
+    # A later revision of the same law must not disappear as a duplicate.
+    newer = parse_json_changes({"changes": [{"title": "Поправка со сравнением",
+        "date": "2026-10-11", "description": "Следующее изменение",
+        "document_number": "DEMO-1"}]}, "https://example.org/changes")
+    assert len(await persist_parsed_changes(db_session, newer)) == 1
+    assert await persist_parsed_changes(db_session, newer) == []

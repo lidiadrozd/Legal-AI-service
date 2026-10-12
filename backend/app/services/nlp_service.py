@@ -10,6 +10,7 @@ from app.core.prompts import format_chat_context, get_system_prompt
 from app.services.document_draft_validator import process_document_response
 from app.services.gigachat_client import get_gigachat_client
 from app.services.llm_cost import TokenUsage
+from app.services.answer_norms import answer_references
 from app.services.response_cache import build_cache_key, response_cache
 
 
@@ -18,6 +19,7 @@ class NLPGenerateResult:
     text: str
     cached: bool
     usage: TokenUsage
+    references: tuple[dict, ...] = ()
 
 
 class NLPService:
@@ -48,6 +50,7 @@ class NLPService:
                 text=cached,
                 cached=True,
                 usage=TokenUsage(0, 0, 0, False),
+                references=answer_references(cached, (context or {}).get("rag_sources", [])),
             )
 
         client = await get_gigachat_client()
@@ -59,6 +62,15 @@ class NLPService:
             dialog_state=dialog_state,
         )
 
+        system_prompt += ("\nПри использовании закона или статьи указывай полную ссылку рядом с утверждением: "
+                          "«ТК РФ, статья 10» либо «Федеральный закон от ДД.ММ.ГГГГ № НН-ФЗ, статья Н». "
+                          "Для ГК РФ указывай часть кодекса и реквизиты закона, если это не часть первая. "
+                          "Повторяй название закона или кодекса рядом с каждым номером статьи; не заменяй его словами «указанного закона». Не придумывай номера, даты и статьи. Не добавляй неиспользованные нормы ради списка.")
+        if (context or {}).get("rag_sources"):
+            system_prompt += ("\nЕсли используешь правовую норму из предоставленного источника, "
+                              "укажи рядом с утверждением его метку [Источник N]. "
+                              "Используй только метки предоставленных источников. "
+                              "Полученный фрагмент, который не использован в ответе, не цитируй.")
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_query},
@@ -77,4 +89,5 @@ class NLPService:
             text=final_response,
             cached=False,
             usage=completion.usage,
+            references=answer_references(final_response, (context or {}).get("rag_sources", [])),
         )

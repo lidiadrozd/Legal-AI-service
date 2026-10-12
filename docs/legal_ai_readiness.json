@@ -1,0 +1,25 @@
+{
+  "rag_threshold": 0.2,
+  "ca_file_available": true,
+  "gigachat": {
+    "state": "ok",
+    "cached": false,
+    "tracked_references": 1,
+    "cited_parts": [
+      "16"
+    ]
+  },
+  "live_monitor": {
+    "state": "error",
+    "error_type": "ConnectTimeout"
+  },
+  "offered_sources": 1,
+  "catalog_sources": 3,
+  "checked_at": "2026-10-11",
+  "api_http_status": 200,
+  "backend_tests": {
+    "passed": 196,
+    "skipped": 1
+  },
+  "scope": "Read-only live GigaChat and source checks; notification dispatch verified separately using temporary test database and mocked external services."
+}

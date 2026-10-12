@@ -1,0 +1,19 @@
+{
+  "changes": [
+    {
+      "title": "Вымышленный акт о поправках",
+      "document_number": "TRAINING-AMENDING-1",
+      "date": "2026-10-09",
+      "description": "В статье 7 части 1 учебных правил срок ответа увеличен с пяти до семи дней.",
+      "url": "https://example.org/training/amending-act",
+      "affected_norms": [
+        {
+          "document_key": "training:service-rules",
+          "article": "7",
+          "part": "1",
+          "point": ""
+        }
+      ]
+    }
+  ]
+}

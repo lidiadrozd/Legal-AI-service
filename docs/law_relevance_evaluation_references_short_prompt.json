@@ -1,0 +1,137 @@
+{
+  "notice": "Вымышленные нормы и ситуации; проверка ссылки ассистента на статью. Не действующее законодательство.",
+  "model": "GigaChat",
+  "fixture_sha256": "b30c7e7d9721599986ccae4b99394c0f2955f5e90a9f2b637a30ba6a7441d230",
+  "checker_sha256": "d09b0a6460f3ec57ca968dcc76cbded283556a666566f81fd2cd481ff694b1ef",
+  "started_at": "2026-10-11T05:45:32.199968+00:00",
+  "state": "completed",
+  "results": [
+    {
+      "id": "personal_request",
+      "expected": "relevant",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Личное обращение соответствует условиям нормы.",
+      "conditions": [],
+      "law_analysis": null,
+      "law_coverage": {
+        "state": "missing_analysis",
+        "passed": false
+      },
+      "failure_stage": "law_analysis",
+      "error_code": "Source quote absent from law text"
+    },
+    {
+      "id": "business_request",
+      "expected": "irrelevant",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Обращение для бизнеса прямо исключено.",
+      "conditions": [],
+      "law_analysis": null,
+      "law_coverage": {
+        "state": "missing_analysis",
+        "passed": false
+      },
+      "failure_stage": "law_analysis",
+      "error_code": "Source quote absent from law text"
+    },
+    {
+      "id": "relative_request",
+      "expected": "irrelevant",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Обращение другого человека не доказывает личное влияние.",
+      "conditions": [],
+      "law_analysis": null,
+      "law_coverage": {
+        "state": "missing_analysis",
+        "passed": false
+      },
+      "failure_stage": "law_analysis",
+      "error_code": "Source quote absent from law text"
+    },
+    {
+      "id": "purpose_unknown",
+      "expected": "insufficient_data",
+      "actual": "insufficient_data",
+      "passed": true,
+      "reason": "Не хватает данных для проверки: Пользователь сообщил, что он физическое лицо; Пользователь подал обращение за учебной услугой; Цель получения услуги не уточнял",
+      "rationale": "Без цели нельзя подтвердить применимость.",
+      "conditions": [
+        {
+          "id": "c1",
+          "kind": "role",
+          "requirement": "Человек является физическим лицом",
+          "source_quote": "Физическим лицам",
+          "condition": "Человек является физическим лицом",
+          "verdict": "met",
+          "fact": "Пользователь сообщил, что он физическое лицо",
+          "evidence": "Я физическое лицо"
+        },
+        {
+          "id": "c2",
+          "kind": "activity",
+          "requirement": "Человек подал обращение за учебной услугой для себя",
+          "source_quote": "подавшим обращение за учебной услугой для себя",
+          "condition": "Человек подал обращение за учебной услугой для себя",
+          "verdict": "met",
+          "fact": "Пользователь подал обращение за учебной услугой",
+          "evidence": "Подал обращение за учебной услугой"
+        },
+        {
+          "id": "c3",
+          "kind": "other",
+          "requirement": "Цель обращения — получение учебной услуги для себя",
+          "source_quote": "для себя",
+          "condition": "Цель обращения — получение учебной услуги для себя",
+          "verdict": "unknown",
+          "fact": "Цель получения услуги не уточнял",
+          "evidence": "Не уточнял цель получения услуги"
+        }
+      ],
+      "law_analysis": {
+        "groups": [
+          {
+            "conditions": [
+              {
+                "id": "c1",
+                "kind": "role",
+                "requirement": "Человек является физическим лицом",
+                "source_quote": "Физическим лицам"
+              },
+              {
+                "id": "c2",
+                "kind": "activity",
+                "requirement": "Человек подал обращение за учебной услугой для себя",
+                "source_quote": "подавшим обращение за учебной услугой для себя"
+              },
+              {
+                "id": "c3",
+                "kind": "other",
+                "requirement": "Цель обращения — получение учебной услуги для себя",
+                "source_quote": "для себя"
+              }
+            ],
+            "id": "g1"
+          }
+        ],
+        "sufficient": true,
+        "summary": "Увеличение срока ответа с пяти до семи дней для физических лиц, обратившихся за учебной услугой для себя"
+      },
+      "law_coverage": {
+        "state": "checked",
+        "passed": true
+      }
+    }
+  ],
+  "passed": 1,
+  "total": 4,
+  "errors": 3,
+  "law_coverage_passed": 1,
+  "law_coverage_total": 4,
+  "false_positives": 0
+}

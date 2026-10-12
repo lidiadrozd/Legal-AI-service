@@ -1,0 +1,35 @@
+{
+  "notice": "Начальный каталог: три части одной статьи, не полная база. Текст проверен по публичной странице Consultant; редакционные примечания и будущие поправки не включены.",
+  "sources": [
+    {
+      "file": "103_fz_article_4_part_14.txt",
+      "document_key": "ru:103-fz:2009-06-03",
+      "article": "4",
+      "part": "14",
+      "point": "",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_88274/58b11f91f39085a94afe793248a1f36e549e8c54/",
+      "revision": "2026-04-09",
+      "sha256": "c4c68207004e81f6620ad318255f25d17fcbfb8273e867eb3d6c18d02ad07d71"
+    },
+    {
+      "file": "103_fz_article_4_part_15.txt",
+      "document_key": "ru:103-fz:2009-06-03",
+      "article": "4",
+      "part": "15",
+      "point": "",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_88274/58b11f91f39085a94afe793248a1f36e549e8c54/",
+      "revision": "2026-04-09",
+      "sha256": "b67cfaf781fe462a9360ad335506516aed957544b72ecb2bb6990f62025f83c7"
+    },
+    {
+      "file": "103_fz_article_4_part_16.txt",
+      "document_key": "ru:103-fz:2009-06-03",
+      "article": "4",
+      "part": "16",
+      "point": "",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_88274/58b11f91f39085a94afe793248a1f36e549e8c54/",
+      "revision": "2026-04-09",
+      "sha256": "6ba2777776ce60e6692b204078958ba4ae62774da08babf1b834f282b0c51661"
+    }
+  ]
+}

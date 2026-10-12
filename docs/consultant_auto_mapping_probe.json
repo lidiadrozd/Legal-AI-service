@@ -1,0 +1,27 @@
+{
+  "checked_at": "2026-10-11T06:29:04.306291+00:00",
+  "source_url": "https://www.consultant.ru/document/cons_doc_LAW_33770/7da1469f17f5828226d438db1d178d28a1622ac9/",
+  "notice": "A successfully fetched live publication snapshot was parsed with a diagnostic document-ID mapping. The separate live overview fetch timed out. No production catalog, database or notifications changed.",
+  "state": "live_publication_snapshot_verified",
+  "overview_attempt": {
+    "state": "error",
+    "error_type": "ConnectTimeout"
+  },
+  "publication_url": "https://www.consultant.ru/document/cons_doc_LAW_540358/bdb2754392763f4c0afbdb3bc7ea77ef6a5287c4/",
+  "catalog_note": "Diagnostic document ID mapping only; no production catalog changed.",
+  "mapped": [
+    {
+      "article": "4",
+      "part": "16",
+      "evidence": {
+        "method": "consultant_explicit_link",
+        "publication_url": "https://www.consultant.ru/document/cons_doc_LAW_540358/bdb2754392763f4c0afbdb3bc7ea77ef6a5287c4/",
+        "target_url": "https://www.consultant.ru/document/cons_doc_LAW_531456/58b11f91f39085a94afe793248a1f36e549e8c54/#dst9",
+        "target_label": "Часть 16 статьи 4",
+        "instruction": "Часть 16 статьи 4 Федерального закона от 3 июня 2009 года N 103-ФЗ \"О деятельности по приему платежей физических лиц, осуществляемой платежными агентами\" (Собрание законодательства Российской Федерации, 2009, N 23, ст. 2758; 2011, N 27, ст. 3873; 2014, N 19, ст. 2315; 2016, N 27, ст. 4223; 2018, N 17, ст. 2429; 2019, N 52, ст. 7831; 2023, N 29, ст. 5305, 5316; N 52, ст. 9515) дополнить пунктом 2.1 следующего содержания:",
+        "source_sha256": "86ebc5f19254ee42f5f3f1183081ad24dcf6d459fadeb278bd115edfb1f43e48"
+      }
+    }
+  ],
+  "retrieval_note": "The publication HTTPS fetch succeeded with trust_env=False and TLS verification enabled. Runtime proxy settings were not changed."
+}

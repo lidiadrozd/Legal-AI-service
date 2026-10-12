@@ -31,6 +31,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+# Отдельная Git-копия для переноса изменений в общий репозиторий
+.team-transfer/
 *.manifest
 *.spec
 pip-wheel-metadata/

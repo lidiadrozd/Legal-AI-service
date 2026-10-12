@@ -1,5 +1,28 @@
 import { create } from 'zustand';
+import { z } from 'zod';
 import { notificationsApi } from '@/api/notifications';
+
+const notificationMetaSchema = z.object({
+  notification_basis: z.enum(['article_change', 'personal_relevance']).optional(),
+  personal_relevance_checked: z.boolean().optional(),
+  law_change_id: z.number().int().positive().optional(),
+  chat_id: z.number().int().positive().nullable().optional(),
+  related_chat_ids: z.array(z.number().int().positive()).optional(),
+  reference_ids: z.array(z.number().int().positive()).optional(),
+  norms: z.array(z.object({
+    document_key: z.string(), article: z.string(), part: z.string(), point: z.string(),
+  })).optional(),
+  reasons: z.array(z.string()).optional(),
+  topic_key: z.string().optional(),
+  topic_label: z.string().optional(),
+});
+
+export type NotificationMeta = z.infer<typeof notificationMetaSchema>;
+
+export function parseNotificationMeta(raw: unknown): NotificationMeta | undefined {
+  const parsed = notificationMetaSchema.safeParse(raw);
+  return parsed.success ? parsed.data : undefined;
+}
 
 export interface Notification {
   id: string;
@@ -9,6 +32,7 @@ export interface Notification {
   icon: string;
   read: boolean;
   createdAt: string;
+  meta?: NotificationMeta;
 }
 
 export interface ServerNotificationRow {
@@ -19,6 +43,7 @@ export interface ServerNotificationRow {
   severity?: string | null;
   is_read: boolean;
   created_at: string;
+  meta?: NotificationMeta | null;
 }
 
 interface NotificationState {
@@ -33,6 +58,7 @@ export type IncomingNotification = {
   icon: string;
   serverId?: number;
   createdAt?: string;
+  meta?: NotificationMeta;
 };
 
 interface NotificationActions {
@@ -64,6 +90,7 @@ export const useNotificationStore = create<NotificationState & NotificationActio
         icon: n.icon,
         read: false,
         createdAt: n.createdAt ?? new Date().toISOString(),
+        meta: n.meta,
       };
       return {
         notifications: [notification, ...s.notifications],
@@ -81,6 +108,7 @@ export const useNotificationStore = create<NotificationState & NotificationActio
       icon: '🔔',
       read: row.is_read,
       createdAt: row.created_at,
+      meta: parseNotificationMeta(row.meta),
     }));
     const unreadCount = notifications.filter((n) => !n.read).length;
     set({ notifications, unreadCount });

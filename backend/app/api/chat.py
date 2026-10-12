@@ -25,7 +25,8 @@ from app.core.config import settings
 from app.services.chat_document_context import load_user_documents_text
 from app.services.llm_cost import record_llm_usage
 from app.services.nlp_service import NLPService
-from app.services.rag_context import build_rag_context
+from app.services.rag_context import build_rag_bundle
+from app.services.law_reference_service import save_chat_law_references
 
 router = APIRouter(prefix="/chat", tags=["💬 Chat"])
 
@@ -227,7 +228,7 @@ async def send_message_stream(
         # 4. RAG контекст + изменения законов + прикреплённые документы.
         context = {"docs": [], "rag": "", "law_db_size": 0, "attached_documents": []}
         try:
-            context["rag"] = build_rag_context(message_in.content)
+            context["rag"], context["rag_sources"] = build_rag_bundle(message_in.content)
             relevant_laws = await get_relevant_law_changes_for_user(
                 db,
                 user_id=current_user.id,
@@ -262,7 +263,9 @@ async def send_message_stream(
         )
     
     # 5. Реальный ответ от GigaChat + SSE стриминг
+    assistant_id = assistant_message.id
     async def generate_stream():
+        answer_saved = False
         try:
             yield f"data: {json.dumps({'message_id': assistant_message.id}, ensure_ascii=False)}\n\n"
 
@@ -298,6 +301,18 @@ async def send_message_stream(
                 usage=nlp_result.usage,
             )
 
+            # Persist the answer and its cited references before signalling completion.
+            assistant_message.content = full_response
+            await db.flush()
+            await save_chat_law_references(
+                db, user_id=current_user.id, chat_id=chat_id, user_message_id=user_message.id,
+                assistant_message_id=assistant_message.id,
+                references=getattr(nlp_result, "references", ()),
+            )
+            await db.commit()
+
+            answer_saved = True
+
             # Стриминг по символам-блокам с сохранением пробелов и переносов
             chunk_size = 24
             for i in range(0, len(full_response), chunk_size):
@@ -308,22 +323,17 @@ async def send_message_stream(
 
             yield "data: [DONE]\n\n"
 
-            # Обновляем финальный ответ ассистента
-            await db.execute(
-                update(Message)
-                .where(Message.id == assistant_message.id)
-                .values(content=full_response)
-            )
-            await db.commit()
 
         except Exception as e:
+            await db.rollback()
             error_text = f"Ошибка GigaChat: {str(e)}"
-            await db.execute(
-                update(Message)
-                .where(Message.id == assistant_message.id)
-                .values(content=error_text)
-            )
-            await db.commit()
+            if not answer_saved:
+                await db.execute(
+                    update(Message)
+                    .where(Message.id == assistant_id)
+                    .values(content=error_text)
+                )
+                await db.commit()
             yield f"data: {json.dumps({'content': error_text}, ensure_ascii=False)}\n\n"
             yield "data: [DONE]\n\n"
     

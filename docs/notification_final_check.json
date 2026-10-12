@@ -1,0 +1,16 @@
+{
+  "isolation": "temporary_postgresql_schema_and_redis_namespace",
+  "live_model": true,
+  "rag_enabled": false,
+  "change_source": "previously_verified_snapshot",
+  "saved_references": 1,
+  "redis_event_received": true,
+  "notifications_created": 1,
+  "repeat_notifications_created": 0,
+  "notification_basis": "article_change",
+  "linked_chat_accessible": true,
+  "other_user_isolated": true,
+  "mark_read_verified": true,
+  "temporary_schema_deleted": true,
+  "state": "ok"
+}

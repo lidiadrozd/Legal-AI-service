@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { getNotificationWebSocketUrl } from '@/config/apiEnv';
 import { useAuthStore } from '@/store/authStore';
-import { useNotificationStore, type IncomingNotification } from '@/store/notificationStore';
+import { useNotificationStore, parseNotificationMeta, type IncomingNotification } from '@/store/notificationStore';
 import { useUIStore } from '@/store/uiStore';
 
 const RECONNECT_DELAY_MS = 3000;
@@ -69,6 +69,7 @@ export function useNotificationWS() {
             icon: typeof data.icon === 'string' ? data.icon : '🔔',
             serverId,
             createdAt,
+            meta: parseNotificationMeta(data.meta),
           };
           addNotification(notification);
           if (notification.severity === 'high' || notification.severity === 'critical') {

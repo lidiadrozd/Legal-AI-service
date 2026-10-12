@@ -1,0 +1,20 @@
+{
+  "real_browser": true,
+  "live_model": true,
+  "public_database": true,
+  "question_contains_article_number": false,
+  "stage": "database_reference",
+  "chats_created": 1,
+  "assistant_saved": true,
+  "model_usage_recorded": false,
+  "saved_references": 0,
+  "tk_article_80_saved": false,
+  "references_belong_to_chat": false,
+  "model_http_statuses": [
+    500
+  ],
+  "ui_opened_created_chat": true,
+  "state": "error",
+  "error_type": "AssertionError",
+  "demo_data_deleted": true
+}

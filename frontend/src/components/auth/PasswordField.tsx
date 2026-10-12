@@ -138,11 +138,12 @@ export function PasswordField({
         <Input
           id={id}
           type={visible ? 'text' : 'password'}
-          placeholder="Введите пароль" // Сделали коротким
+          placeholder={placeholder}
           $error={!!error}
           autoComplete={autoComplete}
           required
           aria-invalid={!!error}
+          aria-describedby={showStrength ? `${id}-requirements` : undefined}
           {...registration}
         />
         <ToggleBtn
@@ -163,7 +164,7 @@ export function PasswordField({
             </StrengthBar>
           )}
           
-          <Requirements>
+          <Requirements id={`${id}-requirements`}>
             <ReqItem $met={checks.length}>
               {checks.length ? <Check size={12} /> : <X size={12} />}
               Минимум 8 символов

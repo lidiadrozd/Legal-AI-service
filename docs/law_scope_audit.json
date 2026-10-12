@@ -1,0 +1,228 @@
+{
+  "checked_at": "2026-10-11T16:39:09.577535+00:00",
+  "applied": true,
+  "entries": [
+    {
+      "change_id": 9,
+      "document_key": "ru:294-fz:2008-12-26",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_543942/",
+      "revision_date": "2026-02-20T00:00:00+00:00",
+      "is_amending_act": false,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 10,
+      "document_key": "ru:666-fz:2023-12-25",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544583/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 11,
+      "document_key": "ru:440-fz:2023-08-04",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544585/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 12,
+      "document_key": "ru:230-fz:2022-06-28",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544589/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 13,
+      "document_key": "ru:391-fz:2017-12-05",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544587/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 27,
+      "document_key": "ru:117-fz:2000-08-05",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_519179/",
+      "revision_date": "2026-08-04T00:00:00+00:00",
+      "is_amending_act": false,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 14,
+      "document_key": "ru:227-fz:2016-07-03",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544590/",
+      "revision_date": "2026-08-04T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 15,
+      "document_key": "ru:230-fz:2015-07-13",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544592/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 16,
+      "document_key": "ru:534-fz:2014-12-31",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544593/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 17,
+      "document_key": "ru:185-fz:2013-07-02",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544591/",
+      "revision_date": "2025-11-04T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 18,
+      "document_key": "ru:169-fz:2011-07-01",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544580/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 19,
+      "document_key": "ru:4-fz:2011-02-07",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544588/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 29,
+      "document_key": "ru:79-fz:2004-07-27",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_528378/",
+      "revision_date": "2026-09-29T00:00:00+00:00",
+      "is_amending_act": false,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 20,
+      "document_key": "ru:374-fz:2009-12-27",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544584/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 21,
+      "document_key": "ru:267-fz:2009-11-25",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544578/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 22,
+      "document_key": "ru:272-fz:2008-12-22",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544586/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 23,
+      "document_key": "ru:118-fz:2006-07-18",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544582/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 24,
+      "document_key": "ru:59-fz:2005-06-06",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544581/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 25,
+      "document_key": "ru:15-fz:2003-01-10",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544579/",
+      "revision_date": "2024-11-30T00:00:00+00:00",
+      "is_amending_act": true,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 26,
+      "document_key": "ru:117-fz:1997-07-21",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_544707/",
+      "revision_date": "2026-08-04T00:00:00+00:00",
+      "is_amending_act": false,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 30,
+      "document_key": "ru:117-fz:2000-08-05",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_545593/",
+      "revision_date": "2026-08-04T00:00:00+00:00",
+      "is_amending_act": false,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    },
+    {
+      "change_id": 31,
+      "document_key": "ru:395-1:1990-12-02",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_545740/",
+      "revision_date": "2026-08-04T00:00:00+00:00",
+      "is_amending_act": false,
+      "status": "unresolved",
+      "reason": "amendment_link_missing",
+      "event_kind": "edition_listing"
+    }
+  ],
+  "unconfirmed_entries": 22,
+  "amending_act_entries": 16
+}

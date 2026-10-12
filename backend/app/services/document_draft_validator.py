@@ -8,21 +8,9 @@ from pydantic import ValidationError
 
 from app.schemas.document_draft import DocumentDraftResponse
 
-DOCUMENT_REQUEST_KEYWORDS = (
-    "документ",
-    "претенз",
-    "исков",
-    "иск ",
-    "ходатайств",
-    "договор",
-    "заявлен",
-    "жалоб",
-    "составь",
-    "сформируй",
-    "оформи",
-    "подготовь",
-    "черновик",
-)
+DOCUMENT_KIND_RE = re.compile(r"\b(?:документ\w*|претенз\w*|исков\w*|иск|ходатайств\w*|договор\w*|заявлен\w*|жалоб\w*)", re.I)
+DOCUMENT_ACTION_RE = re.compile(r"\b(?:составь(?:те)?|составить|сформируй(?:те)?|сформировать|оформи(?:те)?|оформить|подготовь(?:те)?|подготовить|напиши(?:те)?|написать|создай(?:те)?|создать)\s+(?:мне\s+)?(?:пожалуйста[, ]+)?(?:проект\s+|черновик\s+|текст\s+)?(?:юридическ\w*\s+|исков\w*\s+)?(?:документ\w*|претенз\w*|иск\w*|ходатайств\w*|договор\w*|заявлен\w*|жалоб\w*)", re.I)
+
 
 REQUISITE_LABELS = {
     "document_type": "Вид документа",
@@ -40,7 +28,14 @@ REQUISITE_LABELS = {
 
 def is_document_generation_request(user_query: str) -> bool:
     normalized = (user_query or "").lower()
-    return any(keyword in normalized for keyword in DOCUMENT_REQUEST_KEYWORDS)
+    # Discussing a contract or an employer's request to sign one is ordinary advice.
+    # A drafting request needs an action, rather than a document noun alone.
+    if re.search(r"\b(?:как|зачем|почему)\s+(?:мне\s+)?(?:составить|оформить|подготовить|написать)\b", normalized):
+        return False
+    if re.search(r"\b(?:требует|просит|заставляет)\s+(?:меня\s+)?(?:составить|оформить|подготовить|написать)\b", normalized):
+        return False
+    return bool(DOCUMENT_ACTION_RE.search(normalized) or
+                (re.search(r"\b(?:нужен|нужна|нужно)\s+(?:мне\s+)?(?:черновик|образец|шаблон|текст)\b", normalized) and DOCUMENT_KIND_RE.search(normalized)))
 
 
 def extract_json_object(text: str) -> dict[str, Any] | None:

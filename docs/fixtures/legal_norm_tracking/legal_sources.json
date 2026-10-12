@@ -1,0 +1,15 @@
+{
+  "notice": "Вымышленные данные. Каталог для тестов, не действующее законодательство.",
+  "sources": [
+    {
+      "file": "article_7.txt",
+      "document_key": "training:service-rules",
+      "article": "7",
+      "part": "1",
+      "point": "",
+      "source_url": "https://example.org/training/service-rules#article-7",
+      "revision": "training-v1",
+      "sha256": "643df697e3b90dd9bc36d0618a5bbdde775692d972006b3f36900a96d86d2d40"
+    }
+  ]
+}

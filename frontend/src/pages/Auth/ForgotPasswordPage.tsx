@@ -106,7 +106,7 @@ const SuccessBox = styled.div`
 const Footer = styled.div`
   text-align: center;
   margin-top: 24px;
-  
+
   a {
     display: inline-flex;
     align-items: center;
@@ -133,7 +133,7 @@ export default function ForgotPasswordPage() {
       setSent(true);
     } catch (err) {
       setError('root', {
-        message: 'Не удалось отправить письмо. Возможно, сервис почты временно недоступен или указан неверный email.',
+        message: getApiErrorMessage(err, 'Не удалось отправить письмо. Попробуйте позже.'),
       });
     }
   };
@@ -144,7 +144,7 @@ export default function ForgotPasswordPage() {
         <div style={{ marginBottom: 12 }}><Mail size={40} color="var(--color-success)" /></div>
         <Title>Проверьте почту</Title>
         <Sub>
-          Мы отправили инструкции по сбросу пароля на ваш email. 
+          Если аккаунт с таким email существует, мы отправили инструкции по сбросу пароля.
           Если письма нет, проверьте папку «Спам».
         </Sub>
         <Footer>
@@ -158,7 +158,7 @@ export default function ForgotPasswordPage() {
     <>
       <Title>Восстановление доступа</Title>
       <Sub>Введите email, указанный при регистрации, и мы пришлем ссылку для сброса пароля</Sub>
-      
+
       <Form onSubmit={handleSubmit(onSubmit)}>
         {errors.root && (
           <ServerError>
@@ -166,7 +166,7 @@ export default function ForgotPasswordPage() {
             {errors.root.message}
           </ServerError>
         )}
-        
+
         <Field>
           <Label>Ваш Email</Label>
           <Input

@@ -1,0 +1,13 @@
+{
+  "http_status": 200,
+  "balances": [
+    {
+      "usage": "embeddings",
+      "value": 639566368
+    },
+    {
+      "usage": "GigaChat",
+      "value": 71841907
+    }
+  ]
+}
