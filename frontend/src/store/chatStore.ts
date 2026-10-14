@@ -34,7 +34,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   streamingContent: '',
   streamingMessageId: null,
 
-  setChats: (chats) => set({ chats }),
+  setChats: (chats) => set({ chats: [...chats].sort((a, b) =>
+    Date.parse(b.created_at) - Date.parse(a.created_at) || Number(b.id) - Number(a.id)
+  ) }),
 
   addChat: (chat) => set((s) => ({ chats: [chat, ...s.chats] })),
 
@@ -82,7 +84,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       isStreaming: false,
       streamingContent: '',
       streamingMessageId: null,
-      messages: [...messages, assistantMessage],
+      messages: messages.some((message) => message.id === assistantMessage.id)
+        ? messages.map((message) => message.id === assistantMessage.id ? assistantMessage : message)
+        : [...messages, assistantMessage],
     });
   },
 

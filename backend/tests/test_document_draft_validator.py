@@ -90,3 +90,10 @@ def test_document_mentions_do_not_destroy_ordinary_answers(query):
 ])
 def test_explicit_drafting_requests_remain_supported(query):
     assert is_document_generation_request(query)
+
+
+@pytest.mark.parametrize("query", [
+    "Можешь мне создать такой договор?", "Создай этот договор", "Подготовь такую претензию",
+])
+def test_followup_drafting_request_accepts_demonstrative_words(query):
+    assert is_document_generation_request(query)

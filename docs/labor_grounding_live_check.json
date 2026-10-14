@@ -1,0 +1,34 @@
+{
+  "live_model": true,
+  "cases": [
+    {
+      "question": "В какой срок работодатель должен выплатить компенсацию за неиспользованный отпуск при увольнении по ст. 127 ТК РФ, если работник отработал менее 3 месяцев?",
+      "answer": "Ошибка GigaChat: Не удалось подключиться к API GigaChat.",
+      "cites_140": false,
+      "includes_exception": false,
+      "has_source_marker": false,
+      "no_claim_that_verification_unnecessary": true,
+      "model_error": true
+    },
+    {
+      "question": "Когда выплатят компенсацию за неиспользованный отпуск при увольнении?",
+      "answer": "Ошибка GigaChat: Не удалось подключиться к API GigaChat.",
+      "cites_140": false,
+      "includes_exception": false,
+      "has_source_marker": false,
+      "no_claim_that_verification_unnecessary": true,
+      "model_error": true
+    },
+    {
+      "question": "Работник не работал в день увольнения. Когда должна быть выплачена компенсация за неиспользованный отпуск?",
+      "answer": "Ошибка GigaChat: Не удалось подключиться к API GigaChat.",
+      "cites_140": false,
+      "includes_exception": false,
+      "has_source_marker": false,
+      "no_claim_that_verification_unnecessary": true,
+      "model_error": true
+    }
+  ],
+  "state": "blocked_external_service",
+  "temporary_account_deleted": true
+}

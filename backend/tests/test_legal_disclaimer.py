@@ -1,12 +1,18 @@
 from app.core.legal_disclaimer import LEGAL_DISCLAIMER, with_legal_disclaimer
 
 
-def test_with_legal_disclaimer_appends_once():
-    rendered = with_legal_disclaimer("Ответ ассистента.")
-    assert rendered.endswith(LEGAL_DISCLAIMER)
-    assert rendered.count(LEGAL_DISCLAIMER) == 1
+def test_notice_is_not_appended_to_every_answer():
+    assert with_legal_disclaimer("Ответ ассистента.") == "Ответ ассистента."
+    assert with_legal_disclaimer("") == ""
 
 
-def test_with_legal_disclaimer_keeps_existing_disclaimer():
-    text = f"Ответ.\n\n{LEGAL_DISCLAIMER}"
-    assert with_legal_disclaimer(text) == text
+def test_legacy_notice_is_removed_without_changing_facts():
+    assert with_legal_disclaimer(f"ТК РФ, статья 140.\n\n{LEGAL_DISCLAIMER}") == "ТК РФ, статья 140."
+
+
+def test_legacy_labels_are_russian_markdown():
+    result = with_legal_disclaimer("В день увольнения. confidence: high\n[РЕКОМЕНДАЦИЯ] Проверьте расчёт.")
+    assert "**Уверенность:** высокая" in result
+    assert "**Рекомендация:** Проверьте расчёт." in result
+    assert "В день увольнения." in result
+    assert "confidence" not in result

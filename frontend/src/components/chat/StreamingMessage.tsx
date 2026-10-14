@@ -1,6 +1,7 @@
 import styled, { keyframes } from 'styled-components';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { presentAssistantMessage } from '@/utils/assistantPresentation';
 
 const blink = keyframes`
   0%, 100% { opacity: 1; }
@@ -80,7 +81,7 @@ export function StreamingMessage({ content }: Props) {
           <>
             <MarkdownContent>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {content}
+                {presentAssistantMessage(content)}
               </ReactMarkdown>
             </MarkdownContent>
             <Cursor />

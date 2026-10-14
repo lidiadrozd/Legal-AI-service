@@ -58,6 +58,44 @@ async def norm_db(db_session):
     return db_session
 
 
+@pytest.mark.asyncio
+async def test_stream_persists_answer_after_dependency_closes_session(monkeypatch, norm_db, test_user):
+    from app.api import chat as chat_api
+    from app.api.deps import get_current_user
+    from app.db.session import get_db
+    from app.services.answer_norms import answer_references
+    from app.services.llm_cost import TokenUsage
+
+    norm_db.add(test_user)
+    await norm_db.commit()
+    answer = "Срок расчёта: ТК РФ, статья 140."
+    result = nlp_service.NLPGenerateResult(answer, False, TokenUsage(1, 1, 2, False), answer_references(answer, []))
+    monkeypatch.setattr(chat_api._nlp_service, "generate_response", AsyncMock(return_value=result))
+    monkeypatch.setattr(chat_api, "build_rag_bundle", lambda query: ("", []))
+    app = FastAPI()
+    app.include_router(chat_api.router)
+
+    async def closing_dependency():
+        try:
+            yield norm_db
+        finally:
+            await norm_db.close()
+
+    app.dependency_overrides[get_db] = closing_dependency
+    app.dependency_overrides[get_current_user] = lambda: test_user
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        chat = await client.post("/chat/new")
+        chat_id = chat.json()["id"]
+        sent = await client.post(f"/chat/{chat_id}/send_stream", json={"content": "Когда выплачивается расчёт при увольнении?"})
+        chunks = [json.loads(line[6:]).get("content", "") for line in sent.text.splitlines() if line.startswith("data: {")]
+        assert "".join(chunks) == answer
+        history = await client.get(f"/chat/{chat_id}/history")
+        saved = [message for message in history.json() if message["role"] == "assistant"]
+        assert saved[0]["content"] == answer
+    references = list(await norm_db.scalars(select(ChatLawReference).where(ChatLawReference.chat_id == chat_id)))
+    assert len(references) == 1 and references[0].article == "140"
+
+
 def test_catalog_rejects_changed_file_and_escaping_path(tmp_path):
     for name in ("article_7.txt", "legal_sources.json"):
         (tmp_path / name).write_bytes((SAMPLE / name).read_bytes())
@@ -279,8 +317,8 @@ def test_parser_does_not_guess_affected_norm_from_act_number():
 def test_initial_real_catalog_retrieval(monkeypatch):
     root = Path(__file__).resolve().parents[1] / "rag_docs"
     catalog = load_legal_source_catalog(root)
-    assert len(catalog) == 3
-    assert {source.norm.part for source in catalog.values()} == {"14", "15", "16"}
+    payment_sources = [source for source in catalog.values() if source.norm.document_key == "ru:103-fz:2009-06-03"]
+    assert {source.norm.part for source in payment_sources} == {"14", "15", "16"}
     monkeypatch.setattr(settings, "RAG_DOCS_PATH", str(root))
     monkeypatch.setattr(settings, "RAG_ENABLED", True)
     monkeypatch.setattr(settings, "RAG_RERANK_THRESHOLD", 0.2)

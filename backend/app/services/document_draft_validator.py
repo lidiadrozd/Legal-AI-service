@@ -7,6 +7,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.schemas.document_draft import DocumentDraftResponse
+from app.core.prompts import LEGAL_SCOPE_REFUSAL
 
 DOCUMENT_KIND_RE = re.compile(r"\b(?:документ\w*|претенз\w*|исков\w*|иск|ходатайств\w*|договор\w*|заявлен\w*|жалоб\w*)", re.I)
 DOCUMENT_ACTION_RE = re.compile(r"\b(?:составь(?:те)?|составить|сформируй(?:те)?|сформировать|оформи(?:те)?|оформить|подготовь(?:те)?|подготовить|напиши(?:те)?|написать|создай(?:те)?|создать)\s+(?:мне\s+)?(?:пожалуйста[, ]+)?(?:проект\s+|черновик\s+|текст\s+)?(?:юридическ\w*\s+|исков\w*\s+)?(?:документ\w*|претенз\w*|иск\w*|ходатайств\w*|договор\w*|заявлен\w*|жалоб\w*)", re.I)
@@ -28,11 +29,12 @@ REQUISITE_LABELS = {
 
 def is_document_generation_request(user_query: str) -> bool:
     normalized = (user_query or "").lower()
+    normalized = re.sub(r"\b(?:такой|такую|этот|эту|аналогичный|аналогичную)\s+", "", normalized)
     # Discussing a contract or an employer's request to sign one is ordinary advice.
     # A drafting request needs an action, rather than a document noun alone.
-    if re.search(r"\b(?:как|зачем|почему)\s+(?:мне\s+)?(?:составить|оформить|подготовить|написать)\b", normalized):
+    if re.search(r"\b(?:как|зачем|почему)\s+(?:мне\s+)?(?:составить|оформить|подготовить|написать|создать|сформировать)\b", normalized):
         return False
-    if re.search(r"\b(?:требует|просит|заставляет)\s+(?:меня\s+)?(?:составить|оформить|подготовить|написать)\b", normalized):
+    if re.search(r"\b(?:требует|просит|заставляет)\s+(?:меня\s+)?(?:составить|оформить|подготовить|написать|создать|сформировать)\b", normalized):
         return False
     return bool(DOCUMENT_ACTION_RE.search(normalized) or
                 (re.search(r"\b(?:нужен|нужна|нужно)\s+(?:мне\s+)?(?:черновик|образец|шаблон|текст)\b", normalized) and DOCUMENT_KIND_RE.search(normalized)))
@@ -64,6 +66,26 @@ def validate_document_draft_payload(payload: dict[str, Any]) -> DocumentDraftRes
     return DocumentDraftResponse.model_validate(payload)
 
 
+DOCUMENT_FORMAT_RETRY = (
+    "Предыдущий ответ не прошёл проверку JSON документа. Верни тот же документ "
+    "ровно одним валидным JSON-объектом по схеме из системных правил. "
+    "Не меняй известные факты и не добавляй новые; неизвестные данные оставь "
+    "явными заполнителями. Экранируй переносы строк и кавычки внутри строк. "
+    "Без Markdown и пояснений вне JSON."
+)
+
+
+def is_valid_document_response(response_text: str) -> bool:
+    payload = extract_json_object(response_text)
+    if payload is None:
+        return False
+    try:
+        validate_document_draft_payload(payload)
+    except ValidationError:
+        return False
+    return True
+
+
 def format_document_draft_for_user(draft: DocumentDraftResponse) -> str:
     lines = [draft.title.strip(), "", draft.text.strip(), "", "Реквизиты:"]
     requisites = draft.requisites.model_dump(exclude_none=True)
@@ -80,6 +102,9 @@ def format_document_draft_for_user(draft: DocumentDraftResponse) -> str:
 def process_document_response(user_query: str, response_text: str) -> str:
     if not is_document_generation_request(user_query):
         return response_text
+
+    if response_text.strip() == LEGAL_SCOPE_REFUSAL:
+        return LEGAL_SCOPE_REFUSAL
 
     payload = extract_json_object(response_text)
     if payload is None:

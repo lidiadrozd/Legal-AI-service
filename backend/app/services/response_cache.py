@@ -11,7 +11,7 @@ from app.services.rag_context import serialize_chat_context
 
 logger = logging.getLogger(__name__)
 
-_CACHE_PREFIX = "legal_ai:chat_response:citation-v2:"
+_CACHE_PREFIX = "legal_ai:chat_response:citation-v7:"
 _WHITESPACE_RE = re.compile(r"\s+")
 
 

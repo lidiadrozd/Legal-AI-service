@@ -302,8 +302,12 @@ async def send_message_stream(
             )
 
             # Persist the answer and its cited references before signalling completion.
-            assistant_message.content = full_response
-            await db.flush()
+            # Streaming may start after dependency cleanup detached this ORM object.
+            # An explicit UPDATE persists the reply regardless of the identity map.
+            await db.execute(
+                update(Message).where(Message.id == assistant_id, Message.chat_id == chat_id)
+                .values(content=full_response)
+            )
             await save_chat_law_references(
                 db, user_id=current_user.id, chat_id=chat_id, user_message_id=user_message.id,
                 assistant_message_id=assistant_message.id,
