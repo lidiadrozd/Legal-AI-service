@@ -61,13 +61,22 @@ async def dispatch_law_change_notifications(
     db: AsyncSession,
     *,
     lookback_days: int = 2,
+    change_ids: list[int] | None = None,
 ) -> int:
     since = datetime.utcnow() - timedelta(days=lookback_days)
 
+    if change_ids is not None and not change_ids:
+        return 0
+
+    query = select(LawChange).where(
+        LawChange.created_at >= since
+    )
+
+    if change_ids is not None:
+        query = query.where(LawChange.id.in_(change_ids))
+
     changes_result = await db.execute(
-        select(LawChange)
-        .where(LawChange.created_at >= since)
-        .order_by(LawChange.created_at.asc())
+        query.order_by(LawChange.created_at.asc())
     )
     changes = list(changes_result.scalars().all())
 
