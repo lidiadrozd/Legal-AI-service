@@ -183,10 +183,8 @@ async def dispatch_law_change_notifications(
             )
 
     if created_count > 0:
-        # Сначала сохраняем уведомления в PostgreSQL.
         await db.commit()
 
-        # Только после успешного commit публикуем события в Redis.
         for user_id, payload in pending_publications:
             try:
                 publish_notification(
@@ -194,7 +192,6 @@ async def dispatch_law_change_notifications(
                     user_id=user_id,
                 )
             except Exception:
-                # Ошибка Redis не отменяет уже сохранённую запись.
                 logger.exception(
                     "Redis publish failed for law_change "
                     "notification user_id=%s",
