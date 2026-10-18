@@ -1,1 +1,1 @@
-export const LEGAL_DISCLAIMER = 'Не является юридической консультацией.';
+export const LEGAL_DISCLAIMER = 'ИИ может ошибаться. Перед важными решениями проверьте ответ с юристом.';

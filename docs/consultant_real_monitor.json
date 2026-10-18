@@ -1,0 +1,18 @@
+{
+  "started_at": "2026-10-11T15:59:03.595639+00:00",
+  "synthetic_changes": false,
+  "new_changes": 0,
+  "notifications_created": 0,
+  "sources": [
+    {
+      "last_success_at": null,
+      "last_error": "ConnectTimeout",
+      "coverage_gap": false,
+      "completed_periods": 0,
+      "pending_periods": 0
+    }
+  ],
+  "norm_mappings_total": 0,
+  "state": "incomplete_source_check",
+  "finished_at": "2026-10-11T15:59:34.283382+00:00"
+}

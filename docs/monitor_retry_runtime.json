@@ -1,0 +1,48 @@
+{
+  "daily_hour_yekaterinburg": 11,
+  "retry_hours_yekaterinburg": [
+    12,
+    14,
+    17
+  ],
+  "task_state": "SUCCESS",
+  "sources": [
+    {
+      "last_attempt_at": "2026-10-11T16:10:48.932883+00:00",
+      "last_success_at": "2026-10-11T16:15:08.660001+00:00",
+      "last_error": null,
+      "coverage_gap": false,
+      "completed_periods": 4,
+      "pending_periods": 0
+    }
+  ],
+  "law_changes_total": 24,
+  "norm_mappings_total": 23,
+  "norm_examples": [
+    {
+      "document_key": "ru:294-fz:2008-12-26",
+      "article": "",
+      "part": ""
+    },
+    {
+      "document_key": "ru:666-fz:2023-12-25",
+      "article": "",
+      "part": ""
+    },
+    {
+      "document_key": "ru:440-fz:2023-08-04",
+      "article": "",
+      "part": ""
+    },
+    {
+      "document_key": "ru:230-fz:2022-06-28",
+      "article": "",
+      "part": ""
+    },
+    {
+      "document_key": "ru:391-fz:2017-12-05",
+      "article": "",
+      "part": ""
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
+import { Link } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { useNotificationStore } from '@/store/notificationStore';
 import type { Notification } from '@/store/notificationStore';
@@ -58,6 +59,8 @@ const Panel = styled.div<{ $open: boolean }>`
 
   @media (max-width: 480px) {
     position: fixed;
+    top: calc(var(--header-height) + 8px);
+    max-height: min(420px, calc(100dvh - var(--header-height) - 24px));
     right: 16px;
     left: 16px; /* Растягиваем почти на всю ширину на очень мелких экранах */
     width: auto;
@@ -104,7 +107,7 @@ const Item = styled.div<{ $unread: boolean }>`
   gap: 10px;
   padding: 12px 14px;
   border-bottom: 1px solid var(--color-border);
-  background: ${({ $unread }) => ($unread ? 'rgba(var(--color-primary-rgb), 0.05)' : 'transparent')};
+  background: ${({ $unread }) => ($unread ? 'var(--color-primary-muted)' : 'transparent')};
   transition: background 0.2s ease;
   &:last-child { border-bottom: none; }
   &:hover { background: var(--color-surface-hover); }
@@ -147,6 +150,21 @@ const ItemTime = styled.div`
   margin-top: 6px;
 `;
 
+const ChatLink = styled(Link)`
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--color-primary);
+`;
+
+const Details = styled.details`
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  summary { cursor: pointer; }
+  p { white-space: pre-wrap; overflow-wrap: anywhere; }
+`;
+
 const Empty = styled.div`
   padding: 40px 14px;
   text-align: center;
@@ -159,13 +177,29 @@ function formatTime(iso: string): string {
   return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
 
-function NotificationItem({ n }: { n: Notification }) {
+function NotificationItem({ n, onNavigate }: { n: Notification; onNavigate: () => void }) {
+  const chatIds = n.meta?.related_chat_ids?.length
+    ? n.meta.related_chat_ids
+    : n.meta?.chat_id ? [n.meta.chat_id] : [];
+  const title = n.meta?.notification_basis === 'article_change'
+    ? n.title.replace(/^LAW_CHANGE#\d+:\s*/, '') : n.title;
   return (
     <Item $unread={!n.read}>
-      <ItemIcon>{n.icon || '🔔'}</ItemIcon>
+      <ItemIcon>{n.icon || "🔔"}</ItemIcon>
       <ItemBody>
-        <ItemTitle>{n.title}</ItemTitle>
+        <ItemTitle>{title}</ItemTitle>
         <ItemText>{n.body}</ItemText>
+        {n.meta?.notification_basis === 'article_change' && (
+          <Details>
+            <summary>Подробнее об изменении</summary>
+            <p>{n.body}</p>
+          </Details>
+        )}
+        {chatIds.map((chatId, index) => (
+          <ChatLink key={chatId} to={`/chat/${chatId}`} onClick={onNavigate}>
+            {chatIds.length === 1 ? 'Открыть прежний вопрос' : `Связанный вопрос ${index + 1}`}
+          </ChatLink>
+        ))}
         <ItemTime>{formatTime(n.createdAt)}</ItemTime>
       </ItemBody>
     </Item>
@@ -194,11 +228,11 @@ export function NotificationBell() {
 
   return (
     <Wrap ref={wrapRef}>
-      <BellBtn onClick={() => setOpen((v) => !v)} title="Уведомления">
+      <BellBtn aria-label="Уведомления" aria-expanded={open} aria-controls="notifications-panel" onClick={() => setOpen((v) => !v)} title="Уведомления">
         <Bell size={18} />
         {unreadCount > 0 && <Badge>{unreadCount > 99 ? '99+' : unreadCount}</Badge>}
       </BellBtn>
-      <Panel $open={open}>
+      <Panel id="notifications-panel" $open={open}>
         <PanelHeader>
           <PanelTitle>Уведомления</PanelTitle>
           {unreadCount > 0 && (
@@ -209,7 +243,7 @@ export function NotificationBell() {
           {notifications.length === 0 ? (
             <Empty>Нет уведомлений</Empty>
           ) : (
-            notifications.map((n) => <NotificationItem key={n.id} n={n} />)
+            notifications.map((n) => <NotificationItem key={n.id} n={n} onNavigate={() => setOpen(false)} />)
           )}
         </List>
       </Panel>

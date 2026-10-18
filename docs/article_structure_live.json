@@ -1,0 +1,7 @@
+{
+  "test": "real_article_structure",
+  "attempt": 3,
+  "transport_retries": 2,
+  "state": "unconfirmed",
+  "reason": "ReadTimeout"
+}

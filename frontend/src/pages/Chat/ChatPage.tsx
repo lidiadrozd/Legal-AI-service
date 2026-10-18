@@ -71,6 +71,9 @@ export default function ChatPage() {
   }, [loadChats]);
 
   useEffect(() => {
+    const state = useChatStore.getState();
+    // The first send changes /chat to /chat/:id while its stream is already active.
+    if (chatId && state.activeChat?.id === chatId && state.isStreaming) return;
     useChatStore.getState().resetStreaming();
     if (chatId) {
       openChat(chatId);

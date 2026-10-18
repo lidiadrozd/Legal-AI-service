@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import logging
+import hashlib
+import json
 import math
 import re
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 from app.core.config import settings
+from app.services.legal_sources import LegalSource, load_legal_source_catalog
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +22,7 @@ class RagChunk:
     source: str
     text: str
     score: float = 0.0
+    legal_source: LegalSource | None = None
 
 
 class RagIndex:
@@ -52,7 +56,7 @@ class RagIndex:
         query_vector = self._vectorize(query)
         ranked = sorted(
             (
-                RagChunk(source=chunk.source, text=chunk.text, score=self._cosine(query_vector, vector))
+                replace(chunk, score=self._cosine(query_vector, vector))
                 for chunk, vector in zip(self._chunks, self._vectors)
             ),
             key=lambda item: item.score,
@@ -71,7 +75,7 @@ class RagIndex:
             overlap = len(query_terms & chunk_terms) / max(len(query_terms), 1)
             score = (chunk.score * 0.7) + (overlap * 0.3)
             if score >= threshold:
-                rescored.append(RagChunk(source=chunk.source, text=chunk.text, score=score))
+                rescored.append(replace(chunk, score=score))
         return sorted(rescored, key=lambda item: item.score, reverse=True)
 
 
@@ -108,21 +112,22 @@ def _load_chunks() -> list[RagChunk]:
     if not root.exists():
         return []
     chunks: list[RagChunk] = []
+    catalog = load_legal_source_catalog(root)
     for path in sorted(root.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in {".txt", ".md"}:
             continue
         try:
-            text = path.read_text(encoding="utf-8")
-        except OSError:
+            raw = path.read_bytes()
+            text = raw.decode("utf-8")
+        except (OSError, UnicodeError):
             logger.warning("Failed to read RAG document: %s", path)
             continue
-        chunks.extend(
-            _chunk_text(
-                text,
-                source=str(path.relative_to(root)),
-                max_chars=settings.RAG_CHUNK_MAX_CHARS,
-            )
-        )
+        source_name = path.relative_to(root).as_posix()
+        legal_source = catalog.get(source_name)
+        if legal_source and hashlib.sha256(raw).hexdigest() != legal_source.sha256:
+            legal_source = None
+        chunks.extend(replace(chunk, legal_source=legal_source) for chunk in
+                      _chunk_text(text, source=source_name, max_chars=settings.RAG_CHUNK_MAX_CHARS))
     return chunks
 
 
@@ -133,12 +138,12 @@ def get_rag_index() -> RagIndex:
     return _INDEX
 
 
-def build_rag_context(query: str) -> str:
+def build_rag_bundle(query: str) -> tuple[str, list[dict]]:
     if not settings.RAG_ENABLED:
-        return ""
+        return "", []
     index = get_rag_index()
     if not index._chunks:
-        return ""
+        return "", []
 
     candidates = index.vector_search(query, top_k=settings.RAG_VECTOR_TOP_K)
     ranked = RagIndex.rerank(
@@ -148,12 +153,23 @@ def build_rag_context(query: str) -> str:
     )
     selected = ranked[: settings.RAG_MAX_CONTEXT_CHUNKS]
     if not selected:
-        return ""
+        return "", []
 
     lines = ["Релевантные фрагменты базы знаний (сжатый контекст):"]
+    sources = []
     for idx, chunk in enumerate(selected, start=1):
-        lines.append(f"[{idx}] {chunk.source}\n{chunk.text.strip()}")
-    return "\n\n".join(lines)
+        label = f"[Источник {idx}]" if chunk.legal_source else ""
+        metadata = ""
+        if chunk.legal_source:
+            source = chunk.legal_source
+            metadata = f"\nСтатья: {source.norm.article}; часть: {source.norm.part}; пункт: {source.norm.point}; редакция: {source.revision}; ссылка: {source.source_url}"
+            sources.append({"citation_id": idx, "legal_source": source, "text": chunk.text})
+        lines.append(f"[{idx}] {label} {chunk.source}{metadata}\n{chunk.text.strip()}")
+    return "\n\n".join(lines), sources
+
+
+def build_rag_context(query: str) -> str:
+    return build_rag_bundle(query)[0]
 
 
 def serialize_chat_context(context: dict | str | None) -> str:
@@ -163,6 +179,12 @@ def serialize_chat_context(context: dict | str | None) -> str:
         return context.strip() or "Нет дополнительного контекста."
 
     parts: list[str] = []
+    # Cache identity must include the curated norm metadata, not only its text.
+    for item in context.get("rag_sources", []):
+        source = item.get("legal_source")
+        if isinstance(source, LegalSource):
+            parts.append(json.dumps({"citation_id": item["citation_id"], "source": asdict(source)},
+                                    ensure_ascii=False, sort_keys=True))
     rag = (context.get("rag") or "").strip()
     if rag:
         parts.append(rag)

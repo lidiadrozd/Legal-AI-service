@@ -132,6 +132,12 @@ export const chatApi = {
 
     const decoder = new TextDecoder();
     let messageId = '';
+    let completed = false;
+    const complete = () => {
+      if (completed) return;
+      completed = true;
+      onDone(messageId);
+    };
     let buffer = '';
 
     try {
@@ -152,7 +158,7 @@ export const chatApi = {
 
           const payload = dataLines.join('\n');
           if (payload === '[DONE]') {
-            onDone(messageId);
+            complete();
             return;
           }
 
@@ -193,7 +199,7 @@ export const chatApi = {
       onError('Ошибка при получении ответа');
     } finally {
       reader.releaseLock();
-      onDone(messageId);
+      complete();
     }
   },
 };

@@ -1,0 +1,28 @@
+{
+  "targets": [
+    {
+      "url": "https://www.consultant.ru/document/cons_doc_LAW_531456/58b11f91f39085a94afe793248a1f36e549e8c54/#dst9",
+      "resolved_url": "https://www.consultant.ru/document/cons_doc_LAW_88274/58b11f91f39085a94afe793248a1f36e549e8c54/#dst9",
+      "status": 200,
+      "catalog_match": true
+    }
+  ],
+  "mapped_norms": [
+    {
+      "norm": {
+        "document_key": "ru:103-fz:2009-06-03",
+        "article": "4",
+        "part": "16",
+        "point": ""
+      },
+      "evidence": {
+        "method": "consultant_explicit_link",
+        "publication_url": "https://www.consultant.ru/document/cons_doc_LAW_540358/bdb2754392763f4c0afbdb3bc7ea77ef6a5287c4/",
+        "target_url": "https://www.consultant.ru/document/cons_doc_LAW_531456/58b11f91f39085a94afe793248a1f36e549e8c54/#dst9",
+        "target_label": "Часть 16 статьи 4",
+        "instruction": "Часть 16 статьи 4 Федерального закона от 3 июня 2009 года N 103-ФЗ \"О деятельности по приему платежей физических лиц, осуществляемой платежными агентами\" (Собрание законодательства Российской Федерации, 2009, N 23, ст. 2758; 2011, N 27, ст. 3873; 2014, N 19, ст. 2315; 2016, N 27, ст. 4223; 2018, N 17, ст. 2429; 2019, N 52, ст. 7831; 2023, N 29, ст. 5305, 5316; N 52, ст. 9515) дополнить пунктом 2.1 следующего содержания:",
+        "source_sha256": "e55089e4384fc547259bb7c8ce80680d4ccf65e937272f0d2e4aef5c5a617abd"
+      }
+    }
+  ]
+}

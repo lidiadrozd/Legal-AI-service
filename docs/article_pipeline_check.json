@@ -1,0 +1,13 @@
+{
+  "synthetic_http": true,
+  "real_postgresql": true,
+  "baseline_notifications": 0,
+  "saved_reference": true,
+  "changed_article": "80",
+  "notifications_created": 1,
+  "repeated_notifications": 0,
+  "other_user_isolated": true,
+  "source_texts_saved": true,
+  "temporary_schema_deleted": true,
+  "state": "ok"
+}

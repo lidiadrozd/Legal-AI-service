@@ -1,0 +1,56 @@
+{
+  "live_model": true,
+  "rag_enabled": false,
+  "changes": "synthetic",
+  "cases": [
+    {
+      "turns": 2,
+      "name": "dismissal",
+      "saved_norms": [],
+      "citation_lines": [],
+      "state": "missing_article_reference",
+      "other_users_notifications_absent": true
+    },
+    {
+      "turns": 1,
+      "name": "consumer",
+      "saved_norms": [
+        {
+          "document_key": "ru:2300-1:1992-02-07",
+          "article": "18",
+          "part": "",
+          "point": ""
+        },
+        {
+          "document_key": "ru:2300-1:1992-02-07",
+          "article": "17",
+          "part": "",
+          "point": ""
+        }
+      ],
+      "citation_lines": [
+        "Вам следует действовать согласно Закону РФ «О защите прав потребителей».",
+        "1. Обратитесь к продавцу с письменной претензией, изложив требование о возврате денег или замене товара (статья 18 Закона РФ «О защите прав потребителей»).  ",
+        "3. Потребуйте составления акта о выявленных недостатках (статья 18 Закона РФ «О защите прав потребителей»).",
+        "Если продавец откажет вам в удовлетворении претензии, обратитесь в суд с иском о защите прав потребителя (статья 17 Закона РФ «О защите прав потребителей»)."
+      ],
+      "unrelated_notifications_created": 0,
+      "has_whole_law_reference": false,
+      "matching_notifications_created": 1,
+      "repeat_notifications_created": 0,
+      "linked_chat_correct": true,
+      "state": "ok",
+      "other_users_notifications_absent": true
+    },
+    {
+      "turns": 2,
+      "name": "rent",
+      "saved_norms": [],
+      "citation_lines": [],
+      "state": "missing_article_reference",
+      "other_users_notifications_absent": true
+    }
+  ],
+  "temporary_schema_deleted": true,
+  "state": "needs_review"
+}

@@ -1,0 +1,52 @@
+{
+  "state": "ok",
+  "parsed_changes": 4,
+  "mapped_norms": [
+    {
+      "document_key": "ru:103-fz:2009-06-03",
+      "article": "4",
+      "part": "16",
+      "point": ""
+    }
+  ],
+  "trace": [
+    {
+      "url": "https://www.consultant.ru/document/cons_doc_LAW_33770/7da1469f17f5828226d438db1d178d28a1622ac9/",
+      "status": 200,
+      "resolved": "https://www.consultant.ru/document/cons_doc_LAW_33770/7da1469f17f5828226d438db1d178d28a1622ac9/",
+      "bytes": 33767
+    },
+    {
+      "url": "https://www.consultant.ru/document/cons_doc_LAW_545739/",
+      "status": 200,
+      "resolved": "https://www.consultant.ru/document/cons_doc_LAW_88274/",
+      "bytes": 40127
+    },
+    {
+      "url": "https://www.consultant.ru/document/cons_doc_LAW_540358/bdb2754392763f4c0afbdb3bc7ea77ef6a5287c4/#dst100150",
+      "error_type": "ReadTimeout"
+    },
+    {
+      "url": "https://www.consultant.ru/document/cons_doc_LAW_540358/bdb2754392763f4c0afbdb3bc7ea77ef6a5287c4/#dst100150",
+      "status": 200,
+      "resolved": "https://www.consultant.ru/document/cons_doc_LAW_540358/bdb2754392763f4c0afbdb3bc7ea77ef6a5287c4/#dst100150",
+      "bytes": 33487
+    },
+    {
+      "url": "https://www.consultant.ru/document/cons_doc_LAW_531456/58b11f91f39085a94afe793248a1f36e549e8c54/#dst9",
+      "error_type": "ReadTimeout"
+    },
+    {
+      "url": "https://www.consultant.ru/document/cons_doc_LAW_531456/58b11f91f39085a94afe793248a1f36e549e8c54/#dst9",
+      "status": 200,
+      "resolved": "https://www.consultant.ru/document/cons_doc_LAW_88274/58b11f91f39085a94afe793248a1f36e549e8c54/#dst9",
+      "bytes": 137481
+    }
+  ],
+  "checked_at": "2026-10-11",
+  "verification_scope": "One live Consultant overview category, original document redirect, amendment page and target article redirect; no database writes or notification dispatch.",
+  "backend_tests": {
+    "passed": 202,
+    "skipped": 1
+  }
+}

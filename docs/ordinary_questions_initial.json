@@ -1,0 +1,37 @@
+{
+  "live_model": true,
+  "rag_enabled": false,
+  "changes": "synthetic",
+  "cases": [
+    {
+      "name": "dismissal",
+      "saved_norms": [],
+      "citation_lines": [],
+      "state": "missing_article_reference",
+      "other_users_notifications_absent": true
+    },
+    {
+      "name": "consumer",
+      "saved_norms": [],
+      "citation_lines": [
+        "Требуется проверка по актуальной редакции Закона РФ «О защите прав потребителей».",
+        "1. Согласно ст. 18 указанного закона, потребитель вправе потребовать замены товара или возврата денег при обнаружении недостатков в течение гарантийного срока или срока годности (ваш случай – три дня после покупки).  ",
+        "2. Продавец обязан принять товар ненадлежащего качества и провести проверку качества (ст. 18 п. 5).  ",
+        "3. Если продавец отказывается удовлетворить требование потребителя, последний имеет право обратиться с претензией (ст. 22).  ",
+        "4. При несогласии с результатами проверки потребитель вправе самостоятельно организовать независимую экспертизу (ст. 18 п. 5).",
+        "1. Направьте письменную претензию продавцу с требованием возврата денежных средств (срок – 10 дней согласно ст. 22).  "
+      ],
+      "state": "missing_article_reference",
+      "other_users_notifications_absent": true
+    },
+    {
+      "name": "rent",
+      "saved_norms": [],
+      "citation_lines": [],
+      "state": "missing_article_reference",
+      "other_users_notifications_absent": true
+    }
+  ],
+  "temporary_schema_deleted": true,
+  "state": "needs_review"
+}

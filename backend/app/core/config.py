@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
 from functools import lru_cache
 import os
+from pathlib import Path
 
 class Settings(BaseSettings):
     # ========================================
@@ -31,8 +32,12 @@ class Settings(BaseSettings):
     # ========================================
     GIGACHAT_CLIENT_ID: str = os.getenv('GIGACHAT_CLIENT_ID', "")  # ✅ Дефолт!
     GIGACHAT_CLIENT_SECRET: str = os.getenv('GIGACHAT_CLIENT_SECRET', "")  # ✅ Дефолт!
+    GIGACHAT_AUTH_KEY: str = ""  # Optional ready-made Base64 authorization key.
     GIGACHAT_MODEL: str = "GigaChat"
     GIGACHAT_SCOPE: str = "GIGACHAT_API_B2B"
+    GIGACHAT_CA_BUNDLE_FILE: str = str(
+        Path(__file__).resolve().parents[2] / "certs" / "russian_trusted_root_ca.pem"
+    )
     GIGACHAT_PRICE_PER_1K_TOKENS: float = 0.065
 
     # ========================================
@@ -56,7 +61,7 @@ class Settings(BaseSettings):
     ENABLE_PGVECTOR: bool = True  # ✅ Обязательно!
     RAG_ENABLED: bool = True
     RAG_VECTOR_TOP_K: int = 3
-    RAG_RERANK_THRESHOLD: float = 0.7
+    RAG_RERANK_THRESHOLD: float = 0.2
     RAG_MAX_CONTEXT_CHUNKS: int = 2
     RAG_CHUNK_MAX_CHARS: int = 2000
 
@@ -103,8 +108,13 @@ class Settings(BaseSettings):
     CELERY_TASK_ALWAYS_EAGER: bool = False
     CELERY_TASK_TIME_LIMIT: int = 300
     LAW_CHANGE_SOURCES: str = "https://www.consultant.ru/law/review/fed/updprof/"
+    LAW_CHANGE_CURATED_FILE: str = ""
     LAW_CHANGE_HTTP_TIMEOUT: int = 30
     LAW_CHANGE_MAX_CATEGORIES: int = 40
+    LAW_CHANGE_MAX_AMENDMENT_PAGES: int = 20
+    LAW_CHANGE_MAX_PENDING_CHANGES: int = 20
+    LAW_CHANGE_MAX_PERIODS_PER_RUN: int = 8
+    LAW_CHANGE_MAX_SNAPSHOT_DOCUMENTS: int = 20
 
     def law_change_source_list(self) -> list[str]:
         return [item.strip() for item in self.LAW_CHANGE_SOURCES.split(",") if item.strip()]

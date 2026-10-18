@@ -1,0 +1,12 @@
+{
+  "real_backend": true,
+  "synthetic_demo_notification": true,
+  "stage": "click_chat_link",
+  "realtime_without_reload": true,
+  "mobile_panel_inside_viewport": true,
+  "outside_click_closes_panel": true,
+  "bell_notification_visible": true,
+  "click_opened_previous_chat": true,
+  "state": "ok",
+  "demo_data_deleted": true
+}

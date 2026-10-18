@@ -7,12 +7,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.notification import Notification
+from app.models.law_reference_assessment import LawChangeDelivery
 from app.models.user import User
 from app.schemas.notification import NotificationCreate, NotificationOut
 from app.services.notification_bus import publish_notification_async
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 logger = logging.getLogger(__name__)
+
+
+async def _with_law_meta(db, notifications):
+    ids = [n.id for n in notifications if n.notification_type == "law_change"]
+    metadata = {}
+    if ids:
+        metadata = dict((await db.execute(select(LawChangeDelivery.notification_id,
+            LawChangeDelivery.payload_meta).join(Notification,
+            Notification.id == LawChangeDelivery.notification_id).where(
+            LawChangeDelivery.notification_id.in_(ids),
+            LawChangeDelivery.user_id == Notification.user_id))).all())
+    return [NotificationOut.model_validate(n).model_copy(update={"meta": metadata.get(n.id)})
+            for n in notifications]
 
 
 @router.get(
@@ -33,7 +47,7 @@ async def list_notifications(
         stmt = stmt.where(Notification.is_read == is_read)
     stmt = stmt.order_by(Notification.created_at.desc()).offset(offset).limit(limit)
     result = await db.execute(stmt)
-    return list(result.scalars().all())
+    return await _with_law_meta(db, list(result.scalars().all()))
 
 
 @router.post(
@@ -120,5 +134,5 @@ async def mark_notification_as_read(
         await db.refresh(notification)
 
     logger.info("Notification marked read: notification_id=%s user_id=%s", notification_id, current_user.id)
-    return notification
+    return (await _with_law_meta(db, [notification]))[0]
 

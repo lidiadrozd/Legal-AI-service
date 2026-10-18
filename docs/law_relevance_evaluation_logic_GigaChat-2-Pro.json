@@ -1,0 +1,110 @@
+{
+  "notice": "Новые вымышленные сценарии для проверки логики после уточнения промпта. Не действующие законы. Это диагностический набор, не оценка юридической точности.",
+  "model": "GigaChat-2-Pro",
+  "started_at": "2026-10-09T17:37:30.208093+00:00",
+  "state": "completed",
+  "results": [
+    {
+      "id": "or_common_region_applies",
+      "expected": "relevant",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Выполнена вторая альтернатива вместе с общей территорией.",
+      "conditions": [],
+      "law_analysis": null,
+      "law_coverage": {
+        "state": "missing_analysis",
+        "passed": false
+      },
+      "failure_stage": "law_analysis",
+      "error_code": "RuntimeError"
+    },
+    {
+      "id": "or_common_region_excluded",
+      "expected": "irrelevant",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Обязательная территория исключена для обеих альтернатив.",
+      "conditions": [],
+      "law_analysis": null,
+      "law_coverage": {
+        "state": "missing_analysis",
+        "passed": false
+      },
+      "failure_stage": "law_analysis",
+      "error_code": "RuntimeError"
+    },
+    {
+      "id": "and_roles_excluded",
+      "expected": "irrelevant",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Для совместных требований одной роли недостаточно.",
+      "conditions": [],
+      "law_analysis": null,
+      "law_coverage": {
+        "state": "missing_analysis",
+        "passed": false
+      },
+      "failure_stage": "law_analysis",
+      "error_code": "RuntimeError"
+    },
+    {
+      "id": "and_roles_applies",
+      "expected": "relevant",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Оба обязательных статуса выполнены.",
+      "conditions": [],
+      "law_analysis": null,
+      "law_coverage": {
+        "state": "missing_analysis",
+        "passed": false
+      },
+      "failure_stage": "law_analysis",
+      "error_code": "RuntimeError"
+    },
+    {
+      "id": "atomic_purpose_unknown",
+      "expected": "insufficient_data",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Неизвестно обязательное назначение помещения.",
+      "conditions": [],
+      "law_analysis": null,
+      "law_coverage": {
+        "state": "missing_analysis",
+        "passed": false
+      },
+      "failure_stage": "law_analysis",
+      "error_code": "RuntimeError"
+    },
+    {
+      "id": "atomic_purpose_excluded",
+      "expected": "irrelevant",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Назначение явно не соответствует требованию.",
+      "conditions": [],
+      "law_analysis": null,
+      "law_coverage": {
+        "state": "missing_analysis",
+        "passed": false
+      },
+      "failure_stage": "law_analysis",
+      "error_code": "RuntimeError"
+    }
+  ],
+  "passed": 0,
+  "total": 6,
+  "errors": 6,
+  "law_coverage_passed": 0,
+  "law_coverage_total": 6,
+  "false_positives": 0
+}

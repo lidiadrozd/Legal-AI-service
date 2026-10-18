@@ -1,0 +1,13 @@
+{
+  "live_model_requested": true,
+  "endpoint": "/documents/generate-ai",
+  "output_format": "txt",
+  "generation_http_status": 201,
+  "download_http_status": 200,
+  "file_has_document_text": true,
+  "file_is_not_raw_json": true,
+  "bytes": 1045,
+  "state": "ok",
+  "test_document_deleted": true,
+  "temporary_account_deleted": true
+}

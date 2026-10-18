@@ -1,0 +1,7 @@
+{
+  "state": "unavailable",
+  "error_type": "ConnectTimeout",
+  "check": "read_only_current_source",
+  "date": "2026-10-11",
+  "notifications_created": 0
+}

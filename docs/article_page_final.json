@@ -1,0 +1,7 @@
+{
+  "check": "real_consultant_article_page",
+  "synthetic_page": false,
+  "index_status": 200,
+  "state": "unconfirmed",
+  "reason": "ReadTimeout"
+}

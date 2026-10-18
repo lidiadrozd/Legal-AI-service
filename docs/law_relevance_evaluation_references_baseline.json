@@ -1,0 +1,161 @@
+{
+  "notice": "Вымышленные нормы и ситуации; проверка ссылки ассистента на статью. Не действующее законодательство.",
+  "model": "GigaChat",
+  "started_at": "2026-10-11T05:38:21.926060+00:00",
+  "state": "completed",
+  "results": [
+    {
+      "id": "personal_request",
+      "expected": "relevant",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Личное обращение соответствует условиям нормы.",
+      "conditions": [],
+      "law_analysis": {
+        "groups": [
+          {
+            "conditions": [
+              {
+                "id": "c1",
+                "kind": "threshold",
+                "requirement": "Срок ответа увеличен с пяти до семи дней",
+                "source_quote": "срок ответа увеличен с пяти до семи дней"
+              }
+            ],
+            "id": "g1"
+          }
+        ],
+        "sufficient": true,
+        "summary": "Увеличение срока ответа для физических лиц с пяти до семи дней"
+      },
+      "law_coverage": {
+        "state": "missing_or_extra_conditions",
+        "passed": false
+      },
+      "failure_stage": "user_match",
+      "error_code": "Evidence absent from user statements"
+    },
+    {
+      "id": "business_request",
+      "expected": "irrelevant",
+      "actual": "relevant",
+      "passed": false,
+      "reason": "Изменение применимо: Пользователь сообщил, что он физическое лицо, обратившийся за учебной услугой только для своего бизнеса, не для себя.",
+      "rationale": "Обращение для бизнеса прямо исключено.",
+      "conditions": [
+        {
+          "id": "c1",
+          "kind": "threshold",
+          "requirement": "Срок ответа увеличен с пяти до семи дней",
+          "source_quote": "срок ответа увеличен с пяти до семи дней",
+          "condition": "Срок ответа увеличен с пяти до семи дней",
+          "verdict": "met",
+          "fact": "Пользователь сообщил, что он физическое лицо, обратившийся за учебной услугой только для своего бизнеса, не для себя.",
+          "evidence": "Я физическое лицо. Обратился за учебной услугой только для своего бизнеса, не для себя."
+        }
+      ],
+      "law_analysis": {
+        "groups": [
+          {
+            "conditions": [
+              {
+                "id": "c1",
+                "kind": "threshold",
+                "requirement": "Срок ответа увеличен с пяти до семи дней",
+                "source_quote": "срок ответа увеличен с пяти до семи дней"
+              }
+            ],
+            "id": "g1"
+          }
+        ],
+        "sufficient": true,
+        "summary": "Увеличение срока ответа для физических лиц, подавших обращение за учебной услугой для себя"
+      },
+      "law_coverage": {
+        "state": "missing_or_extra_conditions",
+        "passed": false
+      }
+    },
+    {
+      "id": "relative_request",
+      "expected": "irrelevant",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Обращение другого человека не доказывает личное влияние.",
+      "conditions": [],
+      "law_analysis": {
+        "groups": [
+          {
+            "conditions": [
+              {
+                "id": "c1",
+                "kind": "threshold",
+                "requirement": "Срок ответа увеличен с пяти до семи дней",
+                "source_quote": "срок ответа увеличен с пяти до семи дней"
+              }
+            ],
+            "id": "g1"
+          }
+        ],
+        "sufficient": true,
+        "summary": "Увеличение срока ответа для физических лиц, подавших обращение за учебной услугой для себя"
+      },
+      "law_coverage": {
+        "state": "missing_or_extra_conditions",
+        "passed": false
+      },
+      "failure_stage": "user_match",
+      "error_code": "Evidence absent from user statements"
+    },
+    {
+      "id": "purpose_unknown",
+      "expected": "insufficient_data",
+      "actual": "relevant",
+      "passed": false,
+      "reason": "Изменение применимо: Пользователь сообщил, что он физическое лицо, подавшее обращение за учебной услугой.",
+      "rationale": "Без цели нельзя подтвердить применимость.",
+      "conditions": [
+        {
+          "id": "c1",
+          "kind": "threshold",
+          "requirement": "Срок ответа увеличен с пяти до семи дней",
+          "source_quote": "срок ответа увеличен с пяти до семи дней",
+          "condition": "Срок ответа увеличен с пяти до семи дней",
+          "verdict": "met",
+          "fact": "Пользователь сообщил, что он физическое лицо, подавшее обращение за учебной услугой.",
+          "evidence": "Я физическое лицо. Подал обращение за учебной услугой. Цель получения услуги не уточнял."
+        }
+      ],
+      "law_analysis": {
+        "groups": [
+          {
+            "conditions": [
+              {
+                "id": "c1",
+                "kind": "threshold",
+                "requirement": "Срок ответа увеличен с пяти до семи дней",
+                "source_quote": "срок ответа увеличен с пяти до семи дней"
+              }
+            ],
+            "id": "g1"
+          }
+        ],
+        "sufficient": true,
+        "summary": "Увеличение срока ответа для физических лиц, подавших обращение за учебной услугой для себя"
+      },
+      "law_coverage": {
+        "state": "missing_or_extra_conditions",
+        "passed": false
+      }
+    }
+  ],
+  "passed": 0,
+  "total": 4,
+  "errors": 2,
+  "law_coverage_passed": 0,
+  "law_coverage_total": 4,
+  "false_positives": 2,
+  "coverage_note": "Полнота условий размечена вручную после прогона; ответы модели не изменялись."
+}

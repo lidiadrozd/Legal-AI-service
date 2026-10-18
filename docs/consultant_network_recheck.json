@@ -1,0 +1,9 @@
+{
+  "state": "ok",
+  "parsed_changes": 4,
+  "mapped_norms": [],
+  "checked_at": "2026-10-11",
+  "overview_url": "https://www.consultant.ru/document/cons_doc_LAW_33770/7da1469f17f5828226d438db1d178d28a1622ac9/",
+  "notification_ready": false,
+  "note": "Reading the selected live overview succeeded; automatic norm mapping did not produce any confirmed norm in this run. No database writes or notification dispatch."
+}

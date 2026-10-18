@@ -5,6 +5,7 @@ import type { Message } from '@/types/chat.types';
 import { Paperclip } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { presentAssistantMessage } from '@/utils/assistantPresentation';
 
 const Wrap = styled.div<{ $isUser: boolean }>`
   display: flex;
@@ -36,7 +37,7 @@ const Bubble = styled.div<{ $isUser: boolean }>`
 
 const MarkdownContent = styled.div`
   p {
-    margin: 0 0 8px;
+    margin: 0 0 12px;
   }
   p:last-child {
     margin-bottom: 0;
@@ -50,7 +51,7 @@ const MarkdownContent = styled.div`
     padding: 0;
   }
   li {
-    margin: 2px 0;
+    margin: 6px 0;
   }
   code {
     background: rgba(255, 255, 255, 0.08);
@@ -115,7 +116,7 @@ export function MessageBubble({ message }: Props) {
           ) : (
             <MarkdownContent>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {message.content}
+                {presentAssistantMessage(message.content)}
               </ReactMarkdown>
             </MarkdownContent>
           )}

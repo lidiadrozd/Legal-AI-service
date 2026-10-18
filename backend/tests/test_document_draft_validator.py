@@ -69,3 +69,31 @@ def test_format_document_draft_for_user_lists_attachments():
     rendered = format_document_draft_for_user(draft)
     assert "Справка" in rendered
     assert "Копия паспорта" in rendered
+
+
+@pytest.mark.parametrize("query", [
+    "Работаю по трудовому договору. Начальник требует написать заявление. Как защититься?",
+    "Снимаю квартиру по договору, собственник просит съехать. Какие у меня права?",
+    "Как написать претензию?",
+    "Работодатель заставляет написать заявление по собственному желанию",
+    "Претензию я ещё не подавала. Что делать?",
+])
+def test_document_mentions_do_not_destroy_ordinary_answers(query):
+    answer = "Ваши права защищает статья 80 ТК РФ."
+    assert not is_document_generation_request(query)
+    assert process_document_response(query, answer) == answer
+
+
+@pytest.mark.parametrize("query", [
+    "Составь претензию по договору", "Подготовьте мне исковое заявление",
+    "Напиши заявление об увольнении", "Нужен шаблон договора аренды",
+])
+def test_explicit_drafting_requests_remain_supported(query):
+    assert is_document_generation_request(query)
+
+
+@pytest.mark.parametrize("query", [
+    "Можешь мне создать такой договор?", "Создай этот договор", "Подготовь такую претензию",
+])
+def test_followup_drafting_request_accepts_demonstrative_words(query):
+    assert is_document_generation_request(query)

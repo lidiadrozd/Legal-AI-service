@@ -2,6 +2,7 @@
 Legal AI Service - Главный файл FastAPI
 """
 import os
+import asyncio
 from contextlib import asynccontextmanager
 import logging
 from fastapi import FastAPI, Request, Depends, HTTPException
@@ -25,19 +26,15 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """✅ АСИНХРОННЫЙ Lifecycle"""
     
-    # 🔥 ИНИЦИАЛИЗАЦИЯ БД (Возвращаем!)
+    # 🔥 АСИНХРОННАЯ ИНИЦИАЛИЗАЦИЯ БД
     print("🔄 Инициализация базы данных...")
-    import asyncio # Добавь этот импорт сверху, если его нет
-    await asyncio.sleep(2) # Даем базе 2 секунды "проснуться"
-    
+    await asyncio.sleep(2)
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         print("✅ База данных инициализирована АСИНХРОННО!")
-    except Exception as e:
-        import traceback
-        print("❌ Ошибка БД при создании таблиц:")
-        traceback.print_exc()
+    except Exception:
+        logger.exception("Ошибка БД при создании таблиц")
 
     # Автосоздание суперадмина из переменных окружения.
     async with AsyncSessionLocal() as db:
@@ -48,7 +45,7 @@ async def lifespan(app: FastAPI):
     # ✅ Проверка конфигурации
     print("🚀 Starting Legal AI Service...")
     print(f"📊 Config: {settings.APP_NAME} v{settings.VERSION}")
-    print(f"🔑 GigaChat: {'✅ Ready' if settings.GIGACHAT_CLIENT_ID else '❌ Setup .env'}")
+    print(f"🔑 GigaChat: {'✅ Ready' if (settings.GIGACHAT_AUTH_KEY or settings.GIGACHAT_CLIENT_ID) else '❌ Setup .env'}")
     print(f"📈 Celery: {'✅ Redis ready' if settings.CELERY_BROKER_URL else '❌ Redis'}")
     print(f"🧠 pgvector: {'✅ Enabled' if getattr(settings, 'ENABLE_PGVECTOR', False) else '❌ Disabled'}")
     
@@ -106,7 +103,7 @@ async def root():
     return {
         "message": "Legal AI Service 🚀",
         "version": settings.VERSION,
-        "status": "running" if settings.GIGACHAT_CLIENT_ID else "config_required",
+        "status": "running" if (settings.GIGACHAT_AUTH_KEY or settings.GIGACHAT_CLIENT_ID) else "config_required",
         "endpoints": {
             "auth": ["/auth/register", "/auth/login", "/auth/refresh", "/auth/me", "/auth/logout", "/auth/consent"],
             "chat": ["/chat/new", "/chat/list", "/chat/{chat_id}/send_stream", "/chat/feedback"],
@@ -121,7 +118,7 @@ async def root():
             "health": "/health"
         },
         "features": {
-            "gigachat": bool(settings.GIGACHAT_CLIENT_ID),
+            "gigachat": bool(settings.GIGACHAT_AUTH_KEY or settings.GIGACHAT_CLIENT_ID),
             "celery_monitoring": bool(settings.CELERY_BROKER_URL),
             "pgvector": getattr(settings, 'ENABLE_PGVECTOR', False),
             "law_monitoring": True
@@ -146,7 +143,7 @@ async def config_info(request: Request):
         "app_name": settings.APP_NAME,
         "debug": settings.DEBUG,
         "environment": getattr(settings, 'ENVIRONMENT', 'dev'),
-        "gigachat_ready": bool(settings.GIGACHAT_CLIENT_ID and settings.GIGACHAT_CLIENT_SECRET),
+        "gigachat_ready": bool(settings.GIGACHAT_AUTH_KEY or (settings.GIGACHAT_CLIENT_ID and settings.GIGACHAT_CLIENT_SECRET)),
         "celery_ready": bool(settings.CELERY_BROKER_URL),
         "pgvector": getattr(settings, 'ENABLE_PGVECTOR', False),
         "docs": f"{request.url.path}../docs"

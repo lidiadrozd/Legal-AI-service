@@ -1,0 +1,26 @@
+{
+  "proxy_variables_present": {
+    "HTTP_PROXY": false,
+    "HTTPS_PROXY": false,
+    "ALL_PROXY": false,
+    "NO_PROXY": false
+  },
+  "checks": [
+    {
+      "target": "consultant_index",
+      "error": "ConnectTimeout",
+      "seconds": 8.1
+    },
+    {
+      "target": "consultant_tk",
+      "error": "ConnectTimeout",
+      "seconds": 8.0
+    },
+    {
+      "target": "gigachat_minimal",
+      "error": "RuntimeError",
+      "http_status": null,
+      "seconds": 30.1
+    }
+  ]
+}

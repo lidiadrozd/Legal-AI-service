@@ -1,0 +1,29 @@
+{
+  "groups": [
+    {
+      "conditions": [
+        {
+          "id": "c1",
+          "kind": "role",
+          "requirement": "Человек является опекуном",
+          "source_quote": "опекунам"
+        },
+        {
+          "id": "c2",
+          "kind": "role",
+          "requirement": "Человек является попечителем",
+          "source_quote": "попечителям"
+        },
+        {
+          "id": "c3",
+          "kind": "region",
+          "requirement": "Человек проживает в городе Р",
+          "source_quote": "проживающим в городе Р"
+        }
+      ],
+      "id": "g1"
+    }
+  ],
+  "sufficient": true,
+  "summary": "Новое пособие для опекунов или попечителей, проживающих в городе Р"
+}

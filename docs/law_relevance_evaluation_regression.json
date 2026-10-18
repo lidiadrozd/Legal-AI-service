@@ -1,0 +1,154 @@
+{
+  "notice": "Все изменения вымышлены и служат только для проверки классификации. Это не описание действующего законодательства.",
+  "model": "GigaChat",
+  "started_at": "2026-10-09T17:01:33.898492+00:00",
+  "state": "completed",
+  "results": [
+    {
+      "id": "entrepreneur_applies",
+      "expected": "relevant",
+      "actual": "relevant",
+      "passed": true,
+      "reason": "Требуется подтверждение, что пользователь обязан подавать новый ежегодный отчёт",
+      "rationale": "Подтверждён статус действующего ИП, к которому относится новая обязанность.",
+      "conditions": [
+        {
+          "condition": "Является ли пользователь действующим ИП?",
+          "verdict": "met",
+          "evidence": "Я зарегистрирован как ИП и продолжаю деятельность."
+        }
+      ]
+    },
+    {
+      "id": "employee_excluded",
+      "expected": "irrelevant",
+      "actual": "insufficient_data",
+      "passed": false,
+      "reason": "Проверить, является ли пользователь действующим индивидуальным предпринимателем",
+      "rationale": "Совпадение интереса к теме не меняет явно исключённый статус пользователя.",
+      "conditions": [
+        {
+          "condition": "Является ли пользователь действующим индивидуальным предпринимателем?",
+          "verdict": "unknown",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "status_unknown",
+      "expected": "insufficient_data",
+      "actual": "insufficient_data",
+      "passed": true,
+      "reason": "Требуется подтверждение статуса индивидуального предпринимателя",
+      "rationale": "Неизвестно, является ли сам пользователь действующим ИП.",
+      "conditions": [
+        {
+          "condition": "Является ли пользователь индивидуальным предпринимателем?",
+          "verdict": "unknown",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "region_excluded",
+      "expected": "irrelevant",
+      "actual": "irrelevant",
+      "passed": true,
+      "reason": "Проверить, соответствует ли условие пользователю",
+      "rationale": "Условия территориальной применимости явно не выполнены.",
+      "conditions": [
+        {
+          "condition": "Находится ли единственная арендуемая квартира пользователя в регионе А?",
+          "verdict": "not_met",
+          "evidence": "Моя единственная арендуемая квартира находится в регионе Б; жилья в регионе А у меня нет."
+        }
+      ]
+    },
+    {
+      "id": "later_correction",
+      "expected": "irrelevant",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Последнее уточнение отменяет старый статус в кратком фрагменте.",
+      "conditions": []
+    },
+    {
+      "id": "change_unknown",
+      "expected": "insufficient_data",
+      "actual": "insufficient_data",
+      "passed": true,
+      "reason": "Неизвестно, затрагивает ли данное изменение ИП без работников",
+      "rationale": "Тема совпадает, но содержания изменения недостаточно для вывода о влиянии.",
+      "conditions": [
+        {
+          "condition": "Является ли пользователь ИП?",
+          "verdict": "met",
+          "evidence": "Я действующий ИП без работников."
+        },
+        {
+          "condition": "Известено содержание изменения?",
+          "verdict": "unknown",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "region_applies",
+      "expected": "relevant",
+      "actual": "relevant",
+      "passed": true,
+      "reason": "Проверка соответствия условию \"арендуемая квартира находится в регионе А\"",
+      "rationale": "Роль и территория явно совпадают.",
+      "conditions": [
+        {
+          "condition": "Аренда квартиры в регионе А?",
+          "verdict": "met",
+          "evidence": "Я арендую квартиру в регионе А."
+        }
+      ]
+    },
+    {
+      "id": "region_unknown",
+      "expected": "insufficient_data",
+      "actual": "insufficient_data",
+      "passed": true,
+      "reason": "известен ли регион аренды квартиры пользователя",
+      "rationale": "Неизвестна территория квартиры.",
+      "conditions": [
+        {
+          "condition": "Сам пользователь арендует квартиру именно в регионе А?",
+          "verdict": "unknown",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "third_party",
+      "expected": "irrelevant",
+      "actual": "error",
+      "passed": false,
+      "reason": "Не удалось проверить релевантность с помощью ИИ.",
+      "rationale": "Статус родственника не является статусом пользователя.",
+      "conditions": []
+    },
+    {
+      "id": "employment_applies",
+      "expected": "relevant",
+      "actual": "insufficient_data",
+      "passed": false,
+      "reason": "Требуется подтверждение того, что работодатель обязан предоставлять дополнительный оплачиваемый день отдыха",
+      "rationale": "Изменение предоставляет право указанному работнику.",
+      "conditions": [
+        {
+          "condition": "Работодатель обязан предоставить дополнительный оплачиваемый день отдыха",
+          "verdict": "unknown",
+          "evidence": ""
+        }
+      ]
+    }
+  ],
+  "passed": 6,
+  "total": 10,
+  "errors": 2
+}
