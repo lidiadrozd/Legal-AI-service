@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import logging
@@ -29,16 +30,28 @@ from app.services.answer_norms import document_label
 logger = logging.getLogger(__name__)
 
 
-def _format_law_change_message(change: LawChange, topic_label: str) -> str:
-    change_title = (change.change_title or "").strip() or "Изменение законодательства"
+def _format_law_change_message(
+    change: LawChange,
+    topic_label: str,
+) -> str:
+    change_title = (
+        (change.change_title or "").strip()
+        or "Изменение законодательства"
+    )
+
     date_str = None
     if change.change_date is not None:
         try:
             date_str = change.change_date.date().isoformat()
         except Exception:
             date_str = None
-    description = (change.description or "").strip() or "Описание изменения не предоставлено источником."
+
+    description = (
+        (change.description or "").strip()
+        or "Описание изменения не предоставлено источником."
+    )
     link = (change.source_url or "").strip()
+
     lines = [
         f"По теме «{topic_label}» обнаружено изменение законодательства.",
         f"📄 {change_title}",
@@ -48,8 +61,10 @@ def _format_law_change_message(change: LawChange, topic_label: str) -> str:
         "Что изменилось:",
         description,
     ]
-    return "\n".join(line for line in lines if line is not None).strip()
 
+    return "\n".join(
+        line for line in lines if line is not None
+    ).strip()
 
 def _norm_label(reference) -> str:
     pieces = [document_label(reference.document_key), f"статья {reference.article}" if reference.article else "правовой документ"]
