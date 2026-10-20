@@ -79,7 +79,7 @@ services:
       - "traefik.http.routers.legal_ai_api_local.rule=Host(`localhost`)"
       - "traefik.http.routers.legal_ai_api_local.entrypoints=web"
       - "traefik.http.routers.legal_ai_api_local.service=legal_ai_api"
-      - "traefik.http.routers.legal_ai_api_secure.rule=Host(`${TRAEFIK_API_DOMAIN:-87-242-87-53.nip.io}`)"
+      - "traefik.http.routers.legal_ai_api_secure.rule=Host(`${TRAEFIK_API_DOMAIN:-api.example.com}`)"
       - "traefik.http.routers.legal_ai_api_secure.entrypoints=websecure"
       - "traefik.http.routers.legal_ai_api_secure.tls.certresolver=letsencrypt"
       - "traefik.http.routers.legal_ai_api_secure.service=legal_ai_api"

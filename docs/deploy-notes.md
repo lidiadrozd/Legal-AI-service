@@ -1,94 +1,90 @@
-# Деплой Legal AI на VPS (legalai-service.ru)
+# Развёртывание Legal AI
 
-Краткая шпаргалка по серверу **87.242.87.53**, пользователь **student**.
+## Подключение
 
-## Быстрый финиш (один скрипт)
+Актуальный сервер указан владельцем проекта 20.10.2026:
 
-На ВМ из корня репозитория:
-
-```bash
-cd ~/Legal-AI-service
-chmod +x deploy/finish-production.sh
-export CERTBOT_EMAIL=ваш@email.com
-sudo -E deploy/finish-production.sh
+```sh
+ssh root@135.106.163.146
 ```
 
-Перед certbot в **Cloudflare**: A-записи → **DNS only** (серое облако). В **cloud.ru**: TCP **80**, **443**, **22**.
+Владелец подключается по паролю. Для публикации из рабочего окружения требуется разрешённый SSH-ключ. Пароль и приватные ключи не сохранять в репозитории.
 
-## Вручную по шагам
+## Проверенная конфигурация (20.10.2026)
 
-### A. Сеть после перезагрузки
+- Сайт: https://135-106-163-146.nip.io (HTTPS проверен).
+- Интерфейс: `/var/www/legalai-service`.
+- Активная конфигурация Nginx: `/etc/nginx/sites-enabled/legalai-service`. Она отличается от `/etc/nginx/sites-available/legalai-service`; нельзя заменять активный файл старой копией.
+- Сертификат: `/etc/letsencrypt/live/135-106-163-146.nip.io/`.
+- Nginx направляет `/api/` на `http://127.0.0.1:8000/` и поддерживает потоковые ответы и WebSocket.
+- Рабочий Compose-каталог: `/opt/legal-ai/backend`, проект `backend`.
+- Compose-файлы: `docker-compose.yml` и `docker-compose.override.yml`. Для команд использовать оба, оставаясь в этом каталоге.
+- Контейнеры: `legal_ai_api`, `legal_ai_celery`, `legal_ai_beat`, `legal_ai_db`, `legal_ai_redis`.
+- Образ API и Celery на момент проверки: `legal-ai-service:0561f7f`.
+- Пользовательские документы: `/opt/legal-ai/backend/storage/documents`; RAG-файлы: `/opt/legal-ai/backend/rag_docs`.
+- `/opt/legal-ai-update-0561f7f-61NCi6` — каталог предыдущего обновления, не рабочий Compose-каталог.
 
-```bash
-sudo ip link set enp3s0 up
-sudo dhclient -v enp3s0
+Вход по ключу подтверждён. Backend отвечает `healthy` как локально, так и через HTTPS `/api/health`.
+
+## Подготовка интерфейса
+
+```sh
+cd frontend
+npm ci
+npm run build
 ```
 
-Постоянно: `deploy/netplan-enp3s0.example.yaml` → `/etc/netplan/01-legalai.yaml`, `sudo netplan apply`.
+Результат — `frontend/dist`. По умолчанию интерфейс обращается к `/api` того же сайта. На сервере должен быть настроен соответствующий прокси к backend. Если используется отдельный API, его проверенный HTTPS-адрес задают через `VITE_API_BASE_URL` перед сборкой.
 
-### B. Swap 2G
+## Порядок публикации
 
-```bash
-sudo fallocate -l 2G /swapfile
-sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
-grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+1. Проверить текущий каталог публикации, маршрутизацию `/api` и состояние приложения через SSH.
+2. Сохранить предыдущую версию интерфейса для отката.
+3. Перенести проверенную сборку и опубликовать её в подтверждённом каталоге. Сохранить старые файлы assets на время перехода открытых вкладок на новую версию.
+4. Проверить главную страницу, прямой адрес чата, вход, выход и ссылки документов в меню аккаунта.
+5. При ошибке вернуть предыдущую версию.
+
+Обновления входа и меню аккаунта затрагивают только интерфейс. Для них не требуется менять БД или перезапускать backend.
+
+## Код и сервер
+
+Отправка изменений в GitHub сама по себе не обновляет сайт. Автоматический деплой не настроен. Исходный код и опубликованную сборку следует учитывать отдельно; перед выпуском фиксировать ревизию и состав изменений.
+
+При будущих изменениях backend сначала определить действующий Compose-проект или другой способ запуска и сделать резервную копию БД. Не удалять тома и не заменять серверные `.env`, пользовательские файлы и хранилище данных архивом исходников.
+
+## Проверка после публикации
+
+```sh
+curl -fsS https://135-106-163-146.nip.io/api/health
+curl -fsS https://135-106-163-146.nip.io/ >/dev/null
+curl -fsS https://135-106-163-146.nip.io/chat >/dev/null
 ```
 
-### C. Автозапуск
+Для диагностики backend:
 
-```bash
-sudo systemctl enable docker nginx
+```sh
+cd /opt/legal-ai/backend
+docker compose -p backend -f docker-compose.yml -f docker-compose.override.yml ps
 ```
 
-### D. Backend
+При публикации интерфейса сначала копируются assets, затем последним атомарно заменяется `index.html`. Перезапуск Nginx для замены статических файлов не нужен. Старые assets сохраняются для открытых вкладок.
 
-```bash
-cd ~/Legal-AI-service/backend
-docker compose up -d --build
-curl -s http://127.0.0.1:8000/health
+## Выпуск auth-menu-20261020
+
+Опубликованы исправления восстановления сессии, «Запомнить меня» и ссылки документов в меню аккаунта. На момент публикации сборка создана на основе Git `0561f7f` с изменениями интерфейса. Снимок исходников выпуска сохранён на сервере в `legal-ai-auth-menu-source-20261020.tar.gz` рядом со сборкой.
+
+- Сборка: `/opt/legal-ai-releases/auth-menu-20261020`.
+- Резервная копия: `/var/backups/legal-ai/frontend-before-auth-menu-20261020.tar.gz`.
+- SHA256 архива: `24a14371b6d38791e461eb72c0b98df2a074d1ba4500a76e3f7a2b64dea5a3f0`.
+- Проверены HTTPS, `/api/health`, совпадение опубликованного HTML со сборкой и перенаправление гостя с `/chat` на `/login` в браузере.
+- Вход с реальным аккаунтом после публикации автоматически не проверялся.
+
+Для следующих обновлений интерфейса используйте `deploy/publish-frontend.sh`: загрузите архив сборки и скрипт через `scp`, затем вызовите на сервере `bash /tmp/publish-frontend.sh ПУТЬ_К_АРХИВУ SHA256 УНИКАЛЬНОЕ_ИМЯ_ВЫПУСКА`. Скрипт рассчитан на обновление JS/CSS и `index.html`; изменение остальных публичных файлов нужно публиковать отдельно.
+
+Откат этого выпуска на сервере (старые assets сохранены):
+
+```sh
+tar -xOf /var/backups/legal-ai/frontend-before-auth-menu-20261020.tar.gz ./index.html > /var/www/legalai-service/index.html.rollback
+chmod 644 /var/www/legalai-service/index.html.rollback
+mv /var/www/legalai-service/index.html.rollback /var/www/legalai-service/index.html
 ```
-
-У **db** только `5432:5432`. У **api** — `127.0.0.1:8000:8000`.
-
-### E. Frontend + Nginx
-
-```bash
-cd ~/Legal-AI-service/frontend && npm ci && npm run build
-sudo rsync -a --delete dist/ /var/www/legalai-service/
-sudo cp ~/Legal-AI-service/deploy/nginx-legalai-service.conf /etc/nginx/sites-available/legalai-service
-sudo ln -sf /etc/nginx/sites-available/legalai-service /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-### F. HTTPS
-
-```bash
-sudo apt-get install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d legalai-service.ru -d www.legalai-service.ru -d app.legalai-service.ru
-```
-
-### G. CORS в `backend/.env`
-
-```env
-CORS_ORIGINS=["https://legalai-service.ru","https://www.legalai-service.ru","https://app.legalai-service.ru"]
-ACME_EMAIL=ваш@email.com
-```
-
-```bash
-docker compose restart api
-```
-
-## Типичные ошибки
-
-| Симптом | Решение |
-|--------|---------|
-| `Connection timed out` SSH | `dhclient enp3s0`, Security Group TCP 22 |
-| `password authentication failed` postgres | `ALTER USER postgres WITH PASSWORD 'postgres';` |
-| `80` на контейнере **db** | Убрать `80:8000` у db, только у api или nginx |
-| «Не защищено» в браузере | Выпустить certbot (HTTPS) |
-| OOM / mysql killed | swap, `systemctl stop mysql` если не нужен |
-
-## ПК выключен
-
-Сайт на ВМ работает. Риски: ребут без netplan, OOM, конец кредитов cloud.ru.
