@@ -54,9 +54,9 @@ def _format_law_change_message(
 
     lines = [
         f"По теме «{topic_label}» обнаружено изменение законодательства.",
-        f"📄 {change_title}",
-        f"📅 Дата: {date_str}" if date_str else None,
-        f"🔗 Источник: {link}" if link else None,
+        f" {change_title}",
+        f" Дата: {date_str}" if date_str else None,
+        f" Источник: {link}" if link else None,
         "",
         "Что изменилось:",
         description,
