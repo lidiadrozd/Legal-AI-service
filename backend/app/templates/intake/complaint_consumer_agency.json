@@ -1,0 +1,155 @@
+{
+  "scenario": "complaint_consumer_agency",
+  "title": "Жалоба в Роспотребнадзор",
+  "family": "complaint",
+  "version": 3,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Заявитель",
+      "question": "Какое полное ФИО или наименование у стороны «Заявитель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес заявителя нужно указать?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Ведомство",
+      "question": "Какое полное ФИО или наименование у стороны «Ведомство»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес ведомства",
+      "question": "Какой почтовый адрес подразделения известен? Если неизвестен, можно дополнить позже.",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "seller",
+      "label": "Продавец или исполнитель",
+      "question": "На какого продавца или исполнителя подаёте жалобу? Укажите известное название организации или ИП, название магазина и реквизиты.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "seller_address",
+      "label": "Место нарушения или адрес продавца",
+      "question": "По какому адресу находится магазин или исполнитель, действия которого обжалуете?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "purchase",
+      "label": "Покупка или заказ",
+      "question": "Что, когда, у какого продавца или исполнителя и за какую цену приобретено или заказано?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "facts",
+      "label": "Обстоятельства нарушения",
+      "question": "В чём заключается нарушение, когда оно обнаружено и чем подтверждается? Установленные факты нужно отличить от предположений.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "previous_contact",
+      "label": "Предыдущие обращения",
+      "question": "Обращались ли вы к продавцу, исполнителю или в ведомство? Укажите дату, способ, содержание обращения и полученный ответ либо отсутствие обращения.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "requests",
+      "label": "Просьба к ведомству",
+      "question": "Какие действия в пределах компетенции Роспотребнадзора просите совершить? Например, рассмотреть обстоятельства и принять предусмотренные меры.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы прилагаете? Перечислите имеющиеся чек, фотографии, обращения и ответы; отсутствующие документы не добавляем.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата обращения",
+      "question": "Какую дату обращения указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант",
+      "question": "Кто подпишет документ от имени стороны «Заявитель»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

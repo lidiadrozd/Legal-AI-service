@@ -1,0 +1,124 @@
+{
+  "scenario": "order_alimony",
+  "version": 5,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "requisite"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "requisite"
+    },
+    "fee": {
+      "format": "sentence"
+    },
+    "children": {
+      "format": "phrase"
+    },
+    "parentage": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "living": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "existing_support": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "other_dependants": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "assistance": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "income": {
+      "format": "phrase"
+    },
+    "share": {
+      "format": "phrase"
+    },
+    "start": {
+      "format": "phrase"
+    },
+    "eligibility": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "sender_details"
+    },
+    "branch_3": {
+      "field": "contacts"
+    },
+    "branch_5": {
+      "field": "party_details"
+    },
+    "branch_12": {
+      "field": "existing_support"
+    },
+    "branch_13": {
+      "field": "other_dependants"
+    },
+    "branch_19": {
+      "field": "eligibility"
+    }
+  },
+  "blocks_sha256": "7ea16a6c87f5276d37454a9d68257d548b38c384c6f53b8d53608968b731e796",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

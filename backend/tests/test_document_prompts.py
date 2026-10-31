@@ -13,6 +13,53 @@ from app.services import document_ai_generator, nlp_service
 from app.services.llm_cost import TokenUsage
 
 
+CLARIFICATION = json.dumps({"status": "needs_clarification", "questions": [
+    "Кому адресовать претензию?", "Что произошло и чего вы требуете?",
+]}, ensure_ascii=False)
+
+
+@pytest.mark.asyncio
+async def test_download_clarification_does_not_retry_or_create_draft(monkeypatch):
+    client = SimpleNamespace(chat_completion=AsyncMock(return_value=SimpleNamespace(content=CLARIFICATION)))
+    monkeypatch.setattr(document_ai_generator, "get_gigachat_client", AsyncMock(return_value=client))
+    with pytest.raises(document_ai_generator.DocumentNeedsClarification, match="Кому адресовать"):
+        await document_ai_generator.generate_ai_document_text("Составь претензию, я Катя")
+    assert client.chat_completion.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_chat_clarification_and_followup_remain_in_document_mode(monkeypatch):
+    client = SimpleNamespace(chat_completion=AsyncMock(side_effect=[
+        SimpleNamespace(content=CLARIFICATION, usage=TokenUsage(1, 1, 2, False)),
+        SimpleNamespace(content=DOCUMENT_JSON_EXAMPLE, usage=TokenUsage(1, 1, 2, False)),
+    ]))
+    monkeypatch.setattr(nlp_service, "get_gigachat_client", AsyncMock(return_value=client))
+    monkeypatch.setattr(nlp_service.response_cache, "get", AsyncMock(return_value=None))
+    monkeypatch.setattr(nlp_service.response_cache, "set", AsyncMock())
+    service = nlp_service.NLPService()
+    first = await service.generate_response("Составь претензию, я Катя")
+    assert "Кому адресовать" in first.text
+    assert "Не удалось" not in first.text
+    assert client.chat_completion.call_count == 1
+    second = await service.generate_response(
+        "Магазину Ромашка, вернуть 1000 рублей за сломанный чайник",
+        chat_history="user: Составь претензию, я Катя\nassistant: " + first.text,
+    )
+    assert DOCUMENT_JSON_EXAMPLE in client.chat_completion.call_args.args[0][0]["content"]
+    assert "Реквизиты:" in second.text
+
+
+@pytest.mark.parametrize("payload", [
+    {"status": "needs_clarification", "questions": []},
+    {"status": "needs_clarification", "questions": [" "]},
+    {"status": "needs_clarification", "questions": ["Вопрос?"] * 4},
+    {"status": "needs_clarification", "questions": ["Вопрос?"], "текст": "Выдуманный документ"},
+])
+def test_invalid_clarifications_are_rejected(payload):
+    from app.services.document_draft_validator import is_valid_document_response
+    assert not is_valid_document_response(json.dumps(payload, ensure_ascii=False))
+
+
 def test_example_is_valid_for_existing_document_schema():
     draft = DocumentDraftResponse.model_validate(json.loads(DOCUMENT_JSON_EXAMPLE))
     assert draft.requisites.attachments == []

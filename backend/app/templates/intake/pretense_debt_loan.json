@@ -1,0 +1,185 @@
+{
+  "scenario": "pretense_debt_loan",
+  "title": "Претензия о задолженности по договору займа",
+  "family": "debt_pretense",
+  "version": 4,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Займодавец",
+      "question": "Какое полное ФИО или наименование у стороны «Займодавец»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Займодавец»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Заёмщик",
+      "question": "Какое полное ФИО или наименование у стороны «Заёмщик»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Заёмщик»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "agreement",
+      "label": "Основание займа",
+      "question": "Когда и на каких условиях заключён договор займа? Укажите договор или расписку.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "due_date",
+      "label": "Согласованный срок возврата",
+      "question": "Какой срок или порядок возврата согласован? Можно указать словами; дату без основания не придумываем.",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "transfer",
+      "label": "Передача денег",
+      "question": "Когда, сколько и каким способом займодавец передал заёмщику? Чем подтверждается получение?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "payments",
+      "label": "Полученные платежи",
+      "question": "Какие суммы и когда уже возвращены? Если ничего, так и укажите.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "amount",
+      "label": "Основная сумма задолженности",
+      "question": "Какова основная невозвращённая или неоплаченная сумма в рублях без дополнительных начислений?",
+      "kind": "money",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "requests",
+      "label": "Требование займодавца",
+      "question": "Какую сумму и какие подтверждённые начисления требуете вернуть?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "payment",
+      "label": "Способ возврата",
+      "question": "Каким способом и по каким реквизитам заёмщик может вернуть деньги?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "facts",
+      "label": "Обстоятельства нарушения",
+      "question": "Какие обстоятельства невозврата или неоплаты и подтверждающие сведения ещё нужно отразить?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "response_term",
+      "label": "Срок исполнения требования",
+      "question": "В какой срок требуете исполнить претензию? Неизвестный срок оставим для проверки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Займодавец»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

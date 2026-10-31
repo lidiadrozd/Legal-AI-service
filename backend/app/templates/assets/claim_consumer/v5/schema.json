@@ -1,0 +1,133 @@
+{
+  "scenario": "claim_consumer",
+  "version": 5,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "requisite"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "requisite"
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "sentence"
+    },
+    "purchase": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "payment_evidence": {
+      "format": "phrase"
+    },
+    "category": {
+      "format": "phrase"
+    },
+    "defects": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "defect_evidence": {
+      "format": "phrase"
+    },
+    "facts": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "seller_response": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "pretrial": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "calculation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "sender_details"
+    },
+    "branch_3": {
+      "field": "contacts"
+    },
+    "branch_5": {
+      "field": "party_details"
+    },
+    "branch_6": {
+      "field": "other_participants"
+    },
+    "branch_17": {
+      "field": "facts"
+    },
+    "branch_19": {
+      "field": "seller_response"
+    },
+    "branch_21": {
+      "field": "pretrial"
+    },
+    "branch_23": {
+      "field": "calculation"
+    }
+  },
+  "blocks_sha256": "88eac19f79210f6a724073d107a6307ea720d03c7114f14991c8e2e6eb011a66",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

@@ -5,6 +5,13 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def offline_conversation_planner(monkeypatch):
+    """API tests do not make live provider requests for wording questions."""
+    from unittest.mock import AsyncMock
+    monkeypatch.setattr('app.services.document_conversation.get_gigachat_client',AsyncMock(side_effect=RuntimeError('offline test question planner')))
 import pytest_asyncio
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient

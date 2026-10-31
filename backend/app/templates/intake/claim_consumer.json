@@ -1,0 +1,282 @@
+{
+  "scenario": "claim_consumer",
+  "title": "Иск о защите прав потребителя",
+  "family": "other_claim",
+  "version": 5,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Истец",
+      "question": "Какое полное ФИО или наименование у стороны «Истец»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Истец»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_details",
+      "label": "Реквизиты заявителя",
+      "question": "Какие дату и место рождения, ИНН, СНИЛС или паспортные данные заявителя указываем? Для организации — ИНН и ОГРН; неизвестное можно дополнить позднее.",
+      "kind": "text",
+      "optional": false
+    },
+    {
+      "key": "recipient",
+      "label": "Ответчик",
+      "question": "Какое полное ФИО или наименование у стороны «Ответчик»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Ответчик»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "court",
+      "label": "Наименование суда и адрес",
+      "question": "В какой суд направляем документ? Если суд не определён, оставим название для проверки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "party_details",
+      "label": "Дополнительные сведения об участниках",
+      "question": "Какие дата и место рождения, место работы и идентификатор ответчика вам известны? Данные истца укажите отдельно; неизвестное не угадываем.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "purchase",
+      "label": "Приобретение товара, работ или услуг",
+      "question": "Что, у кого и когда приобретено или заказано? Назовите товар либо предмет работ или услуг и реквизиты договора.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "amount",
+      "label": "Уплаченная сумма",
+      "question": "Какую сумму вы фактически уплатили в рублях?",
+      "kind": "money",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "payment_evidence",
+      "label": "Подтверждение оплаты",
+      "question": "Чем подтверждается оплата? Укажите реквизиты чека, перевода или другие имеющиеся сведения.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "procedure",
+      "label": "Цель приобретения",
+      "question": "Товар, работа или услуга приобретались для личных нужд? Опишите цель приобретения.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "defects",
+      "label": "Выявленные недостатки",
+      "question": "Какие именно недостатки обнаружены и когда? Укажите известные сроки годности или гарантии, если они относятся к ситуации.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "defect_evidence",
+      "label": "Подтверждение недостатков",
+      "question": "Чем подтверждаются недостатки? Укажите имеющиеся документы, фотографии, результаты проверки или экспертизы.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "category",
+      "label": "Характеристики приобретения",
+      "question": "Какие вид, марка, модель товара или конкретный вид работ/услуг известны? Это нужно для проверки применимых правил.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "facts",
+      "label": "Развитие ситуации",
+      "question": "Какие ещё обстоятельства важны: даты обращений, последствия, проверка качества, ответы продавца?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "seller_response",
+      "label": "Обращения к продавцу или исполнителю",
+      "question": "Какие требования уже предъявлялись продавцу или исполнителю и каков его ответ?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "pretrial",
+      "label": "Досудебное обращение",
+      "question": "Обращались ли вы к ответчику до суда? Укажите дату, способ, подтверждение и ответ либо отсутствие обращения.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "calculation",
+      "label": "Расчёт требований",
+      "question": "Из каких отдельных сумм и периодов состоят требования? Основной долг, дополнительные начисления и расходы укажите раздельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование для проверки",
+      "question": "Правовое обоснование будет проверено отдельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "fee",
+      "label": "Государственная пошлина и льготы для проверки",
+      "question": "Размер пошлины или основание освобождения требует отдельной проверки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "requests",
+      "label": "Требования к суду",
+      "question": "Что именно просите у суда? Перечислите каждое требование отдельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "other_participants",
+      "label": "Другие участники",
+      "question": "Есть ли третьи лица или другие участники дела? Укажите роль, имя и адрес либо ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "copy_notice",
+      "label": "Направление копий участникам",
+      "question": "Направлены ли другим участникам копии этого документа и отсутствующих у них приложений? Укажите подтверждение или что отправка ещё предстоит.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Истец»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "claim_price",
+      "label": "Цена иска",
+      "question": "Цена иска определяется из заявленных денежных требований; расчёт выполняется отдельно.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

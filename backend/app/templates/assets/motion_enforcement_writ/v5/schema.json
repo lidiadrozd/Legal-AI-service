@@ -1,0 +1,98 @@
+{
+  "scenario": "motion_enforcement_writ",
+  "version": 5,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "requisite"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "requisite"
+    },
+    "case_number": {
+      "format": "requisite"
+    },
+    "case_subject": {
+      "format": "phrase"
+    },
+    "decision": {
+      "format": "phrase"
+    },
+    "force_date": {
+      "format": "phrase"
+    },
+    "previous_writ": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "delivery_method": {
+      "format": "phrase"
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "sender_details"
+    },
+    "branch_3": {
+      "field": "contacts"
+    },
+    "branch_5": {
+      "field": "party_details"
+    },
+    "branch_10": {
+      "field": "previous_writ"
+    }
+  },
+  "blocks_sha256": "9ca42d7c60d467687334bdd236cea6285a2148f663bbc58b97bcc2098fc563dd",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

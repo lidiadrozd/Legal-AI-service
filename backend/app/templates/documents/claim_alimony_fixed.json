@@ -1,0 +1,241 @@
+{
+  "scenario": "claim_alimony_fixed",
+  "composition": "legal_document",
+  "intake_only_fields": [
+    "calculation",
+    "copy_notice",
+    "monthly_amount",
+    "other_participants",
+    "payment",
+    "pretrial",
+    "start"
+  ],
+  "field_formats": {},
+  "version": 8,
+  "schema_version": 4,
+  "coverage": "structured",
+  "source": "Самостоятельная форма с отдельным нормативным и фактическим слоями",
+  "usage_basis": "Самостоятельная редакция. Исходные образцы используются для проверки состава сведений, а не как факты пользователя.",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-26",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "claim",
+  "source_urls": [
+    "https://www.consultant.ru/document/cons_doc_LAW_8982/",
+    "https://www.consultant.ru/document/cons_doc_LAW_39570/",
+    "https://www.consultant.ru/document/cons_doc_LAW_28165/61fdaaad02ecf7772dc9e0331d21c7ddc3323d4f/"
+  ],
+  "limitations": [
+    "Черновик требует проверки фактов, применимости процедуры, сроков, подсудности и правового обоснования.",
+    "Неизвестные данные обозначаются полями для заполнения; условия и доказательства не предполагаются."
+  ],
+  "blocks": [
+    {
+      "text": "В {{court}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Истец: {{sender}}\nАдрес: {{sender_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{sender_details}}",
+      "role": "addressee",
+      "when_field": "sender_details",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "{{contacts}}",
+      "role": "addressee",
+      "when_field": "contacts",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Ответчик: {{recipient}}\nАдрес: {{recipient_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{party_details}}",
+      "role": "addressee",
+      "when_field": "party_details",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Цена иска: {{claim_price}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{fee}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Исковое заявление о взыскании алиментов на ребёнка в твёрдой денежной сумме",
+      "role": "title",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{children}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{parentage}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{living}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{existing_support}}",
+      "role": "body",
+      "when_field": "existing_support",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "{{other_dependants}}",
+      "role": "body",
+      "when_field": "other_dependants",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "{{assistance}}",
+      "role": "body",
+      "when_field": "assistance",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "{{fixed_grounds}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{maintenance_calculation}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "На основании изложенного прошу суд",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{requests}}",
+      "role": "request",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{indexation}}",
+      "role": "body",
+      "when_field": "indexation",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "claim_alimony_fixed/v8/template.docx",
+    "template_sha256": "fdd62b701f53f30cbc40a02983c076faaf1aa5c9ef2e4ab8b915ae50164334eb",
+    "schema": "claim_alimony_fixed/v8/schema.json",
+    "schema_sha256": "d2262622e34716a8e60b014d5ddb5d187f3af1cbeaec27afcb8616b7e32fee2d"
+  }
+}

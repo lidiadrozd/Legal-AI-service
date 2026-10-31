@@ -1,0 +1,160 @@
+{
+  "scenario": "pretense_damage_property",
+  "composition": "clause_document",
+  "intake_only_fields": [
+    "legal_basis"
+  ],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "damage_object": "sentence",
+    "facts": "sentence",
+    "responsibility": "sentence",
+    "evidence": "sentence",
+    "amount": "auto",
+    "requests": "sentence",
+    "payment_details": "sentence",
+    "attachments": "list",
+    "date": "auto",
+    "signature": "requisite"
+  },
+  "version": 1,
+  "schema_version": null,
+  "coverage": "structured",
+  "source": "Открытые формы и нормативные требования; самостоятельная редакция для сервиса",
+  "usage_basis": "Самостоятельно составленный текст; полные авторские формы ГАРАНТа не воспроизводятся",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-24",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "letter",
+  "source_urls": [
+    "https://kpd.garant.ru/zhaloby_pretenzii/pretenziya_o_vozmeshhenii_ushherba_prichinennogo_imushhestvu_mezhdu_fizicheskimi_liczami/"
+  ],
+  "limitations": [
+    "Сверка с открытыми источниками не заменяет юридическую проверку конкретного документа.",
+    "Ответственное лицо и причинная связь не определяются автоматически по факту повреждения имущества."
+  ],
+  "blocks": [
+    {
+      "text": "Кому: {{recipient}}\nАдрес: {{recipient_address}}\n\nОт: {{sender}}\nАдрес: {{sender_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Претензия о возмещении имущественного ущерба",
+      "role": "title",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Повреждённое имущество: {{damage_object}}. Обстоятельства происшествия: {{facts}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Причина повреждения и основания предъявления требования адресату: {{responsibility}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Документы и иные доказательства размера ущерба: {{evidence}}. Заявленная сумма возмещения: {{amount}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Требование основано на правилах о возмещении убытков и причинённого вреда — статьи 15 и 1064 ГК РФ, с учётом обстоятельств и распределения ответственности.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Требование о возмещении",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{requests}}",
+      "role": "request",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Способ исполнения и платёжные реквизиты: {{payment_details}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Прошу письменно сообщить о результатах рассмотрения и предложенном порядке урегулирования.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "pretense_damage_property/v1/template.docx",
+    "template_sha256": "78afa5e2c3f8731a9e6e493338d463f590d023b8856d958b1d38006f5c3a9095",
+    "schema": "pretense_damage_property/v1/schema.json",
+    "schema_sha256": "7f35c45e3a1e11193a0f28be4f872c9d754d4bdcc7bf64546341ff1df71586ff"
+  }
+}

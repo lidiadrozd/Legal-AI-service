@@ -1,0 +1,87 @@
+{
+  "scenario": "act_housing_handover",
+  "version": 8,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "date": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "agreement": {
+      "format": "phrase"
+    },
+    "property": {
+      "format": "phrase"
+    },
+    "property_description": {
+      "format": "phrase"
+    },
+    "handover_date": {
+      "format": "phrase"
+    },
+    "condition": {
+      "format": "phrase"
+    },
+    "inventory": {
+      "format": "phrase"
+    },
+    "meters": {
+      "format": "phrase"
+    },
+    "keys": {
+      "format": "phrase"
+    },
+    "claims": {
+      "format": "phrase"
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "contacts": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "signature": {
+      "format": "requisite"
+    },
+    "counterparty_signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_17": {
+      "field": "contacts"
+    }
+  },
+  "blocks_sha256": "8cfa9f7cbcaa5d61fcbc42adb75008450b513f4367d9b073ef6ef5b13962b988",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

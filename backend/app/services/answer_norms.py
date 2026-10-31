@@ -123,3 +123,38 @@ def answer_references(answer, offered):
     curated = cited_legal_sources(answer, offered)
     identities = {r["legal_source"].norm for r in curated}
     return curated + tuple(r for r in extract_answer_norms(answer) if r["legal_source"].norm not in identities)
+
+
+def has_mismatched_source_markers(answer, offered):
+    """Reject a marker for article A attached to a paragraph citing only article B."""
+    by_id = {str(r["citation_id"]): r["legal_source"].norm for r in offered}
+    for paragraph in re.split(r"\n\s*\n|\n(?=\d+\.)", answer):
+        explicit = { (r["legal_source"].norm.document_key, r["legal_source"].norm.article)
+                    for r in extract_answer_norms(paragraph) if r["legal_source"].norm.article }
+        for marker in re.findall(r"\[Источник\s+(\d+)\]", paragraph):
+            norm = by_id.get(marker)
+            if norm and explicit and (norm.document_key, norm.article) not in explicit:
+                return True
+    return False
+
+
+def grounding_issues(answer, offered):
+    issues = []
+    uses_worker_initiative = any(r["legal_source"].norm.document_key == TK_KEY and r["legal_source"].norm.article == "80" for r in extract_answer_norms(answer))
+    if uses_worker_initiative and re.search(r"увольнение возможно только на основании (?:его )?письменного заявления|(?:работника|сотрудника) можно уволить (?:исключительно|только) по (?:его )?заявлению|по инициативе работодателя без его письменного заявления", answer, re.I):
+        issues.append("Статья 80 относится только к инициативе работника. Нельзя утверждать, что любое увольнение требует заявления работника; уточни основание прямо в кратком выводе.")
+    if has_mismatched_source_markers(answer, offered):
+        issues.append("Метка источника относится к другой статье.")
+    deadline = any(r["legal_source"].norm.document_key == TK_KEY and r["legal_source"].norm.article == "140" for r in offered)
+    if deadline:
+        if re.search(r"следующ\w+\s+дн", answer, re.I) and not re.search(r"если[^\n]*(?:не работал|отсутствовал)", answer, re.I):
+            issues.append("Срок после требования применим только если работник в день увольнения не работал; это не свободная альтернатива расчёту в день увольнения.")
+        if re.search(r"следующ\w+\s+рабоч\w+\s+дн", answer, re.I):
+            issues.append("Статья 140 устанавливает следующий день, а не следующий рабочий день.")
+        if re.search(r"до дня увольнения", answer, re.I):
+            issues.append("В статье 140 исключение связано с тем, что в день увольнения работник не работал; не с требованием до увольнения.")
+        if re.search(r"(?:независимо от (?:количества|числа) отработанных|независимо от стажа)", answer, re.I):
+            issues.append("Нельзя обещать положительную компенсацию без данных о начисленных и использованных днях отпуска; короткий стаж сам по себе не определяет сумму.")
+        if re.search(r"хотя бы один день|(?:один|1) день в последнем месяце", answer, re.I):
+            issues.append("Условие о единственном отработанном дне не подтверждено предоставленными источниками.")
+    return issues

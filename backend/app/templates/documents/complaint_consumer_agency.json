@@ -1,0 +1,195 @@
+{
+  "scenario": "complaint_consumer_agency",
+  "composition": "clause_document",
+  "intake_only_fields": [],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "contacts": "sentence",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "seller": "requisite",
+    "seller_address": "auto",
+    "purchase": "sentence",
+    "facts": "sentence",
+    "previous_contact": "sentence",
+    "requests": "sentence",
+    "attachments": "list",
+    "date": "auto",
+    "signature": "requisite",
+    "legal_basis": "sentence"
+  },
+  "version": 9,
+  "schema_version": 3,
+  "coverage": "structured",
+  "source": "Самостоятельная форма обращения с учётом структуры официальных рекомендаций Роспотребнадзора",
+  "usage_basis": "Самостоятельный текст; рекомендации органа служат источником состава сведений.",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-27",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "letter",
+  "source_urls": [
+    "https://zpp.rospotrebnadzor.ru/news/federal/572274",
+    "https://zpp.rospotrebnadzor.ru/handbook/finance/memos/210401",
+    "https://petition.rospotrebnadzor.ru/petition/",
+    "https://www.consultant.ru/document/cons_doc_LAW_305/",
+    "https://www.consultant.ru/document/cons_doc_LAW_59999/"
+  ],
+  "limitations": [
+    "Жалоба в ведомство отличается от претензии продавцу и иска в суд.",
+    "Обращение не гарантирует назначение контрольного мероприятия или взыскание денег."
+  ],
+  "blocks": [
+    {
+      "text": "{{recipient}}\nАдрес: {{recipient_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Заявитель: {{sender}}\nАдрес: {{sender_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{contacts}}",
+      "role": "addressee",
+      "when_field": "contacts",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Жалоба в Роспотребнадзор",
+      "role": "title",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Жалоба подаётся в отношении продавца или исполнителя {{seller}}, находящегося по адресу: {{seller_address}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Обстоятельства нарушения",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{purchase}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{facts}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{previous_contact}}",
+      "role": "body",
+      "when_field": "previous_contact",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Правовое обоснование",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "На основании изложенного прошу",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{requests}}",
+      "role": "request",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Ответ на обращение прошу направить по указанному почтовому адресу заявителя.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "complaint_consumer_agency/v9/template.docx",
+    "schema": "complaint_consumer_agency/v9/schema.json",
+    "template_sha256": "b27bd0ea2a07115c82056841d41fe72aecbe552ccd3b5f10c40bb93f0ff43bdd",
+    "schema_sha256": "e77232cdc8e86c425279f36dc7c1d3c1702e20b2764be1c774de5da37f97f86e"
+  }
+}

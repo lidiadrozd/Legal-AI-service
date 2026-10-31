@@ -1,0 +1,72 @@
+{
+  "scenario": "labor_resignation",
+  "version": 8,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "position": {
+      "format": "phrase"
+    },
+    "last_day": {
+      "format": "phrase"
+    },
+    "early_reason": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "delivery": {
+      "format": "phrase"
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "contacts"
+    },
+    "branch_6": {
+      "field": "early_reason"
+    }
+  },
+  "blocks_sha256": "cdf477798282bf6d38dfe322ee30fbf1f627883c108aef3835b012a97d35c8a3",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

@@ -15,10 +15,11 @@ from app.core.prompts import (
 from app.services.document_draft_validator import (
     process_document_response, is_document_generation_request,
     is_valid_document_response, DOCUMENT_FORMAT_RETRY,
+    has_pending_document_clarification,
 )
 from app.services.gigachat_client import get_gigachat_client
 from app.services.llm_cost import TokenUsage
-from app.services.answer_norms import answer_references, extract_answer_norms, document_label
+from app.services.answer_norms import answer_references, extract_answer_norms, document_label, has_mismatched_source_markers, grounding_issues
 from app.services.response_cache import build_cache_key, response_cache
 
 
@@ -45,16 +46,18 @@ class NLPService:
         dialog_state: str = "",
     ) -> NLPGenerateResult:
         """Генерация ответа с автообновлением токена"""
-        drafting = is_document_generation_request(user_query)
+        drafting = (is_document_generation_request(user_query)
+                    or has_pending_document_clarification(chat_history))
         history_tail = (chat_history or "")[-self.max_history_chars :]
         cache_key = build_cache_key(
             user_query=user_query,
             context=context,
             chat_history=history_tail,
-            dialog_state=dialog_state,
+            dialog_state="document-clarifications-v3:" + dialog_state,
         )
         cached = await response_cache.get(cache_key)
-        if cached and not (drafting and cached.startswith("Не удалось оформить документ")):
+        if (cached and not (drafting and cached.startswith("Не удалось оформить документ"))
+                and not grounding_issues(cached, (context or {}).get("rag_sources", []))):
             return NLPGenerateResult(
                 text=cached,
                 cached=True,
@@ -74,6 +77,11 @@ class NLPService:
                           "«ТК РФ, статья 10» либо «Федеральный закон от ДД.ММ.ГГГГ № НН-ФЗ, статья Н». "
                           "Для ГК РФ указывай часть кодекса и реквизиты закона, если это не часть первая. "
                           "Повторяй название закона или кодекса рядом с каждым номером статьи; не заменяй его словами «указанного закона». Не придумывай номера, даты и статьи. Не добавляй неиспользованные нормы ради списка.")
+        system_prompt += ("\nПроверь предпосылки вопроса: названная пользователем статья может не регулировать этот случай. "
+                          "Явно объясни ошибочную ссылку и укажи применимую норму. Различай право на выплату, размер и срок. "
+                          "Не добавляй слово «рабочий» к сроку, если его нет в норме. "
+                          "Не обобщай запрет увольнения по одному основанию на другие основания увольнения. "
+                          "В разделе правовых оснований перечисли все нормы, на которых основаны выводы, а не только статью из вопроса.")
         if (context or {}).get("rag_sources"):
             system_prompt += ("\nЕсли используешь правовую норму из предоставленного источника, "
                               "укажи рядом с утверждением его метку [Источник N]. "
@@ -94,8 +102,10 @@ class NLPService:
         # Repair an omitted legal basis once, using the same retrieved evidence.
         # Never infer that every retrieved norm was used in the answer.
         basis_retried = False
-        if (not drafting and offered and completion.content.strip() != LEGAL_SCOPE_REFUSAL
-                and not any(r["legal_source"].norm.article for r in answer_references(completion.content, offered))):
+        issues = grounding_issues(completion.content, offered)
+        if (not drafting and completion.content.strip() != LEGAL_SCOPE_REFUSAL
+                and ((offered and not any(r["legal_source"].norm.article for r in answer_references(completion.content, offered)))
+                     or issues)):
             basis_retried = True
             first = completion
             completion = await client.chat_completion(
@@ -106,7 +116,9 @@ class NLPService:
                         "Верни полный исправленный ответ: рядом с выводом назови закон и конкретную статью, "
                         "которая регулирует именно этот вопрос, и метку использованного источника. "
                         "Не подменяй статью о сроке статьёй о праве на выплату. Сохрани условия и исключения. "
-                        "Если основание не установлено, прямо сообщи об этом. Не придумывай нормы."
+                        "Метка источника должна соответствовать именно статье рядом с ней; проверь каждую метку. "
+                        "Если основание не установлено, прямо сообщи об этом. Не придумывай нормы. "
+                        + " Выявленные ошибки: " + "; ".join(issues)
                     )},
                 ], model=settings.GIGACHAT_MODEL, temperature=0.0,
             )
@@ -132,8 +144,31 @@ class NLPService:
                 first.usage.usage_estimated or completion.usage.usage_estimated,
             )
         final_response = with_legal_disclaimer(
-            process_document_response(user_query, completion.content)
+            process_document_response("Составь документ" if drafting else user_query, completion.content)
         )
+        remaining_issues = grounding_issues(final_response, offered) if not drafting else []
+        if remaining_issues:
+            # Fail closed on a known contradiction rather than showing a confident
+            # fabricated deadline after an unsuccessful model repair.
+            excerpts = []
+            seen = set()
+            used_articles = {(r["legal_source"].norm.document_key, r["legal_source"].norm.article)
+                             for r in extract_answer_norms(completion.content) if r["legal_source"].norm.article}
+            for item in offered:
+                norm = item["legal_source"].norm
+                if used_articles and (norm.document_key, norm.article) not in used_articles:
+                    continue
+                if norm in seen:
+                    continue
+                seen.add(norm)
+                excerpts.append(f"{document_label(norm.document_key)}, статья {norm.article} [Источник {item['citation_id']}]\n{item['text']}")
+            final_response = ("Не удалось согласовать полный ответ с проверенными источниками. "
+                              "Ниже приведены доступные фрагменты; применимость к вашей ситуации требует проверки.\n\n"
+                              + "\n\n".join(excerpts)) if excerpts else "Не удалось подтвердить правовое основание ответа по доступным источникам. Для надёжного вывода требуется проверка применимых норм и обстоятельств."
+        if not drafting and has_mismatched_source_markers(final_response, offered):
+            # A failed repair must not expose a source label as verified support.
+            final_response = re.sub(r"\[Источник\s+\d+\]", "", final_response)
+            final_response += "\n\n**Требуется проверка:** ссылки на источники не удалось согласовать с указанными статьями."
         references = answer_references(final_response, (context or {}).get("rag_sources", []))
         if not drafting:
             visible = {r["legal_source"].norm for r in extract_answer_norms(final_response)}
@@ -141,6 +176,13 @@ class NLPService:
                        if r.get("origin") != "assistant_citation"
                        and r["legal_source"].norm.article and r["legal_source"].norm not in visible]
             if missing:
+                # Include the main rule already cited in the body as well as
+                # additional sourced rules; an addendum must not mislabel the basis.
+                missing = list(dict.fromkeys(r["legal_source"].norm for r in references
+                                             if r["legal_source"].norm.article))
+                missing = [norm for norm in missing if norm.part or norm.point or not any(
+                    other.document_key == norm.document_key and other.article == norm.article
+                    and (other.part or other.point) for other in missing)]
                 final_response += "\n\n**Правовое основание:** " + "; ".join(
                     f"{document_label(norm.document_key)}, статья {norm.article}"
                     + (f", часть {norm.part}" if norm.part else "")

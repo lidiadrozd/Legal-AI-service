@@ -7,9 +7,9 @@ from __future__ import annotations
 import json
 
 from app.core.prompts import DOCUMENT_JSON_RULES, LEGAL_SCOPE_RULES, LEGAL_SCOPE_REFUSAL, DOCUMENT_DRAFT_FUNCTION
-from app.schemas.document_draft import DocumentDraftResponse
+from app.schemas.document_draft import DocumentDraftResponse, DocumentClarificationResponse
 from pydantic import ValidationError
-from app.services.document_draft_validator import DOCUMENT_FORMAT_RETRY
+from app.services.document_draft_validator import DOCUMENT_FORMAT_RETRY, format_document_clarification
 
 from app.core.config import settings
 from app.services.gigachat_client import get_gigachat_client
@@ -27,10 +27,14 @@ _DOCUMENT_TYPE_HINTS: dict[str, str] = {
 
 _SYSTEM_PROMPT = (
     "Ты — помощник по подготовке черновиков юридических документов по законодательству РФ. "
-    "Пиши на русском языке в официально-деловом стиле. Не задавай повторных вопросов; используй факты из контекста.\n"
+    "Пиши на русском языке в официально-деловом стиле. Уточняй недостающие существенные факты; используй факты из контекста.\n"
     + LEGAL_SCOPE_RULES + DOCUMENT_JSON_RULES
     + "\nВ конце поля «текст» добавь: «Черновик сформирован ИИ. Требуется проверка юристом перед подачей.»"
 )
+
+
+class DocumentNeedsClarification(ValueError):
+    """A valid clarification must never trigger format repair or file creation."""
 
 
 def _parse_model_output(raw: str, *, fallback_title: str) -> tuple[str, str]:
@@ -39,7 +43,11 @@ def _parse_model_output(raw: str, *, fallback_title: str) -> tuple[str, str]:
     if text == LEGAL_SCOPE_REFUSAL:
         raise ValueError(LEGAL_SCOPE_REFUSAL)
     try:
-        draft = DocumentDraftResponse.model_validate(json.loads(text))
+        payload = json.loads(text)
+        if isinstance(payload, dict) and payload.get("status") == "needs_clarification":
+            clarification = DocumentClarificationResponse.model_validate(payload)
+            raise DocumentNeedsClarification(format_document_clarification(clarification))
+        draft = DocumentDraftResponse.model_validate(payload)
     except (json.JSONDecodeError, ValidationError, TypeError) as exc:
         raise ValueError("Модель вернула некорректный JSON документа. Повторите запрос.") from exc
     return draft.title.strip()[:200], draft.text.strip()
@@ -83,6 +91,8 @@ async def generate_ai_document_text(
     fallback = (title_hint or type_label or "Юридический документ").strip()
     try:
         return _parse_model_output(raw.content, fallback_title=fallback or "Юридический документ")
+    except DocumentNeedsClarification:
+        raise
     except ValueError:
         if raw.content.strip() == LEGAL_SCOPE_REFUSAL:
             raise

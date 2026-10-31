@@ -1,0 +1,96 @@
+{
+  "scenario": "claim_debt_loan",
+  "version": 3,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "phrase"
+    },
+    "agreement": {
+      "format": "phrase"
+    },
+    "transfer": {
+      "format": "phrase"
+    },
+    "due_date": {
+      "format": "phrase"
+    },
+    "payments": {
+      "format": "phrase"
+    },
+    "order_history": {
+      "format": "phrase"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "facts": {
+      "format": "phrase"
+    },
+    "pretrial": {
+      "format": "phrase"
+    },
+    "calculation": {
+      "format": "phrase"
+    },
+    "legal_basis": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "copy_notice": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "9ee12e2d946206f6abccbb88742cdf60ad6a5d77f79dad90036f616f2bd96e15",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

@@ -1,5 +1,5 @@
 {
-  "notice": "Небольшая проверенная база фрагментов: три части статьи 4 закона 103-ФЗ, часть 1 статьи 127 и статья 140 ТК РФ. Не является полной базой законодательства. Будущие редакции и комментарии не включены.",
+  "notice": "Небольшая база проверенных фрагментов и явно помеченных авторских изложений. Не является полной базой законодательства или юридическим заключением.",
   "sources": [
     {
       "file": "103_fz_article_4_part_14.txt",
@@ -54,6 +54,30 @@
       "verified_on": "2026-10-14",
       "coverage": "полный текст статьи и отдельно обозначенное пояснение области применения",
       "sha256": "c11cc65e866d9c520befb3f32f7c4ed75e63bfe7353972223993f8be86f34274"
+    },
+    {
+      "file": "tk_rf_article_80_summary.txt",
+      "document_key": "ru:197-fz:2001-12-30",
+      "article": "80",
+      "part": "1",
+      "point": "",
+      "source_url": "https://base.garant.ru/12125268/134df926347d321d8dc82c9551519f33/",
+      "revision": "2026-05-25",
+      "checked_at": "2026-10-24",
+      "content_kind": "operator_summary",
+      "sha256": "dea138b2f67e2e1bcc6440b6d78e8897643a237695dac3c0c3ce22675abe2f26"
+    },
+    {
+      "file": "tk_rf_article_81_point_5_summary.txt",
+      "document_key": "ru:197-fz:2001-12-30",
+      "article": "81",
+      "part": "1",
+      "point": "5",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/6a7ba42d8fda3a1ba186a9eb5c806921998ae7d1/",
+      "revision": "2026-05-25",
+      "checked_at": "2026-10-24",
+      "content_kind": "operator_summary",
+      "sha256": "a55b0416253b5ad5fb8e6979aff31264143bd22e4e6b96c912566b63dd45541f"
     }
   ]
 }

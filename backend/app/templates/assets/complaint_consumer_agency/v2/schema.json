@@ -1,0 +1,68 @@
+{
+  "scenario": "complaint_consumer_agency",
+  "version": 2,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "seller": {
+      "format": "phrase"
+    },
+    "seller_address": {
+      "format": "phrase"
+    },
+    "purchase": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "facts": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "previous_contact": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "1d76e1f6015204491f347d41c53f680c096680a084dacde7720fdc323746c24d",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

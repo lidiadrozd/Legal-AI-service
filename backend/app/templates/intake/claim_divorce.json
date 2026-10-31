@@ -1,0 +1,252 @@
+{
+  "scenario": "claim_divorce",
+  "title": "Исковое заявление о расторжении брака",
+  "family": "claim",
+  "version": 5,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Истец",
+      "question": "Какое полное ФИО или наименование у стороны «Истец»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Истец»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_details",
+      "label": "Реквизиты заявителя",
+      "question": "Какие дату и место рождения, ИНН, СНИЛС или паспортные данные заявителя указываем? Для организации — ИНН и ОГРН; неизвестное можно дополнить позднее.",
+      "kind": "text",
+      "optional": false
+    },
+    {
+      "key": "recipient",
+      "label": "Ответчик",
+      "question": "Какое полное ФИО или наименование у стороны «Ответчик»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Ответчик»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "court",
+      "label": "Наименование суда и адрес",
+      "question": "В какой суд направляем документ? Если суд не определён, оставим название для проверки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "party_details",
+      "label": "Дополнительные сведения об участниках",
+      "question": "Какие дата и место рождения, место работы и идентификатор ответчика вам известны? Данные истца укажите отдельно; неизвестное не угадываем.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "marriage",
+      "label": "Заключение брака",
+      "question": "Когда, каким органом ЗАГС зарегистрирован брак? Каковы номер записи и реквизиты свидетельства?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "children",
+      "label": "Общие несовершеннолетние дети",
+      "question": "Есть ли общие несовершеннолетние дети? Укажите ФИО, даты рождения и документы либо отсутствие детей.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "breakdown",
+      "label": "Прекращение семейных отношений",
+      "question": "С какого времени семейные отношения прекращены и почему дальнейшая совместная жизнь невозможна?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "registry_obstacle",
+      "label": "Основания обращения в суд",
+      "question": "Почему расторжение брака через ЗАГС невозможно: общие несовершеннолетние дети, несогласие или уклонение супруга, иные обстоятельства?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "restrictions",
+      "label": "Обстоятельства, влияющие на возможность обращения",
+      "question": "Имеются ли беременность супруги или ребёнок младше года? Кто подаёт иск и имеется ли согласие супруги, если оно требуется?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "disputes",
+      "label": "Связанные споры",
+      "question": "Есть ли спор о детях, содержании или имуществе и какие требования заявляете вместе с расторжением брака? Для самостоятельных требований могут понадобиться отдельные формы.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "pretrial",
+      "label": "Досудебное обращение",
+      "question": "Обращались ли вы к ответчику до суда? Укажите дату, способ, подтверждение и ответ либо отсутствие обращения.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "calculation",
+      "label": "Расчёт требований",
+      "question": "Из каких отдельных сумм и периодов состоят требования? Основной долг, дополнительные начисления и расходы укажите раздельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование для проверки",
+      "question": "Правовое обоснование будет проверено отдельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "fee",
+      "label": "Государственная пошлина и льготы для проверки",
+      "question": "Размер пошлины или основание освобождения требует отдельной проверки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "requests",
+      "label": "Требования к суду",
+      "question": "Что именно просите у суда? Перечислите каждое требование отдельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "other_participants",
+      "label": "Другие участники",
+      "question": "Есть ли третьи лица или другие участники дела? Укажите роль, имя и адрес либо ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "copy_notice",
+      "label": "Направление копий участникам",
+      "question": "Направлены ли другим участникам копии этого документа и отсутствующих у них приложений? Укажите подтверждение или что отправка ещё предстоит.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Истец»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "claim_price",
+      "label": "Цена иска",
+      "question": "Цена иска определяется из заявленных денежных требований; расчёт выполняется отдельно.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

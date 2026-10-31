@@ -6,6 +6,7 @@ import { Paperclip } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { presentAssistantMessage } from '@/utils/assistantPresentation';
+import { DocumentDownloadLink } from './DocumentDownloadLink';
 
 const Wrap = styled.div<{ $isUser: boolean }>`
   display: flex;
@@ -115,7 +116,7 @@ export function MessageBubble({ message }: Props) {
             message.content
           ) : (
             <MarkdownContent>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: DocumentDownloadLink }}>
                 {presentAssistantMessage(message.content)}
               </ReactMarkdown>
             </MarkdownContent>

@@ -1,0 +1,360 @@
+{
+  "scenario": "contract_housing",
+  "composition": "clause_document",
+  "intake_only_fields": [
+    "legal_basis"
+  ],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "sender_details": "requisite",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "recipient_details": "requisite",
+    "property": "auto",
+    "property_description": "phrase",
+    "ownership": "phrase",
+    "residents": "phrase",
+    "start_date": "auto",
+    "term": "auto",
+    "amount": "auto",
+    "payment": "phrase",
+    "utilities": "phrase",
+    "deposit_amount": "auto",
+    "deposit_terms": "phrase",
+    "handover": "phrase",
+    "repairs": "phrase",
+    "access": "phrase",
+    "liability": "phrase",
+    "termination": "phrase",
+    "return_terms": "phrase",
+    "additional_terms": "phrase",
+    "attachments": "list",
+    "place": "requisite",
+    "date": "auto",
+    "signature": "requisite",
+    "counterparty_signature": "requisite"
+  },
+  "version": 6,
+  "schema_version": 3,
+  "coverage": "structured",
+  "source": "Самостоятельная полная форма с отдельными условиями сторон и проверяемыми нормативными ориентирами",
+  "usage_basis": "Самостоятельная редакция; чужие коммерческие формы и их условия не копируются автоматически.",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-27",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "contract",
+  "source_urls": [
+    "https://www.consultant.ru/document/cons_doc_LAW_9027/"
+  ],
+  "limitations": [
+    "Условия сторон не заменяют проверку императивных требований закона.",
+    "Неподтверждённые условия, гарантии, штрафы и согласия не добавляются.",
+    "Форма применяется только к указанному виду договора; специальные и неподдерживаемые договоры требуют отдельной формы."
+  ],
+  "blocks": [
+    {
+      "text": "Договор найма жилого помещения",
+      "role": "title",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{place}}\t{{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Наймодатель: {{sender}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Наниматель: {{recipient}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Указанные лица, далее совместно именуемые «Стороны», заключили настоящий договор о нижеследующем.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "1. Предмет договора",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "1.1. Наймодатель предоставляет Нанимателю за плату во владение и пользование для проживания жилое помещение по адресу: {{property}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "1.2. Характеристики жилого помещения: {{property_description}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "1.3. Основание права или полномочий Наймодателя: {{ownership}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "1.4. Постоянно проживающие совместно с Нанимателем лица: {{residents}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "2. Срок и передача помещения",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "2.1. Дата начала найма: {{start_date}}. Продолжительность найма: {{term}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "2.2. Порядок передачи жилого помещения: {{handover}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "3. Плата и расчёты",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "3.1. Ежемесячная плата за наём составляет {{amount}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "3.2. Порядок внесения платы: {{payment}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "3.3. Коммунальные и прочие платежи: {{utilities}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "3.4. Обеспечительный платёж не предусмотрен.",
+      "role": "body",
+      "when_field": "deposit",
+      "when_value": "нет",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "3.4. Обеспечительный платёж составляет {{deposit_amount}}.",
+      "role": "body",
+      "when_field": "deposit",
+      "when_value": "да",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "3.5. Условия внесения, зачёта и возврата обеспечительного платежа: {{deposit_terms}}",
+      "role": "body",
+      "when_field": "deposit",
+      "when_value": "да",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "4. Права и обязанности сторон",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "4.1. Помещение предоставляется для проживания. Наниматель обязан использовать его по назначению, обеспечивать сохранность и своевременно вносить согласованные платежи.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "4.2. Условия ремонта и обслуживания: {{repairs}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "4.3. Порядок доступа Наймодателя: {{access}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "5. Ответственность сторон",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "5.1. {{liability}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "6. Изменение, прекращение и возврат",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "6.1. {{termination}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "6.2. {{return_terms}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "7. Прочие условия",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "7.1. Вопросы, не урегулированные настоящим договором, разрешаются в соответствии с применимыми нормами законодательства Российской Федерации. Изменения и дополнения оформляются сторонами в письменной форме. Договор найма регулируется главой 35 ГК РФ, в том числе статьями 671, 674, 676, 678, 681–683, 687 и 688.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "7.2. Дополнительные согласованные условия: {{additional_terms}}",
+      "role": "body",
+      "when_field": "additional_terms",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "8. Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "8.1. {{attachments}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "9. Реквизиты и подписи сторон",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Наймодатель: {{sender}}\nАдрес: {{sender_address}}\nРеквизиты: {{sender_details}}\nПодпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Наниматель: {{recipient}}\nАдрес: {{recipient_address}}\nРеквизиты: {{recipient_details}}\nПодпись: __________________ / {{counterparty_signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "contract_housing/v6/template.docx",
+    "schema": "contract_housing/v6/schema.json",
+    "template_sha256": "e3626b489dab376f64b37ad18889afd8a08f3dd1b3b302ec3eadd945e8e89988",
+    "schema_sha256": "208efbcaba08f0fa57ee550045120da8ddde9a7b8146fbb3bacda6afd7ba67df"
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "scenario": "claim_divorce",
+  "version": 5,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "requisite"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "requisite"
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "sentence"
+    },
+    "marriage": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "children": {
+      "format": "phrase"
+    },
+    "breakdown": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "registry_obstacle": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "restrictions": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "disputes": {
+      "format": "phrase"
+    },
+    "pretrial": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "calculation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "sender_details"
+    },
+    "branch_3": {
+      "field": "contacts"
+    },
+    "branch_5": {
+      "field": "party_details"
+    },
+    "branch_6": {
+      "field": "other_participants"
+    },
+    "branch_14": {
+      "field": "restrictions"
+    },
+    "branch_17": {
+      "field": "pretrial"
+    },
+    "branch_19": {
+      "field": "calculation"
+    }
+  },
+  "blocks_sha256": "6cda8093b7e1afe05da731f633e8146831de87d738274a614336f3104aab13af",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

@@ -1,0 +1,107 @@
+{
+  "scenario": "contract_work",
+  "version": 6,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "place": {
+      "format": "requisite"
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "recipient_details": {
+      "format": "requisite"
+    },
+    "subject": {
+      "format": "phrase"
+    },
+    "scope": {
+      "format": "phrase"
+    },
+    "materials": {
+      "format": "phrase"
+    },
+    "term": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "payment": {
+      "format": "phrase"
+    },
+    "acceptance": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "changes": {
+      "format": "phrase"
+    },
+    "quality": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "liability": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "termination": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "additional_terms": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "signature": {
+      "format": "requisite"
+    },
+    "counterparty_signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_22": {
+      "field": "additional_terms"
+    }
+  },
+  "blocks_sha256": "a3e08709ec02156faab759e9f2506e5ce32abc0c79c55b270aa7cddbed225dc0",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

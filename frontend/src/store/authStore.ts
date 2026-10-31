@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { User } from '@/types/auth.types';
 import { setTokens, clearTokens } from '@/utils/tokenStorage';
 
@@ -17,29 +18,54 @@ interface AuthActions {
   logout: () => void;
 }
 
-// Remove the legacy persistent copy, including tokens saved without consent to remember.
-localStorage.removeItem('ai-lawyer-auth');
+export const useAuthStore = create<AuthState & AuthActions>()(
+  persist(
+    (set) => ({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      isConsentGiven: false,
+      isAuthenticated: false,
 
-export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
-  user: null,
-  accessToken: null,
-  refreshToken: null,
-  isConsentGiven: false,
-  isAuthenticated: false,
+      setAuth: (user, access, refresh, remember = true) => {
+        setTokens(access, refresh, remember);
+        set({
+          user,
+          accessToken: access,
+          refreshToken: refresh,
+          isAuthenticated: true,
+          isConsentGiven: user.is_consent_given,
+        });
+      },
 
-  setAuth: (user, access, refresh, remember = true) => {
-    setTokens(access, refresh, remember);
-    set({ user, accessToken: access, refreshToken: refresh,
-      isAuthenticated: true, isConsentGiven: user.is_consent_given });
-  },
-  setConsentGiven: () => set((state) => ({
-    isConsentGiven: true,
-    user: state.user ? { ...state.user, is_consent_given: true } : null,
-  })),
-  updateUser: (user) => set({ user, isConsentGiven: user.is_consent_given }),
-  logout: () => {
-    clearTokens();
-    set({ user: null, accessToken: null, refreshToken: null,
-      isAuthenticated: false, isConsentGiven: false });
-  },
-}));
+      setConsentGiven: () =>
+        set((state) => ({
+          isConsentGiven: true,
+          user: state.user ? { ...state.user, is_consent_given: true } : null,
+        })),
+
+      updateUser: (user) => set({ user, isConsentGiven: user.is_consent_given }),
+
+      logout: () => {
+        clearTokens();
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false,
+          isConsentGiven: false,
+        });
+      },
+    }),
+    {
+      name: 'ai-lawyer-auth',
+      partialize: (state) => ({
+        user: state.user,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        isConsentGiven: state.isConsentGiven,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
+  )
+);

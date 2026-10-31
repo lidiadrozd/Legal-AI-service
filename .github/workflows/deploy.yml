@@ -1,0 +1,74 @@
+name: Deploy Legal AI to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Ручной запуск
+
+env:
+  DOCKER_IMAGE: legal-ai-service:latest
+  COMPOSE_FILE: docker-compose.prod.yml
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: ./backend
+        push: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}
+
+    - name: Deploy to Production Server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.PROD_HOST }}
+        username: ${{ secrets.PROD_USER }}
+        key: ${{ secrets.PROD_SSH_KEY }}
+        script: |
+          cd /var/www/legal-ai
+          git pull origin main
+          
+          # Секреты из GitHub Secrets
+          echo "SECRET_KEY=${{ secrets.PROD_SECRET_KEY }}" > .env.prod
+          echo "GIGACHAT_CLIENT_ID=${{ secrets.PROD_GIGACHAT_ID }}" >> .env.prod
+          echo "GIGACHAT_CLIENT_SECRET=${{ secrets.PROD_GIGACHAT_SECRET }}" >> .env.prod
+          
+          docker-compose -f docker-compose.prod.yml down
+          docker-compose -f docker-compose.prod.yml pull
+          docker-compose -f docker-compose.prod.yml up -d --build
+          
+          # Очистка
+          docker system prune -af
+          docker volume prune -f
+          
+          # Логи
+          docker-compose -f docker-compose.prod.yml logs -f api
+
+    - name: Notify on success
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      if: success()
+
+    - name: Notify on failure
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      if: failure()

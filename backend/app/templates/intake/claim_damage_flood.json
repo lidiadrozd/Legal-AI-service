@@ -1,0 +1,400 @@
+{
+  "scenario": "claim_damage_flood",
+  "title": "Иск: ущерб от залива квартиры",
+  "family": "other_claim",
+  "version": 4,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Истец",
+      "question": "Какое полное ФИО или наименование у стороны «Истец»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес (истец)",
+      "question": "Укажите полный адрес: истец.",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_details",
+      "label": "Дополнительные реквизиты истца",
+      "question": "Какие дата и место рождения, идентификатор и контакты истца известны? Неизвестное можно дополнить позже.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Ответчик",
+      "question": "Какое полное ФИО или наименование у стороны «Ответчик»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес (ответчик)",
+      "question": "Укажите полный адрес: ответчик.",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_details",
+      "label": "Дополнительные реквизиты ответчика",
+      "question": "Какие дата и место рождения, место работы и идентификатор ответчика известны? Неизвестные сведения не нужно угадывать.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "court",
+      "label": "Суд и адрес",
+      "question": "Укажите суд и его адрес; если ещё не определили суд, сообщите об этом.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "property_address",
+      "label": "Адрес повреждённой квартиры",
+      "question": "По какому полному адресу находится повреждённая квартира? Если это ваш указанный адрес, так и напишите.",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "property_right",
+      "label": "Право истца на квартиру и подтверждение",
+      "question": "На каком основании вам принадлежит или предоставлена повреждённая квартира? Укажите известный подтверждающий документ.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "flood_date",
+      "label": "Дата залива",
+      "question": "Когда произошёл залив квартиры?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "source_address",
+      "label": "Адрес источника залива",
+      "question": "Из какой квартиры или другого помещения поступила вода? Укажите адрес; можно сослаться на уже указанный адрес ответчика.",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "source_relation",
+      "label": "Связь ответчика с источником залива",
+      "question": "Кем ответчик является по отношению к помещению или оборудованию — собственником, жильцом, управляющей организацией? Укажите, что известно и чем подтверждается.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "damage_object",
+      "label": "Повреждённые помещения и имущество",
+      "question": "Какие комнаты, отделка и вещи повреждены при заливе?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "facts",
+      "label": "Причина залива и подтверждающие обстоятельства",
+      "question": "Что известно о причине залива и какими документами это подтверждается?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "restoration",
+      "label": "Состояние восстановления",
+      "question": "Повреждения уже устранены, устранены частично или ремонт ещё не выполнен?",
+      "kind": "choice",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": [
+        "не восстановлено",
+        "восстановлено",
+        "частично восстановлено"
+      ]
+    },
+    {
+      "key": "restoration_costs",
+      "label": "Выполненный ремонт и расходы",
+      "question": "Какие восстановительные работы уже выполнены, сколько потрачено на работы и материалы и чем подтверждается оплата?",
+      "kind": "text",
+      "optional": false,
+      "when_field": "restoration",
+      "when_values": [
+        "восстановлено",
+        "частично восстановлено"
+      ],
+      "choices": []
+    },
+    {
+      "key": "restoration_estimate",
+      "label": "Предстоящие восстановительные расходы",
+      "question": "Какие работы ещё необходимы и чем подтверждается их стоимость — отчётом оценщика, сметой или другим документом?",
+      "kind": "text",
+      "optional": false,
+      "when_field": "restoration",
+      "when_values": [
+        "не восстановлено",
+        "частично восстановлено"
+      ],
+      "choices": []
+    },
+    {
+      "key": "amount",
+      "label": "Основная сумма",
+      "question": "Какова точная сумма в рублях, без дополнительных начислений?",
+      "kind": "money",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "calculation",
+      "label": "Расчёт материального ущерба",
+      "question": "Из каких составляющих складывается сумма ущерба? Можно указать расчёт и реквизиты отчёта оценщика; уже возмещённые суммы нужно учесть.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "evidence",
+      "label": "Доказательства обстоятельств и размера ущерба",
+      "question": "Какие документы подтверждают причину залива и размер ущерба? Укажите известные даты и номера акта, отчёта оценщика и других документов.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "pretrial",
+      "label": "Досудебное урегулирование",
+      "question": "Направлялась ли претензия: когда, каким способом, есть ли подтверждение и ответ?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "litigation_costs",
+      "label": "Заявляемые судебные расходы",
+      "question": "Какие расходы, помимо самого ущерба, хотите взыскать и чем подтверждаются их размер и оплата? Если таких требований нет, ответьте «нет».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "expertise",
+      "label": "Просьба о судебной экспертизе",
+      "question": "Хотите включить ходатайство о назначении судебной экспертизы? Можно ответить «нет» или попросить пояснение.",
+      "kind": "choice",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": [
+        "да",
+        "нет"
+      ]
+    },
+    {
+      "key": "expertise_details",
+      "label": "Вопросы для судебной экспертизы",
+      "question": "Какие обстоятельства нужно установить экспертизой и какие вопросы предлагаете поставить эксперту?",
+      "kind": "text",
+      "optional": false,
+      "when_field": "expertise",
+      "when_values": [
+        "да"
+      ],
+      "choices": []
+    },
+    {
+      "key": "security",
+      "label": "Обеспечение иска",
+      "question": "Хотите включить просьбу об обеспечительных мерах? Если нет, ответьте «нет».",
+      "kind": "choice",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": [
+        "да",
+        "нет"
+      ]
+    },
+    {
+      "key": "security_details",
+      "label": "Меры обеспечения и их обоснование",
+      "question": "Какую конкретную обеспечительную меру просите применить и какие обстоятельства обосновывают её необходимость?",
+      "kind": "text",
+      "optional": false,
+      "when_field": "security",
+      "when_values": [
+        "да"
+      ],
+      "choices": []
+    },
+    {
+      "key": "requests",
+      "label": "Требования к суду",
+      "question": "Что именно просите взыскать или обязать сделать? Перечислите требования отдельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "other_participants",
+      "label": "Другие участники дела",
+      "question": "Есть ли другие участники дела? Укажите их процессуальное положение, имена или наименования и адреса либо сообщите об отсутствии.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "copy_status",
+      "label": "Направление копий иска участникам",
+      "question": "Копии именно этого иска и отсутствующих у других участников приложений уже направлены или отправка ещё предстоит?",
+      "kind": "choice",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": [
+        "направлены",
+        "не направлены"
+      ]
+    },
+    {
+      "key": "copy_notice",
+      "label": "Подтверждение направления копий иска",
+      "question": "Кому, когда и каким способом направлены копии именно иска и приложений? Укажите подтверждающий документ.",
+      "kind": "text",
+      "optional": false,
+      "when_field": "copy_status",
+      "when_values": [
+        "направлены"
+      ],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Проверенное правовое обоснование",
+      "question": "Есть ли проверенное правовое обоснование требований? Если нет, оставим этот раздел для проверки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "fee",
+      "label": "Госпошлина / основание льготы",
+      "question": "Укажите проверенный размер госпошлины и подтверждение оплаты либо основание льготы. Если неизвестно, сообщите.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "jurisdiction",
+      "label": "Основание выбора суда и порядка",
+      "question": "Какие сведения подтверждают выбор этого суда и порядка? Если выбор ещё не проверен, так и сообщите.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, так и напишите.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Укажите: дата документа.",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант",
+      "question": "Кто подпишет документ от имени стороны «Истец»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "claim_price",
+      "label": "Цена иска",
+      "question": "Цена иска определяется из заявленных денежных требований; расчёт выполняется отдельно.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

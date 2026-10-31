@@ -1,0 +1,139 @@
+{
+  "scenario": "claim_labor_salary",
+  "version": 5,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "requisite"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "requisite"
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "sentence"
+    },
+    "employment": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "dismissal": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "wages": {
+      "format": "phrase"
+    },
+    "debt_period": {
+      "format": "phrase"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "evidence": {
+      "format": "phrase"
+    },
+    "previous_contact": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "salary_dispute": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "pretrial": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "calculation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "sender_details"
+    },
+    "branch_3": {
+      "field": "contacts"
+    },
+    "branch_5": {
+      "field": "party_details"
+    },
+    "branch_6": {
+      "field": "other_participants"
+    },
+    "branch_11": {
+      "field": "dismissal"
+    },
+    "branch_12": {
+      "field": "wages"
+    },
+    "branch_17": {
+      "field": "previous_contact"
+    },
+    "branch_18": {
+      "field": "salary_dispute"
+    },
+    "branch_20": {
+      "field": "pretrial"
+    },
+    "branch_22": {
+      "field": "calculation"
+    }
+  },
+  "blocks_sha256": "0506658f05fdc8f2be723eb7ecf1d9f7bc59dc0d8b13df00abc59b71c92190d2",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

@@ -1,0 +1,322 @@
+{
+  "scenario": "contract_housing",
+  "title": "Договор найма жилого помещения",
+  "family": "contract",
+  "version": 3,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Наймодатель",
+      "question": "Какое полное ФИО или наименование у стороны «Наймодатель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес Наймодателя",
+      "question": "Какой полный адрес стороны «Наймодатель» нужно указать?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_details",
+      "label": "Реквизиты Наймодателя",
+      "question": "Какие паспортные данные или реквизиты организации стороны «Наймодатель» известны? Неизвестные можно дополнить позже.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Наниматель",
+      "question": "Какое полное ФИО или наименование у стороны «Наниматель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес Нанимателя",
+      "question": "Какой полный адрес стороны «Наниматель» нужно указать?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_details",
+      "label": "Реквизиты Нанимателя",
+      "question": "Какие паспортные данные или реквизиты организации стороны «Наниматель» известны?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "property",
+      "label": "Адрес передаваемого жилья",
+      "question": "Какой полный адрес квартиры или другого жилого помещения передаётся внаём?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "property_description",
+      "label": "Характеристики жилья",
+      "question": "Каковы вид помещения, площадь, число комнат и другие известные характеристики жилья?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "ownership",
+      "label": "Полномочия наймодателя",
+      "question": "На каком основании Наймодатель вправе передать жильё? Укажите известный документ о праве или полномочиях.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "residents",
+      "label": "Проживающие с нанимателем",
+      "question": "Кто будет постоянно проживать вместе с Нанимателем? Если никто, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "start_date",
+      "label": "Начало найма",
+      "question": "С какой даты начинается наём?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "term",
+      "label": "Продолжительность найма",
+      "question": "На какой срок стороны заключают договор? Например, 2 года или 11 месяцев.",
+      "kind": "duration",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "amount",
+      "label": "Ежемесячная плата",
+      "question": "Какова согласованная месячная плата за жильё в рублях?",
+      "kind": "money",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "payment",
+      "label": "Порядок оплаты",
+      "question": "До какого числа каждого месяца и каким способом вносится плата?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "utilities",
+      "label": "Коммунальные и прочие платежи",
+      "question": "Как стороны распределяют коммунальные платежи и другие расходы на содержание жилья?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "deposit",
+      "label": "Наличие обеспечительного платежа",
+      "question": "Предусмотрен обеспечительный платёж? Ответьте «да» или «нет».",
+      "kind": "choice",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": [
+        "да",
+        "нет"
+      ]
+    },
+    {
+      "key": "deposit_amount",
+      "label": "Сумма обеспечительного платежа",
+      "question": "Какова сумма обеспечительного платежа?",
+      "kind": "money",
+      "optional": false,
+      "when_field": "deposit",
+      "when_values": [
+        "да"
+      ],
+      "choices": []
+    },
+    {
+      "key": "deposit_terms",
+      "label": "Условия обеспечительного платежа",
+      "question": "Когда вносится обеспечительный платёж и при каких согласованных условиях он возвращается или засчитывается?",
+      "kind": "text",
+      "optional": false,
+      "when_field": "deposit",
+      "when_values": [
+        "да"
+      ],
+      "choices": []
+    },
+    {
+      "key": "handover",
+      "label": "Передача жилья",
+      "question": "Когда и в каком состоянии передаётся жильё? Как фиксируются имущество, ключи, счётчики и имеющиеся недостатки?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "repairs",
+      "label": "Ремонт и обслуживание",
+      "question": "Как стороны согласовали текущий ремонт, капитальный ремонт и устранение неисправностей? Если не согласовали, так и напишите.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "access",
+      "label": "Доступ наймодателя",
+      "question": "Как стороны согласовали доступ Наймодателя в жильё и предварительное уведомление Нанимателя?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "liability",
+      "label": "Ответственность",
+      "question": "Какие условия ответственности стороны согласовали? Штрафы без согласования не добавляются.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "termination",
+      "label": "Изменение и прекращение",
+      "question": "Как стороны согласовали изменение и прекращение договора и уведомления об этом?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "return_terms",
+      "label": "Возврат жилья",
+      "question": "В какой срок и в каком порядке жильё и имущество возвращаются Наймодателю?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "additional_terms",
+      "label": "Дополнительные согласованные условия",
+      "question": "Есть ли дополнительные согласованные условия — например, о животных или поднайме? Если нет, ответьте «нет».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения к договору",
+      "question": "Какие приложения стороны включают в договор? Например, опись или техническое задание. Можно ответить «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "place",
+      "label": "Место заключения",
+      "question": "В каком населённом пункте заключается договор?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата договора",
+      "question": "Какую дату заключения договора указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант первой стороны",
+      "question": "Кто подпишет документ от имени стороны «Наймодатель»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "counterparty_signature",
+      "label": "Подписант второй стороны",
+      "question": "Кто подпишет документ от имени стороны «Наниматель»? Укажите ФИО и известные полномочия.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

@@ -1,12 +1,13 @@
 import base64
 from types import SimpleNamespace
+import httpx
 import pytest
 from app.services import gigachat_client as module
 
 
-def client(monkeypatch, *, client_id="test-id", secret="test-secret", key=""):
+def client(monkeypatch, *, client_id="test-id", secret="test-secret", key="", proxy=""):
     monkeypatch.setattr(module, "settings", SimpleNamespace(GIGACHAT_CLIENT_ID=client_id,
-        GIGACHAT_CLIENT_SECRET=secret, GIGACHAT_AUTH_KEY=key))
+        GIGACHAT_CLIENT_SECRET=secret, GIGACHAT_AUTH_KEY=key, GIGACHAT_PROXY_URL=proxy))
     return module.GigaChatAutoToken()
 
 
@@ -55,3 +56,36 @@ async def test_ready_key_oauth_preserves_expiry_and_single_refresh(monkeypatch):
     assert len(requests) == 1
     assert requests[0].headers["Authorization"] == "Basic " + key
     assert value.expires_at == 2000000240
+
+
+@pytest.mark.asyncio
+async def test_oauth_uses_the_configured_connect_proxy_without_disabling_tls(monkeypatch):
+    value = client(monkeypatch, proxy="http://127.0.0.1:8766")
+    module.settings.GIGACHAT_SCOPE = "test-scope"
+    context = object()
+    captured = {}
+
+    class FakeHttp:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return False
+
+        async def post(self, *_args, **_kwargs):
+            return httpx.Response(
+                200,
+                json={"access_token": "synthetic-token", "expires_in": 1800},
+                request=httpx.Request("POST", "https://example.test/oauth"),
+            )
+
+    def factory(**kwargs):
+        captured.update(kwargs)
+        return FakeHttp()
+
+    monkeypatch.setattr(module, "build_gigachat_ssl_context", lambda: context)
+    monkeypatch.setattr(module.httpx, "AsyncClient", factory)
+
+    assert await value.get_valid_token() == "synthetic-token"
+    assert captured["proxy"] == "http://127.0.0.1:8766"
+    assert captured["verify"] is context

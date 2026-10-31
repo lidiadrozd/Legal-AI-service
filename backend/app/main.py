@@ -32,6 +32,8 @@ async def lifespan(app: FastAPI):
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            from app.db.document_workflow_schema import ensure_document_workflow_column
+            await conn.run_sync(ensure_document_workflow_column)
         print("✅ База данных инициализирована АСИНХРОННО!")
     except Exception:
         logger.exception("Ошибка БД при создании таблиц")
@@ -61,6 +63,8 @@ async def lifespan(app: FastAPI):
     yield
     
     # ✅ Закрытие соединений
+    from app.services.gigachat_client import close_gigachat_client
+    await close_gigachat_client()
     await engine.dispose()
     print("🛑 Legal AI Service остановлен")
 
@@ -176,6 +180,10 @@ async def law_monitoring_status(db: AsyncSession = Depends(get_db)):
 # ✅ Обработчики ошибок
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
+    if isinstance(exc, HTTPException):
+        # A missing owned resource is different from a missing API route.
+        # Preserve the domain code so clients can recover the specific action.
+        return await http_exception_handler(request, exc)
     logger.warning("404: path=%s", request.url.path)
     return JSONResponse(status_code=404, content={"error": "Endpoint не найден", "docs": "/docs"})
 
@@ -183,7 +191,7 @@ async def not_found_handler(request: Request, exc):
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     logger.warning("HTTPException: status=%s path=%s detail=%s", exc.status_code, request.url.path, exc.detail)
-    return JSONResponse(status_code=exc.status_code, content={"error": exc.detail})
+    return JSONResponse(status_code=exc.status_code, content={"error": exc.detail}, headers=exc.headers)
 
 
 @app.exception_handler(RequestValidationError)

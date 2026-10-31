@@ -1,0 +1,305 @@
+{
+  "scenario": "contract_work",
+  "composition": "clause_document",
+  "intake_only_fields": [],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "sender_details": "requisite",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "recipient_details": "requisite",
+    "subject": "phrase",
+    "scope": "phrase",
+    "materials": "phrase",
+    "term": "sentence",
+    "amount": "auto",
+    "payment": "phrase",
+    "acceptance": "sentence",
+    "changes": "phrase",
+    "quality": "sentence",
+    "liability": "sentence",
+    "termination": "sentence",
+    "additional_terms": "sentence",
+    "attachments": "list",
+    "place": "requisite",
+    "date": "auto",
+    "signature": "requisite",
+    "counterparty_signature": "requisite",
+    "legal_basis": "sentence"
+  },
+  "version": 7,
+  "schema_version": 3,
+  "coverage": "structured",
+  "source": "Самостоятельная полная форма с отдельными условиями сторон и проверяемыми нормативными ориентирами",
+  "usage_basis": "Самостоятельная редакция; чужие коммерческие формы и их условия не копируются автоматически.",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-27",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "contract",
+  "source_urls": [
+    "https://www.consultant.ru/document/cons_doc_LAW_9027/"
+  ],
+  "limitations": [
+    "Условия сторон не заменяют проверку императивных требований закона.",
+    "Неподтверждённые условия, гарантии, штрафы и согласия не добавляются.",
+    "Форма применяется только к указанному виду договора; специальные и неподдерживаемые договоры требуют отдельной формы."
+  ],
+  "blocks": [
+    {
+      "text": "Договор подряда",
+      "role": "title",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{place}}\t{{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Заказчик: {{sender}}, адрес: {{sender_address}}. Реквизиты: {{sender_details}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Подрядчик: {{recipient}}, адрес: {{recipient_address}}. Реквизиты: {{recipient_details}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Указанные лица, далее совместно именуемые «Стороны», заключили настоящий договор о нижеследующем.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "1. Предмет и объём",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Подрядчик выполняет задание Заказчика: {{subject}}. Объём и требования: {{scope}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Предоставление материалов, оборудования и исходных данных: {{materials}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "2. Сроки",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{term}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "3. Цена и расчёты",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Согласованная цена договора: {{amount}}. Порядок расчётов: {{payment}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "4. Исполнение и приёмка",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{acceptance}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Порядок изменения задания, цены и сроков: {{changes}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "5. Качество и недостатки",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{quality}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "6. Ответственность",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{liability}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "7. Изменение и прекращение",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{termination}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "8. Прочие условия",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{additional_terms}}",
+      "role": "body",
+      "when_field": "additional_terms",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Неурегулированные вопросы разрешаются по применимым нормам законодательства Российской Федерации. Условия, противоречащие императивным нормам, не приобретают силу вследствие включения в договор.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Правовое регулирование",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Подписи сторон",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Заказчик: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Подрядчик: __________________ / {{counterparty_signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "contract_work/v7/template.docx",
+    "schema": "contract_work/v7/schema.json",
+    "template_sha256": "9564657629e92f4fc02d43402f9826f2e7d430a67b87cca6d553842e5960f1de",
+    "schema_sha256": "04369adf3657014d4c29789a92a6c2c61ec8733d9c5c601b75ebe261ff3970ef"
+  }
+}

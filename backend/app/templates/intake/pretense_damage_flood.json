@@ -1,0 +1,205 @@
+{
+  "scenario": "pretense_damage_flood",
+  "title": "Претензия: ущерб от залива квартиры",
+  "family": "damage_pretense",
+  "version": 4,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Потерпевший",
+      "question": "Какое полное ФИО или наименование у стороны «Потерпевший»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Потерпевший»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Лицо, которому предъявлено требование",
+      "question": "Какое полное ФИО или наименование у стороны «Лицо, которому предъявлено требование»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Лицо, которому предъявлено требование»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "property",
+      "label": "Повреждённое имущество",
+      "question": "Какое имущество повреждено и где оно находится? Для недвижимости укажите полный адрес.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "property_right",
+      "label": "Право на имущество",
+      "question": "На каком основании имущество принадлежит вам или почему вы вправе требовать возмещения? Чем это подтверждается?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "event",
+      "label": "Событие причинения вреда",
+      "question": "Когда и как произошло повреждение? Укажите известные причины; предположения отделим от установленных фактов.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "responsibility",
+      "label": "Связь адресата с причинением вреда",
+      "question": "Какие действия или бездействие адресата привели к ущербу и чем это подтверждается?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "damage",
+      "label": "Перечень повреждений",
+      "question": "Какие помещения, вещи или элементы имущества повреждены? Перечислите повреждения.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "evidence",
+      "label": "Доказательства",
+      "question": "Есть ли акт, оценка, экспертиза, фотографии, свидетели или другие подтверждения?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "restoration",
+      "label": "Восстановление имущества",
+      "question": "Выполнен ли ремонт или восстановление? Укажите фактические расходы, оценку будущих расходов и подтверждения раздельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "amount",
+      "label": "Размер основного ущерба",
+      "question": "Какова сумма основного ущерба в рублях?",
+      "kind": "money",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "requests",
+      "label": "Требование о возмещении",
+      "question": "Что конкретно и в каком объёме требуете возместить?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "payment",
+      "label": "Способ исполнения",
+      "question": "Каким способом адресат может возместить ущерб?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "previous_contact",
+      "label": "Предыдущие обращения",
+      "question": "Обращались ли вы к адресату ранее и каков ответ?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Потерпевший»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

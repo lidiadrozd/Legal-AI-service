@@ -1,0 +1,270 @@
+{
+  "scenario": "contract_loan",
+  "composition": "clause_document",
+  "intake_only_fields": [],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "sender_details": "requisite",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "recipient_details": "requisite",
+    "amount": "auto",
+    "transfer": "phrase",
+    "interest": "phrase",
+    "term": "phrase",
+    "repayment": "phrase",
+    "early_repayment": "phrase",
+    "liability": "sentence",
+    "termination": "sentence",
+    "additional_terms": "sentence",
+    "attachments": "list",
+    "place": "requisite",
+    "date": "auto",
+    "signature": "requisite",
+    "counterparty_signature": "requisite",
+    "legal_basis": "sentence"
+  },
+  "version": 7,
+  "schema_version": 3,
+  "coverage": "structured",
+  "source": "Самостоятельная полная форма с отдельными условиями сторон и проверяемыми нормативными ориентирами",
+  "usage_basis": "Самостоятельная редакция; чужие коммерческие формы и их условия не копируются автоматически.",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-27",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "contract",
+  "source_urls": [
+    "https://www.consultant.ru/document/cons_doc_LAW_9027/"
+  ],
+  "limitations": [
+    "Условия сторон не заменяют проверку императивных требований закона.",
+    "Неподтверждённые условия, гарантии, штрафы и согласия не добавляются.",
+    "Форма применяется только к указанному виду договора; специальные и неподдерживаемые договоры требуют отдельной формы."
+  ],
+  "blocks": [
+    {
+      "text": "Договор займа",
+      "role": "title",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{place}}\t{{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Займодавец: {{sender}}, адрес: {{sender_address}}. Реквизиты: {{sender_details}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Заёмщик: {{recipient}}, адрес: {{recipient_address}}. Реквизиты: {{recipient_details}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Указанные лица, далее совместно именуемые «Стороны», заключили настоящий договор о нижеследующем.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "1. Сумма и передача займа",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Сумма займа составляет {{amount}}. Передача и её подтверждение: {{transfer}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "2. Проценты",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Стороны согласовали беспроцентный заём.",
+      "role": "body",
+      "when_field": "interest_type",
+      "when_value": "беспроцентный",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Стороны согласовали процентный заём. Размер и порядок уплаты процентов: {{interest}}.",
+      "role": "body",
+      "when_field": "interest_type",
+      "when_value": "процентный",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "3. Возврат займа",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Срок возврата: {{term}}. Порядок возврата: {{repayment}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Досрочный возврат: {{early_repayment}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "4. Ответственность",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{liability}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "5. Изменение и прекращение",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{termination}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "6. Прочие условия",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{additional_terms}}",
+      "role": "body",
+      "when_field": "additional_terms",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Факт передачи займа подтверждается соответствующим документом о передаче денежных средств. Изменения и дополнения к договору оформляются сторонами в письменной форме.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Правовое регулирование",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Подписи сторон",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Займодавец: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Заёмщик: __________________ / {{counterparty_signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "contract_loan/v7/template.docx",
+    "schema": "contract_loan/v7/schema.json",
+    "template_sha256": "bb25c1e0a2fc03f9426b0390e04995c7de87b607905dfec18f70f2d68b6863ac",
+    "schema_sha256": "8604b0f1d3ac12de4f6bbaeceb16206e338d4a2b3b0bf3d30397b6fca1da03e0"
+  }
+}

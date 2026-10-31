@@ -28,7 +28,8 @@ export function useChat() {
   const openChat = useCallback(
     async (chatId: string) => {
       const messages = await chatApi.getChatHistory(chatId);
-      setMessages(messages);
+      // A slower request for the previous chat must not overwrite the new one.
+      if (useChatStore.getState().activeChat?.id === chatId) setMessages(messages);
     },
     [setMessages]
   );
@@ -71,8 +72,10 @@ export function useChat() {
         },
         signal
       );
+      // The server may refine a document subject after a clarification.
+      await loadChats().catch(() => undefined);
     },
-    [activeChat, appendMessage, startStreaming, appendStreamChunk, finishStreaming, addToast]
+    [activeChat, appendMessage, startStreaming, appendStreamChunk, finishStreaming, addToast, loadChats]
   );
 
   return { loadChats, openChat, createChat, sendMessage };

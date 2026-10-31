@@ -34,9 +34,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   streamingContent: '',
   streamingMessageId: null,
 
-  setChats: (chats) => set({ chats: [...chats].sort((a, b) =>
+  setChats: (chats) => set((state) => ({ chats: [...chats].sort((a, b) =>
     Date.parse(b.created_at) - Date.parse(a.created_at) || Number(b.id) - Number(a.id)
-  ) }),
+  ), activeChat: state.activeChat ? { ...state.activeChat, title: chats.find((chat) => chat.id === state.activeChat?.id)?.title ?? state.activeChat.title } : null })),
 
   addChat: (chat) => set((s) => ({ chats: [chat, ...s.chats] })),
 

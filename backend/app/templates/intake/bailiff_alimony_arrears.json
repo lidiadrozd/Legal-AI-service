@@ -1,0 +1,175 @@
+{
+  "scenario": "bailiff_alimony_arrears",
+  "title": "Заявление об определении задолженности по алиментам",
+  "family": "enforcement",
+  "version": 4,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Взыскатель",
+      "question": "Какое полное ФИО или наименование у стороны «Взыскатель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Взыскатель»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Судебный пристав-исполнитель",
+      "question": "Какое полное ФИО или наименование у стороны «Судебный пристав-исполнитель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Судебный пристав-исполнитель»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "debtor",
+      "label": "Должник по алиментам",
+      "question": "Укажите ФИО должника и известные данные, позволяющие его идентифицировать.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "enforcement",
+      "label": "Исполнительное производство",
+      "question": "Укажите номер, дату исполнительного производства и подразделение приставов; если оно не возбуждено, сообщите.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "support_basis",
+      "label": "Основание взыскания алиментов",
+      "question": "Какие судебный акт, приказ, исполнительный лист или нотариальное соглашение уже установили алименты? Укажите реквизиты.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "support_terms",
+      "label": "Установленные размер и сроки",
+      "question": "Какой размер алиментов и сроки уплаты установлены в исполнительном документе?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "arrears_period",
+      "label": "Период задолженности",
+      "question": "За какие точные периоды алименты не уплачены?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "received_payments",
+      "label": "Фактически полученные суммы",
+      "question": "Какие платежи и когда получены за этот период?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "income_information",
+      "label": "Сведения для расчёта",
+      "question": "Какие доходы должника и подтверждения невыплат известны?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "requests",
+      "label": "Просьба взыскателя",
+      "question": "Что просите у пристава: определить задолженность, выдать постановление о расчёте или другое действие в пределах полномочий?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Взыскатель»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

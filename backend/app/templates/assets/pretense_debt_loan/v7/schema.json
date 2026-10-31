@@ -1,0 +1,97 @@
+{
+  "scenario": "pretense_debt_loan",
+  "version": 7,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "agreement": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "transfer": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "due_date": {
+      "format": "phrase"
+    },
+    "payments": {
+      "format": "phrase"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "facts": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "payment": {
+      "format": "phrase"
+    },
+    "response_term": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "contacts"
+    },
+    "branch_10": {
+      "field": "facts"
+    },
+    "branch_15": {
+      "field": "payment"
+    },
+    "branch_16": {
+      "field": "response_term"
+    }
+  },
+  "blocks_sha256": "ac0e8d8da3e1006fa3081abe7e3bdbdc201305adccabc400ce3a5169adfd7fac",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

@@ -1,0 +1,110 @@
+{
+  "scenario": "contract_loan",
+  "version": 6,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "place": {
+      "format": "requisite"
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "recipient_details": {
+      "format": "requisite"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "transfer": {
+      "format": "phrase"
+    },
+    "interest_type": {
+      "format": "phrase"
+    },
+    "interest": {
+      "format": "phrase"
+    },
+    "term": {
+      "format": "phrase"
+    },
+    "repayment": {
+      "format": "phrase"
+    },
+    "early_repayment": {
+      "format": "phrase"
+    },
+    "liability": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "termination": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "additional_terms": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "signature": {
+      "format": "requisite"
+    },
+    "counterparty_signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "unknown_8": {
+      "field": "interest_type",
+      "unknown": true
+    },
+    "branch_9": {
+      "field": "interest_type",
+      "value": "беспроцентный"
+    },
+    "branch_10": {
+      "field": "interest_type",
+      "value": "процентный"
+    },
+    "branch_19": {
+      "field": "additional_terms"
+    }
+  },
+  "blocks_sha256": "9c0066ebcb7b9ebed32e9a69259d1c6d3b4ba1b5733c4fe24336fbf8041d2086",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

@@ -6,7 +6,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from app.schemas.document_draft import DocumentDraftResponse
+from app.schemas.document_draft import DocumentDraftResponse, DocumentClarificationResponse
 from app.core.prompts import LEGAL_SCOPE_REFUSAL
 
 DOCUMENT_KIND_RE = re.compile(r"\b(?:документ\w*|претенз\w*|исков\w*|иск|ходатайств\w*|договор\w*|заявлен\w*|жалоб\w*)", re.I)
@@ -70,7 +70,9 @@ DOCUMENT_FORMAT_RETRY = (
     "Предыдущий ответ не прошёл проверку JSON документа. Верни тот же документ "
     "ровно одним валидным JSON-объектом по схеме из системных правил. "
     "Не меняй известные факты и не добавляй новые; неизвестные данные оставь "
-    "явными заполнителями. Экранируй переносы строк и кавычки внутри строк. "
+    "явными заполнителями только для согласованного образца. Если существенных фактов "
+    "недостаточно, верни JSON с status=needs_clarification и questions по системным правилам, "
+    "не создавай документ. Экранируй переносы строк и кавычки внутри строк. "
     "Без Markdown и пояснений вне JSON."
 )
 
@@ -80,10 +82,27 @@ def is_valid_document_response(response_text: str) -> bool:
     if payload is None:
         return False
     try:
-        validate_document_draft_payload(payload)
+        if payload.get("status") == "needs_clarification":
+            DocumentClarificationResponse.model_validate(payload)
+        else:
+            validate_document_draft_payload(payload)
     except ValidationError:
         return False
     return True
+
+
+CLARIFICATION_PREFIX = "Для подготовки документа не хватает данных."
+
+
+def format_document_clarification(clarification: DocumentClarificationResponse) -> str:
+    return CLARIFICATION_PREFIX + "\n" + "\n".join(
+        question for question in clarification.questions[:1]
+    )
+
+
+def has_pending_document_clarification(chat_history: str) -> bool:
+    replies = re.split(r"(?:^|\n)assistant:\s*", chat_history or "")
+    return len(replies) > 1 and replies[-1].startswith(CLARIFICATION_PREFIX)
 
 
 def format_document_draft_for_user(draft: DocumentDraftResponse) -> str:
@@ -114,6 +133,8 @@ def process_document_response(user_query: str, response_text: str) -> str:
         )
 
     try:
+        if payload.get("status") == "needs_clarification":
+            return format_document_clarification(DocumentClarificationResponse.model_validate(payload))
         draft = validate_document_draft_payload(payload)
     except ValidationError as exc:
         details = "; ".join(error["msg"] for error in exc.errors())

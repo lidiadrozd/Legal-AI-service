@@ -1,0 +1,77 @@
+{
+  "scenario": "act_housing_handover",
+  "version": 4,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "agreement": {
+      "format": "phrase"
+    },
+    "property": {
+      "format": "phrase"
+    },
+    "property_description": {
+      "format": "phrase"
+    },
+    "handover_date": {
+      "format": "phrase"
+    },
+    "condition": {
+      "format": "phrase"
+    },
+    "inventory": {
+      "format": "phrase"
+    },
+    "meters": {
+      "format": "phrase"
+    },
+    "keys": {
+      "format": "phrase"
+    },
+    "claims": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    },
+    "counterparty_signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "42d95906fa374f12063422b63a2ecf61dcc49085212b504b8fac04bb2f279a98",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

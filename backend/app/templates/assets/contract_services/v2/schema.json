@@ -1,0 +1,102 @@
+{
+  "scenario": "contract_services",
+  "version": 2,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "place": {
+      "format": "phrase"
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "recipient_details": {
+      "format": "phrase"
+    },
+    "subject": {
+      "format": "phrase"
+    },
+    "scope": {
+      "format": "phrase"
+    },
+    "materials": {
+      "format": "phrase"
+    },
+    "term": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "payment": {
+      "format": "phrase"
+    },
+    "acceptance": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "changes": {
+      "format": "phrase"
+    },
+    "quality": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "liability": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "termination": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "additional_terms": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "signature": {
+      "format": "phrase"
+    },
+    "counterparty_signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {
+    "branch_22": {
+      "field": "additional_terms"
+    }
+  },
+  "blocks_sha256": "ab653e00be1af3a2aacc6f4b671091c2ce88b94b0d6be39a975cf8c37c41c1cc",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

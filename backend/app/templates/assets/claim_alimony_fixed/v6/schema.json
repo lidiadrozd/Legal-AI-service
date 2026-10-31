@@ -1,0 +1,127 @@
+{
+  "scenario": "claim_alimony_fixed",
+  "version": 6,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "phrase"
+    },
+    "claim_price": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "phrase"
+    },
+    "children": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "parentage": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "living": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "existing_support": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "other_dependants": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "assistance": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "fixed_grounds": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "maintenance_calculation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "indexation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "sender_details"
+    },
+    "branch_3": {
+      "field": "contacts"
+    },
+    "branch_5": {
+      "field": "party_details"
+    },
+    "branch_12": {
+      "field": "existing_support"
+    },
+    "branch_13": {
+      "field": "other_dependants"
+    },
+    "branch_14": {
+      "field": "assistance"
+    }
+  },
+  "blocks_sha256": "a458ac0d8bfce0c254bf4e8b369b45951cfd7deee2670850b7303d1ed9c51862",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

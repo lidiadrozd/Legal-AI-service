@@ -1,0 +1,273 @@
+{
+  "scenario": "claim_debt_rent",
+  "composition": "clause_document",
+  "intake_only_fields": [],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "court": "requisite",
+    "other_participants": "phrase",
+    "party_details": "requisite",
+    "agreement": "sentence",
+    "property": "sentence",
+    "due_date": "sentence",
+    "facts": "sentence",
+    "amount": "auto",
+    "pretrial": "sentence",
+    "jurisdiction": "sentence",
+    "procedure": "sentence",
+    "legal_basis": "sentence",
+    "calculation": "sentence",
+    "fee": "sentence",
+    "requests": "sentence",
+    "payment_details": "sentence",
+    "copy_notice": "sentence",
+    "attachments": "list",
+    "date": "auto",
+    "signature": "requisite"
+  },
+  "version": 2,
+  "schema_version": null,
+  "coverage": "structured",
+  "source": "Открытые формы и нормативные требования; самостоятельная редакция для сервиса",
+  "usage_basis": "Самостоятельно составленный текст; полные авторские формы ГАРАНТа не воспроизводятся",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-24",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "claim",
+  "source_urls": [
+    "https://kpd.garant.ru/iskovye_zayavleniya_arbitrazhnye/iskovoe_zayavlenie_o_vzyskanii_zadolzhennosti_po_dogovoru_arendy/"
+  ],
+  "limitations": [
+    "Сверка с открытыми источниками не заменяет юридическую проверку конкретного документа.",
+    "До подачи необходим выбор между приказным и исковым производством, а также проверка подсудности и процессуальных реквизитов.",
+    "Базовый пакет не смешивает ссылки на ГПК и АПК в тексте; процессуальные основания указываются после выбора порядка."
+  ],
+  "blocks": [
+    {
+      "text": "В {{court}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Истец: {{sender}}\nАдрес: {{sender_address}}\nОтветчик: {{recipient}}\nАдрес: {{recipient_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Иные участники: {{other_participants}}",
+      "role": "addressee",
+      "when_field": "other_participants",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Дополнительные сведения: {{party_details}}",
+      "role": "addressee",
+      "when_field": "party_details",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Основной долг: {{amount}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Госпошлина / льгота: {{fee}}",
+      "role": "addressee",
+      "when_field": "fee",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Исковое заявление о взыскании задолженности по арендной плате",
+      "role": "title",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Обстоятельства спора",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Основание обязательства: {{agreement}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Объект и период аренды: {{property}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Согласованный срок исполнения: {{due_date}}. Обстоятельства нарушения: {{facts}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Размер заявленного основного долга: {{amount}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Досудебное урегулирование и выбор суда",
+      "role": "heading",
+      "when_field": "pretrial",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "{{pretrial}}",
+      "role": "body",
+      "when_field": "pretrial",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Основание выбора суда и порядка рассмотрения: {{jurisdiction}}.",
+      "role": "body",
+      "when_field": "jurisdiction",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Выбранный процессуальный порядок: {{procedure}}.",
+      "role": "body",
+      "when_field": "procedure",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Обоснование и расчёт",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "ГК РФ, статьи 309, 310, 614. {{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Расчёт взыскиваемых сумм: {{calculation}}.",
+      "role": "body",
+      "when_field": "calculation",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Требования к суду",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{requests}}",
+      "role": "request",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Реквизиты для исполнения денежного требования: {{payment_details}}.",
+      "role": "body",
+      "when_field": "payment_details",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Сведения о направлении копий участникам: {{copy_notice}}.",
+      "role": "body",
+      "when_field": "copy_notice",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "claim_debt_rent/v2/template.docx",
+    "template_sha256": "b5c3f09e343fb67ef7ff016c33653d34853b6c7a40854ae3cfccaf8a5088640a",
+    "schema": "claim_debt_rent/v2/schema.json",
+    "schema_sha256": "d442060e02af641c632a4e2aa31afcd5ad2a83ff4129506dbb957687e3dee246"
+  }
+}

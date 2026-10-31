@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import styled from 'styled-components';
 import { Upload, FileText, Sparkles, X } from 'lucide-react';
@@ -9,6 +9,7 @@ import { DocumentCard } from '@/components/documents/DocumentCard';
 import { DocumentViewer } from '@/components/documents/DocumentViewer';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUIStore } from '@/store/uiStore';
+import { getApiErrorMessage } from '@/utils/apiError';
 import type {
   AiDocumentType,
   Document,
@@ -279,6 +280,7 @@ function isUploadedDocx(doc: Document): boolean {
 }
 
 export default function DocumentsPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -294,6 +296,7 @@ export default function DocumentsPage() {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
+  const [aiQuestions, setAiQuestions] = useState('');
   const [aiDocType, setAiDocType] = useState<AiDocumentType | ''>('');
   const [aiTitle, setAiTitle] = useState('');
   const addToast = useUIStore((s) => s.addToast);
@@ -333,6 +336,7 @@ export default function DocumentsPage() {
   useEffect(() => {
     const chat = searchParams.get('chatId');
     const openGen = searchParams.get('openGenerate');
+    const mode = searchParams.get('mode');
     if (!chat && openGen !== '1') return;
 
     if (chat && /^\d+$/.test(chat)) {
@@ -340,6 +344,7 @@ export default function DocumentsPage() {
     }
     if (openGen === '1') {
       setShowGenerateModal(true);
+      setGenerateMode(mode === 'ai' ? 'ai' : 'builtin');
     }
 
     setSearchParams(
@@ -347,6 +352,7 @@ export default function DocumentsPage() {
         const next = new URLSearchParams(prev);
         next.delete('chatId');
         next.delete('openGenerate');
+        next.delete('mode');
         return next;
       },
       { replace: true },
@@ -422,13 +428,14 @@ export default function DocumentsPage() {
     try {
       setIsGenerating(true);
       if (generateMode === 'ai') {
+          setAiQuestions('');
         const prompt = aiPrompt.trim();
         if (prompt.length < 10) {
           addToast({ type: 'error', message: 'Опишите запрос подробнее (минимум 10 символов)' });
           setIsGenerating(false);
           return;
         }
-        const generated = await documentsApi.generateAi({
+        const interview = await documentsApi.startInterview({
           prompt,
           filename: filename.trim() || 'ai-document',
           output_format: outputFormat,
@@ -436,13 +443,16 @@ export default function DocumentsPage() {
           ...(aiDocType ? { document_type: aiDocType } : {}),
           ...(selectedChatId ? { chat_id: Number(selectedChatId) } : {}),
         });
-        await documentsApi.download(generated.document_id, generated.filename);
         setShowGenerateModal(false);
         setAiPrompt('');
         setAiDocType('');
         setAiTitle('');
-        addToast({ type: 'success', message: 'Документ сгенерирован и скачан' });
-        queryClient.invalidateQueries({ queryKey: ['documents'] });
+        setSelectedChatId('');
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
+        if (interview.context_omitted) {
+          addToast({ type: 'info', message: 'Прежний чат недоступен. Подготовка начата по вашему описанию.' });
+        }
+        navigate(`/chat/${interview.chat_id}`);
         return;
       }
       if (generateMode === 'uploaded') {
@@ -499,8 +509,10 @@ export default function DocumentsPage() {
       setFieldValues({});
       addToast({ type: 'success', message: 'Документ сгенерирован и скачан' });
       queryClient.invalidateQueries({ queryKey: ['documents'] });
-    } catch {
-      addToast({ type: 'error', message: 'Ошибка генерации документа' });
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Ошибка генерации документа');
+      if (generateMode === 'ai') setAiQuestions(message);
+      addToast({ type: 'error', message });
     } finally {
       setIsGenerating(false);
     }
@@ -640,9 +652,15 @@ export default function DocumentsPage() {
                       style={{ minHeight: 120 }}
                     />
                   </Label>
+                    {aiQuestions && (
+                      <Hint role="status" style={{ whiteSpace: 'pre-wrap' }}>
+                        {aiQuestions}{'\n'}Ваше описание сохранено в форме.
+                      </Hint>
+                    )}
                   <Hint>
-                    ИИ составит черновик по законодательству РФ. Укажите стороны, суммы, даты и суть спора.
-                    Недостающие данные будут отмечены как [плейсхолдеры]. Перед подачей проверьте текст у юриста.
+                    После продолжения откроется чат с уточняющими вопросами. Укажите известные сведения;
+                    неизвестные можно оставить для заполнения позже. Документ собирается по шаблону
+                    с текстом и оформлением. Перед использованием требуется проверка юристом.
                   </Hint>
                   <Label>
                     Контекст из чата (опционально)
@@ -784,7 +802,7 @@ export default function DocumentsPage() {
                 {isGenerating
                   ? 'Генерация...'
                   : generateMode === 'ai'
-                    ? 'Сгенерировать с ИИ'
+                    ? 'Продолжить в чате'
                     : generateMode === 'uploaded'
                       ? 'Заполнить и скачать'
                       : 'Сгенерировать'}

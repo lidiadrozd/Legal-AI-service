@@ -1,0 +1,133 @@
+{
+  "scenario": "claim_consumer_defective_goods",
+  "version": 1,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "requisite"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "requisite"
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "claim_price": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "sentence"
+    },
+    "purchase": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "payment_evidence": {
+      "format": "phrase"
+    },
+    "consumer_status": {
+      "format": "sentence"
+    },
+    "goods_category": {
+      "format": "phrase"
+    },
+    "defect": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "defect_evidence": {
+      "format": "phrase"
+    },
+    "facts": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "seller_response": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "pretrial": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "calculation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "payment_details": {
+      "format": "sentence"
+    },
+    "copy_notice": {
+      "format": "sentence"
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "sender_details"
+    },
+    "branch_3": {
+      "field": "contacts"
+    },
+    "branch_5": {
+      "field": "party_details"
+    },
+    "branch_19": {
+      "field": "facts"
+    }
+  },
+  "blocks_sha256": "9ca1245dbcc5db36e7953dbad3d47cda3d95891389646c628fdd770e21f835bd",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

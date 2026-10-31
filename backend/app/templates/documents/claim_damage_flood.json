@@ -1,0 +1,384 @@
+{
+  "scenario": "claim_damage_flood",
+  "composition": "clause_document",
+  "intake_only_fields": [
+    "amount",
+    "copy_notice",
+    "copy_status",
+    "jurisdiction"
+  ],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "sender_details": "requisite",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "recipient_details": "requisite",
+    "court": "requisite",
+    "property_address": "auto",
+    "property_right": "sentence",
+    "flood_date": "auto",
+    "source_address": "auto",
+    "source_relation": "sentence",
+    "damage_object": "sentence",
+    "facts": "sentence",
+    "restoration_costs": "phrase",
+    "restoration_estimate": "sentence",
+    "calculation": "sentence",
+    "evidence": "sentence",
+    "pretrial": "sentence",
+    "litigation_costs": "phrase",
+    "expertise_details": "phrase",
+    "security_details": "phrase",
+    "requests": "sentence",
+    "other_participants": "phrase",
+    "copy_notice": "phrase",
+    "legal_basis": "sentence",
+    "fee": "phrase",
+    "attachments": "list",
+    "date": "auto",
+    "signature": "requisite",
+    "claim_price": "phrase"
+  },
+  "version": 7,
+  "schema_version": 4,
+  "coverage": "structured",
+  "source": "Открытые формы и нормативные требования; самостоятельная редакция для сервиса",
+  "usage_basis": "Самостоятельно составленный текст; полные авторские формы ГАРАНТа не воспроизводятся",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-27",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "claim",
+  "source_urls": [
+    "https://kpd.garant.ru/iskovye_zayavleniya_sudy_obshhej/iskovoe_zayavlenie_o_vzyskanii_ushherba_prichinennogo_zalivom_kvartiry/",
+    "https://www.consultant.ru/document/cons_doc_LAW_39570/69470b15e4eb033f5bfa691094e1d083f32238e9/",
+    "https://www.consultant.ru/document/cons_doc_LAW_39570/c04bddd90fe8dd05299705ec675c65ecd0f668dc/",
+    "https://www.consultant.ru/document/cons_doc_LAW_5142/4734407fbf4d5eec5306840f8b75b994e5d57090/",
+    "https://www.consultant.ru/document/cons_doc_LAW_9027/c511835e25e63740cf185038b1ad056526f814e9/",
+    "https://www.consultant.ru/document/cons_doc_LAW_5142/",
+    "https://www.consultant.ru/document/cons_doc_LAW_9027/"
+  ],
+  "limitations": [
+    "Сверка с открытыми источниками не заменяет юридическую проверку конкретного документа.",
+    "Основание ответственности управляющей организации, собственника или иного лица проверяется отдельно."
+  ],
+  "blocks": [
+    {
+      "text": "В {{court}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Истец: {{sender}}\nАдрес: {{sender_address}}\nРеквизиты и контакты истца: {{sender_details}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Ответчик: {{recipient}}\nАдрес: {{recipient_address}}\nДополнительные реквизиты ответчика: {{recipient_details}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Другие участники дела: {{other_participants}}",
+      "role": "addressee",
+      "when_field": "other_participants",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Цена иска: {{claim_price}}\nГосударственная пошлина: {{fee}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Исковое заявление о возмещении ущерба от залива квартиры",
+      "role": "title",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Обстоятельства причинения ущерба",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Повреждённая квартира расположена по адресу: {{property_address}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{property_right}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Залив произошёл {{flood_date}}. Адрес помещения или иного источника поступления воды: {{source_address}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{source_relation}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{facts}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{damage_object}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Размер ущерба и доказательства",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Повреждённое имущество не восстановлено.",
+      "role": "body",
+      "when_field": "restoration",
+      "when_value": "не восстановлено",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Повреждённое имущество восстановлено.",
+      "role": "body",
+      "when_field": "restoration",
+      "when_value": "восстановлено",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Восстановление повреждённого имущества выполнено частично.",
+      "role": "body",
+      "when_field": "restoration",
+      "when_value": "частично восстановлено",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Выполненные работы, затраты на работы и материалы и подтверждение расходов: {{restoration_costs}}.",
+      "role": "body",
+      "when_field": "restoration",
+      "when_value": null,
+      "when_status": null,
+      "when_values": [
+        "восстановлено",
+        "частично восстановлено"
+      ]
+    },
+    {
+      "text": "{{restoration_estimate}}",
+      "role": "body",
+      "when_field": "restoration",
+      "when_value": null,
+      "when_status": null,
+      "when_values": [
+        "не восстановлено",
+        "частично восстановлено"
+      ]
+    },
+    {
+      "text": "{{calculation}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{evidence}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Досудебное урегулирование",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{pretrial}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Правовое обоснование",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Заявляемые судебные расходы и их подтверждение: {{litigation_costs}}.",
+      "role": "body",
+      "when_field": "litigation_costs",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Требования к суду",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{requests}}",
+      "role": "request",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Взыскать с ответчика в пользу истца судебные расходы: {{litigation_costs}}.",
+      "role": "request",
+      "when_field": "litigation_costs",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Назначение судебной экспертизы",
+      "role": "heading",
+      "when_field": "expertise",
+      "when_value": "да",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Прошу назначить судебную экспертизу. Предлагаемые вопросы и обстоятельства для исследования: {{expertise_details}}.",
+      "role": "request",
+      "when_field": "expertise",
+      "when_value": "да",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Обеспечение иска",
+      "role": "heading",
+      "when_field": "security",
+      "when_value": "да",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Прошу принять следующие обеспечительные меры: {{security_details}}.",
+      "role": "request",
+      "when_field": "security",
+      "when_value": "да",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Направление копий иска и приложений другим участникам: {{copy_notice}}.",
+      "role": "body",
+      "when_field": "copy_status",
+      "when_value": "направлены",
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "claim_damage_flood/v7/template.docx",
+    "schema": "claim_damage_flood/v7/schema.json",
+    "template_sha256": "4d0fabac02157e501bbd38d752dd384558371cc9fc7c173190e1eeb24440f8fc",
+    "schema_sha256": "ed48214cdef2ee9df07ebfa3fdd33d847112321b9e9e2c84a82403ed3ab83fc2"
+  }
+}

@@ -61,9 +61,26 @@ class GigaChatAutoToken:
         self.access_token: str | None = None
         self.expires_at: float = 0
         self.lock = asyncio.Lock()
+        self._http_client: httpx.AsyncClient | None = None
 
         self.client_id = settings.GIGACHAT_CLIENT_ID
         self.client_secret = settings.GIGACHAT_CLIENT_SECRET
+
+    def _get_http_client(self) -> httpx.AsyncClient:
+        # Reuse established TLS connections across interview turns. Creating a
+        # client per answer made every request depend on a new TLS handshake.
+        if self._http_client is None or self._http_client.is_closed:
+            self._http_client = httpx.AsyncClient(
+                timeout=httpx.Timeout(120.0, connect=15.0),
+                limits=httpx.Limits(max_connections=20, max_keepalive_connections=10, keepalive_expiry=120.0),
+                proxy=getattr(settings, "GIGACHAT_PROXY_URL", "") or None,
+                verify=build_gigachat_ssl_context())
+        return self._http_client
+
+    async def aclose(self):
+        if self._http_client is not None:
+            await self._http_client.aclose()
+            self._http_client = None
 
     def _build_auth_header(self) -> str:
         """Accept an explicit ready-made key or a conventional ID/secret pair."""
@@ -96,8 +113,16 @@ class GigaChatAutoToken:
         }
 
         try:
+            # OAuth must use the same explicitly configured CONNECT route as
+            # chat/completions.  Otherwise a Docker Desktop installation can
+            # reach the model endpoint through the local tunnel but fail
+            # before that, while obtaining an access token.
             # Проверка TLS включена. Не отключайте её через verify=False.
-            async with httpx.AsyncClient(timeout=30.0, verify=build_gigachat_ssl_context()) as http:
+            async with httpx.AsyncClient(
+                timeout=30.0,
+                proxy=getattr(settings, "GIGACHAT_PROXY_URL", "") or None,
+                verify=build_gigachat_ssl_context(),
+            ) as http:
                 response = await http.post(
                     _OAUTH_URL,
                     headers=headers,
@@ -216,12 +241,15 @@ class GigaChatAutoToken:
             payload["function_call"] = {"name": structured_function["name"]}
 
         try:
-            async with httpx.AsyncClient(timeout=120.0, verify=build_gigachat_ssl_context()) as http:
-                response = await http.post(
-                    _CHAT_URL,
-                    headers=headers,
-                    json=payload,
-                )
+            http = self._get_http_client()
+            for attempt in range(2):
+                try:
+                    response = await http.post(_CHAT_URL, headers=headers, json=payload)
+                    break
+                except (httpx.ConnectError, httpx.ConnectTimeout):
+                    # A failed connection has not sent a model request. Retry
+                    # once; never retry a read timeout or an ambiguous POST.
+                    if attempt: raise
 
             response.raise_for_status()
             data = response.json()
@@ -310,6 +338,13 @@ class GigaChatAutoToken:
 
 _gigachat_client: GigaChatAutoToken | None = None
 _client_init_lock = asyncio.Lock()
+
+
+async def close_gigachat_client():
+    global _gigachat_client
+    if _gigachat_client is not None:
+        await _gigachat_client.aclose()
+        _gigachat_client = None
 
 
 async def get_gigachat_client() -> GigaChatAutoToken:

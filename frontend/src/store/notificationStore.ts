@@ -68,40 +68,20 @@ interface NotificationActions {
   clearAll: () => void;
 }
 
-function normalizeSeverity(
-  raw: string | null | undefined,
-): Notification['severity'] {
-  const value = (raw || 'medium').toLowerCase();
-
-  if (
-    value === 'low' ||
-    value === 'medium' ||
-    value === 'high' ||
-    value === 'critical'
-  ) {
-    return value;
-  }
-
+function normalizeSeverity(raw: string | null | undefined): Notification['severity'] {
+  const v = (raw || 'medium').toLowerCase();
+  if (v === 'low' || v === 'medium' || v === 'high' || v === 'critical') return v;
   return 'medium';
 }
 
-export const useNotificationStore = create<
-  NotificationState & NotificationActions
->((set) => ({
+export const useNotificationStore = create<NotificationState & NotificationActions>((set) => ({
   notifications: [],
   unreadCount: 0,
 
   addNotification: (n) => {
-    const id =
-      n.serverId != null
-        ? `db-${n.serverId}`
-        : crypto.randomUUID();
-
-    set((state) => {
-      if (state.notifications.some((item) => item.id === id)) {
-        return state;
-      }
-
+    const id = n.serverId != null ? `db-${n.serverId}` : crypto.randomUUID();
+    set((s) => {
+      if (s.notifications.some((x) => x.id === id)) return s;
       const notification: Notification = {
         id,
         title: n.title,
@@ -112,19 +92,15 @@ export const useNotificationStore = create<
         createdAt: n.createdAt ?? new Date().toISOString(),
         meta: n.meta,
       };
-
       return {
-        notifications: [
-          notification,
-          ...state.notifications,
-        ],
-        unreadCount: state.unreadCount + 1,
+        notifications: [notification, ...s.notifications],
+        unreadCount: s.unreadCount + 1,
       };
     });
   },
 
   hydrateFromServer: (rows) => {
-    const serverNotifications: Notification[] = rows.map((row) => ({
+    const notifications: Notification[] = rows.map((row) => ({
       id: `db-${row.id}`,
       title: row.title,
       body: row.message,
@@ -134,78 +110,30 @@ export const useNotificationStore = create<
       createdAt: row.created_at,
       meta: parseNotificationMeta(row.meta),
     }));
-
-    const currentNotifications =
-      useNotificationStore.getState().notifications;
-
-    // Запоминаем ID уведомлений, полученных с сервера.
-    const serverIds = new Set(
-      serverNotifications.map((notification) => notification.id),
-    );
-
-   
-    const transientNotifications = currentNotifications.filter(
-      (notification) =>
-        !notification.id.startsWith('db-') &&
-        !serverIds.has(notification.id),
-    );
-
-    const mergedNotifications = [
-      ...transientNotifications,
-      ...serverNotifications,
-    ].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() -
-        new Date(a.createdAt).getTime(),
-    );
-
-    const unreadCount = mergedNotifications.filter(
-      (notification) => !notification.read,
-    ).length;
-
-    set({
-      notifications: mergedNotifications,
-      unreadCount,
-    });
+    const unreadCount = notifications.filter((n) => !n.read).length;
+    set({ notifications, unreadCount });
   },
 
   markAllRead: async () => {
     const unread = useNotificationStore
       .getState()
-      .notifications.filter(
-        (notification) =>
-          !notification.read &&
-          notification.id.startsWith('db-'),
-      );
+      .notifications.filter((n) => !n.read && n.id.startsWith('db-'));
 
-    // Оптимистично обновляем интерфейс.
-    set((state) => ({
-      notifications: state.notifications.map(
-        (notification) => ({
-          ...notification,
-          read: true,
-        }),
-      ),
+    set((s) => ({
+      notifications: s.notifications.map((n) => ({ ...n, read: true })),
       unreadCount: 0,
     }));
 
     await Promise.allSettled(
-      unread.map((notification) => {
-        const numericId = Number(
-          notification.id.slice(3),
-        );
-
+      unread.map((n) => {
+        const numericId = Number(n.id.slice(3));
         return Number.isFinite(numericId)
           ? notificationsApi.markAsRead(numericId)
           : Promise.resolve();
-      }),
+      })
     );
   },
 
-  clearAll: () =>
-    set({
-      notifications: [],
-      unreadCount: 0,
-    }),
+  clearAll: () => set({ notifications: [], unreadCount: 0 }),
 }));
 

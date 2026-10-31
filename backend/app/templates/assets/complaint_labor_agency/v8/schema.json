@@ -1,0 +1,107 @@
+{
+  "scenario": "complaint_labor_agency",
+  "version": 8,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "employer": {
+      "format": "phrase"
+    },
+    "employer_address": {
+      "format": "phrase"
+    },
+    "employment": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "dismissal": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "debt_period": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "evidence": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "previous_contact": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "facts": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "payment": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "contacts"
+    },
+    "branch_6": {
+      "field": "dismissal"
+    },
+    "branch_8": {
+      "field": "evidence"
+    },
+    "branch_9": {
+      "field": "previous_contact"
+    },
+    "branch_10": {
+      "field": "facts"
+    }
+  },
+  "blocks_sha256": "52c2a01a3d4038f60d950f2f034062b3f94e8e3d17cae44cc175d808f43cb065",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

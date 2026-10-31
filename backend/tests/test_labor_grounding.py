@@ -6,6 +6,24 @@ from app.core.config import settings
 from app.services import rag_context
 
 
+def test_known_deadline_contradictions_are_detected():
+    from app.services.answer_norms import grounding_issues, TK_KEY
+    from app.services.legal_sources import LegalSource, NormIdentity
+    sources = [{"citation_id": 1, "legal_source": LegalSource(NormIdentity(TK_KEY, "140"),
+                "https://www.consultant.ru/document/cons_doc_LAW_34683/", "2026-05-25", "a" * 64), "text": "Норма"}]
+    assert grounding_issues("Расчёт не позднее следующего рабочего дня.", sources)
+    assert grounding_issues("В день увольнения или не позднее следующего дня после требования.", sources)
+    assert not grounding_issues("Если работник в день увольнения не работал, выплата не позднее следующего дня после требования.", sources)
+
+
+def test_source_marker_for_another_article_is_detected():
+    from app.services.answer_norms import has_mismatched_source_markers, TK_KEY
+    from app.services.legal_sources import LegalSource, NormIdentity
+    sources = [{"citation_id": 1, "legal_source": LegalSource(NormIdentity(TK_KEY, "127"),
+                "https://www.consultant.ru/document/cons_doc_LAW_34683/", "2026-05-25", "a" * 64)}]
+    assert has_mismatched_source_markers("Срок: ТК РФ, статья 140 [Источник 1]", sources)
+
+
 @pytest.mark.parametrize("query", [
     "В какой срок работодатель должен выплатить компенсацию за неиспользованный отпуск при увольнении по ст. 127 ТК РФ, если работник отработал менее 3 месяцев?",
     "Когда выплатят компенсацию за неиспользованный отпуск при увольнении?",

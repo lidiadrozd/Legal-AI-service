@@ -1,0 +1,245 @@
+{
+  "scenario": "contract_work",
+  "title": "Договор подряда",
+  "family": "contract",
+  "version": 3,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Заказчик",
+      "question": "Какое полное ФИО или наименование у стороны «Заказчик»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес Заказчика",
+      "question": "Какой полный адрес стороны «Заказчик» нужно указать?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_details",
+      "label": "Реквизиты Заказчика",
+      "question": "Какие паспортные данные или реквизиты организации стороны «Заказчик» известны? Неизвестные можно дополнить позже.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Подрядчик",
+      "question": "Какое полное ФИО или наименование у стороны «Подрядчик»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес Подрядчика",
+      "question": "Какой полный адрес стороны «Подрядчик» нужно указать?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_details",
+      "label": "Реквизиты Подрядчика",
+      "question": "Какие паспортные данные или реквизиты организации стороны «Подрядчик» известны?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "subject",
+      "label": "Предмет договора",
+      "question": "Какие конкретные работы и результат заказывает Заказчик?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "scope",
+      "label": "Объём и требования",
+      "question": "Каковы объём, требования к качеству и согласованные ограничения задания?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "materials",
+      "label": "Материалы и исходные данные",
+      "question": "Кто предоставляет материалы, оборудование или исходные данные и на каких условиях?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "term",
+      "label": "Сроки и этапы",
+      "question": "Какие даты начала, завершения и промежуточные этапы согласованы?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "amount",
+      "label": "Цена договора",
+      "question": "Какова согласованная цена договора в рублях?",
+      "kind": "money",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "payment",
+      "label": "Порядок расчётов",
+      "question": "Как согласованы аванс, остальные платежи, сроки оплаты и способ расчётов?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "acceptance",
+      "label": "Приёмка",
+      "question": "Как и в какой срок Заказчик принимает результат или подтверждает оказание услуг и сообщает о замечаниях?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "changes",
+      "label": "Изменение задания и цены",
+      "question": "Как согласовываются дополнительные работы или услуги, изменение цены и сроков?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "quality",
+      "label": "Устранение недостатков",
+      "question": "Как стороны согласовали устранение недостатков и гарантийные обязательства?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "liability",
+      "label": "Ответственность",
+      "question": "Какие условия ответственности согласованы? Несогласованные штрафы не добавляются.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "termination",
+      "label": "Изменение и прекращение",
+      "question": "Как согласованы изменение, отказ от исполнения или расторжение договора и расчёты при прекращении?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "additional_terms",
+      "label": "Дополнительные условия",
+      "question": "Какие дополнительные условия стороны согласовали? Можно ответить «нет».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения к договору",
+      "question": "Какие приложения стороны включают в договор? Например, опись или техническое задание. Можно ответить «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "place",
+      "label": "Место заключения",
+      "question": "В каком населённом пункте заключается договор?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата договора",
+      "question": "Какую дату заключения договора указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант первой стороны",
+      "question": "Кто подпишет документ от имени стороны «Заказчик»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "counterparty_signature",
+      "label": "Подписант второй стороны",
+      "question": "Кто подпишет документ от имени стороны «Подрядчик»? Укажите ФИО и известные полномочия.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}
