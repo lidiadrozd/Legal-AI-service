@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { AppRouter } from './router';
 import { CookieBanner } from '@/components/common/CookieBanner';
+import { TermsBanner } from '@/components/TermsBanner';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
 import { getAccessToken, getRefreshToken, getRememberMe } from '@/utils/tokenStorage';
@@ -34,7 +35,13 @@ function App() {
     </div>
   );
 
-  return <><AppRouter /><CookieBanner /></>;
+  return (
+    <>
+      <AppRouter />
+      <CookieBanner />
+      <TermsBanner />
+    </>
+  );
 }
 
 export default App;
