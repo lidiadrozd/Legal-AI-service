@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { createGlobalStyle } from 'styled-components';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useUIStore } from '@/store/uiStore';
@@ -11,9 +11,30 @@ interface AppLayoutProps {
   isAdmin?: boolean;
 }
 
+/*
+ * На мобильных браузерах 100vh считается по "высокому" экрану (адресная строка скрыта),
+ * поэтому страница была выше видимой области: прокручивался весь документ, шапка уезжала
+ * вверх, а блок ввода уходил под панель браузера. Пока открыт AppLayout, документ не
+ * должен прокручиваться вообще: прокручивается только область контента внутри Shell.
+ */
+const AppViewportLock = createGlobalStyle`
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  #root {
+    min-height: 0;
+    height: 100%;
+  }
+`;
+
 const Shell = styled.div`
+  position: fixed;
+  inset: 0;
   display: flex;
-  min-height: 100vh;
+  overflow: hidden;
   background: var(--color-bg);
 `;
 
@@ -24,13 +45,15 @@ const SidebarWrap = styled.aside<{ $open: boolean }>`
   flex-direction: column;
   background: var(--color-surface);
   border-right: 1px solid var(--color-border);
-  height: 100vh;
-  position: sticky;
-  top: 0;
+  height: 100%;
   transition: transform var(--transition-normal), width var(--transition-normal);
 
   @media (max-width: 768px) {
     position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    height: auto;
     z-index: 100;
     transform: ${({ $open }) => ($open ? 'translateX(0)' : 'translateX(-100%)')};
   }
@@ -41,13 +64,17 @@ const Main = styled.main`
   display: flex;
   flex-direction: column;
   min-width: 0;
-  height: 100vh;
+  min-height: 0;
+  height: 100%;
   overflow: hidden;
 `;
 
 const Content = styled.div`
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 `;
 
 const Overlay = styled.div<{ $visible: boolean }>`
@@ -68,6 +95,7 @@ export function AppLayout({ isAdmin = false }: AppLayoutProps) {
 
   return (
     <Shell>
+      <AppViewportLock />
       <Overlay $visible={sidebarOpen} onClick={() => setSidebarOpen(false)} />
       <SidebarWrap $open={sidebarOpen}>
         <Sidebar isAdmin={isAdmin} />

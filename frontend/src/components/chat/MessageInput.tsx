@@ -15,6 +15,10 @@ const Wrap = styled.div`
   background: var(--color-bg);
   border-top: 1px solid var(--color-border);
   flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 8px 12px 12px;
+  }
 `;
 
 const AttachedFile = styled.div`
@@ -111,6 +115,7 @@ const PickerBackdrop = styled.div`
 const PickerModal = styled.div`
   width: min(640px, calc(100vw - 32px));
   max-height: min(70vh, 520px);
+  max-height: min(70dvh, 520px);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
