@@ -69,7 +69,7 @@ def _document_list(text):
                 'договор и документы о выполненных работах',text,flags=re.I)
     document_head=(r'банковск|расч[её]тн|приказ|свидетельств|справк|копи|расписк|претензи|'
                    r'исков\w* заявлен|уведомлен|квитанц|опи[сьс]|почтов\w* отправлен|'
-                   r'плат[её]жн\w* поручен|договор|акт|чек|переписк')
+                   r'плат[её]жн\w* поручен|договор|акт|чек|переписк|гаранти')
     # Allow ordinary user wording such as "расписку и претензию" as two
     # applications.  The look-ahead has to accept inflected document words;
     # a strict word boundary immediately after the stem made "претензию"

@@ -40,8 +40,24 @@ def field_value_problem(key: str, value: str, label: str = "") -> str | None:
     """
     text = (value or "").strip()
     normalized = " ".join(_words(text))
+    if key in {'sender','recipient','signature','counterparty_signature'}:
+        if not re.search(r'«|"|\b(?:ООО|АО|ПАО|ИП|ФГБУ|МБУ)\b',text) and re.match(
+                r'^(?:я\s+)?(?:купил[аи]?|приобр[её]л[аи]?|съехал[аи]?|хочу|нужен|нужна|нужно|подписываю|прошу|продали|помоги|доверяю)\b',normalized):
+            return 'identity_is_description'
+        if len(text)>220 and not re.search(r'«|"|\b(?:ООО|АО|ПАО|ИП|ФГБУ|МБУ)\b',text):
+            return 'identity_is_description'
+        # A role/description is not an identity. Do not reject unusual names
+        # or legal entity names merely because they contain a common word.
+        if not re.search(r'«|"|\b(?:ООО|АО|ПАО|ИП|ФГБУ|МБУ)\b',text) and re.match(
+                r'^(?:один\s+человек|другой\b|кто[- ]то|человек\b|(?:заказчик|исполнитель)\s+(?:созда[её]т|делает|принимает)|(?:я|он|она|мы|вы|они)$)',normalized):
+            return 'identity_is_description'
+    if key=='termination' and re.fullmatch(r'(?:(?:при|в случае|на случай)\s+)?(?:экстренн\w*\s+ситуаци\w*|непредвиденн\w*\s+обстоятельств\w*|форс\s*мажор\w*)',normalized):
+        return 'termination_is_vague'
     if label_echo(text, label):
         return "label_echo"
+    if key=='defect_evidence' and re.search(r'перестал\w*|не\s+(?:работает|охлаждает)|утратил\w*\s+способност|выявлен\w*\s+недостат',text,re.I):
+        if not re.search(r'фото|видео|акт\b|сервис|диагност|экспертиз|осмотр|свидетел|доказательств|документ|нет\b|отсутств|не провод|можно\s+провер',text,re.I):
+            return 'evidence_is_defect'
     if key == "property":
         # "Независимая оценка определила стоимость ремонта 128 500" is a
         # useful amount/evidence, but does not identify what was damaged.
@@ -71,6 +87,9 @@ def field_value_problem(key: str, value: str, label: str = "") -> str | None:
 
 def problem_question(code: str) -> str:
     return {
+        "identity_is_description": "Здесь нужно ФИО человека или наименование организации. Описание того, кто выполняет работу, не является именем. Как зовут эту сторону договора?",
+        "evidence_is_defect": "Сам недостаток уже сохранён. Есть ли фото, видео, акт осмотра или другие подтверждения? Если подтверждений пока нет, так и напишите.",
+        "termination_is_vague": "Что стороны договорились делать в экстренной ситуации: переносить сроки или прекращать договор, и как рассчитываться за выполненную часть? Если условия ещё не согласованы, можно оставить их для уточнения.",
         "label_echo": "В ответ попало название поля, а не факт. Укажите конкретные сведения либо сообщите, что они неизвестны.",
         "property_is_appraisal": "Оценка и сумма ущерба сохранены для расчёта, но здесь нужно назвать само повреждённое имущество: например, квартиру, комнату, вещь или технику. Что именно повреждено?",
         "property_is_generic": "Нужно конкретно назвать повреждённый объект, а не писать только «имущество». Что именно повреждено и где находится?",

@@ -4,6 +4,7 @@ import re
 
 def asks_for_help(message):
     text = message.casefold().replace("ё", "е")
+    if re.fullmatch(r'\s*(?:в смысле|что это значит|не поняла вопрос|не понял вопрос)[.!? ]*', text):return True
     # A short request for an example must never be recorded as a factual
     # answer.  In particular, users often write "пример паспортных данных"
     # while the form asks for party details; treating it as the answer skipped
@@ -18,7 +19,7 @@ def asks_for_help(message):
         r"\b(?:поясни|объясни|обьясни|подскажи|расскажи|посоветуй|помоги|разберись|посчитай|рассчитай)\b"
         r"|не (?:понял|поняла|понимаю)|\b(?:какие|какой|какого|какая|кто|зачем|почему|что такое)\b"
         r"|ты (?:должен|должна)|уже отвечал|одно и то же|заладил|не знаю.{0,25}например"
-        r"|можно ли|надо ли|а можно|а нельзя|не разбираюсь|перепиши|исправь документ|проверь документ"
+        r"|\bможно ли\b|\bнадо ли\b|\bа можно\b|\bа нельзя\b|не разбираюсь|перепиши|исправь документ|проверь документ"
         # Requests to determine the law are help turns too.  They used to be
         # caught only by the conversational wrapper, while the persistent
         # controller still tried to save them as facts before it reached the
@@ -29,6 +30,11 @@ def asks_for_help(message):
 def leaves_blank(message):
     if asks_for_help(message):
         return False
+    if re.fullmatch(r'\s*остав[ьт]\w*\s+для\s+ручного\s+заполнения[.! ]*', message, re.I):return True
+    verb=r'(?:внесу|внес[её]м|впишу|впишем|заполню|заполним|дополню|укажу|укажем)'
+    manner=r'(?:сам(?:а|и|остоятельно)?|вручную|позже|потом)'
+    manual=verb+r'\s+'+manner+r'(?:\s+'+manner+r')?|'+manner+r'\s+'+verb+r'(?:\s+'+manner+r')?'
+    if re.fullmatch(r'\s*(?:(?:паспортные\s+данные|реквизиты|эти\s+данные)\s+)?(?:'+manual+r')[.! ]*',message,re.I):return True
     # A hesitant introduction must not erase the facts after it: "не знаю.
     # Работал ..." is an answer containing facts, not a request to leave blank.
     parts = re.split(r"[.!;]\s+|\bно\b|\bоднако\b", message, flags=re.I)
@@ -39,7 +45,7 @@ def leaves_blank(message):
 
 def conversational_value(value):
     """A command/question must never become a document fact, including old sessions."""
-    return asks_for_help(value) or leaves_blank(value) or is_progress_message(value)
+    return asks_for_help(value) or leaves_blank(value) or is_progress_message(value) or is_recall_request(value) or bool(re.fullmatch(r'\s*(?:а\s+)?сам[а]?\s+(?:подумай|догадайся|посмотри)[.!? ]*',value,re.I))
 
 
 def is_progress_message(message):
@@ -49,7 +55,9 @@ def is_progress_message(message):
 
 
 def is_recall_request(message):
-    return bool(re.search(r"уже\s+(?:отвечал|писал|говорил|сообщал|сказал)|(?:я же|я ведь).{0,20}(?:писал|сказал|говорил)|посмотри\s+выше|забыл.{0,15}контекст|ты забыл|ты забыла", message, re.I))
+    if re.search(r'\b(?:(?:смотри|посмотри|прочитай)|(?:писал|указал|сообщал|отвечал)[аи]?)\s+(?:(?:это|всё|все)\s+)?выше\b',message,re.I):return True
+    if re.search(r'\b(?:написано|указано|сообщено|есть)\s+выше\b',message,re.I):return True
+    return bool(re.search(r"уже\s+(?:отвечал|писал|говорил|сообщал|сказал|спрашивал)|(?:я же|я ведь).{0,20}(?:писал|сказал|говорил)|посмотри\s+выше|(?:посмотри|прочитай|смотри).{0,15}предыдущ\w*\s+сообщени|в\s+предыдущем\s+сообщении.{0,30}(?:есть|написан|указан)|забыл.{0,15}контекст|ты забыл|ты забыла", message, re.I))
 
 
 def document_kind(state):
@@ -57,13 +65,15 @@ def document_kind(state):
     text = " ".join([state.get("request", ""), state.get("title_hint", ""), state.get("document_type_hint", "")]).lower()
     if not state.get('scenario'):
         text+=' '+' '.join(state.get('user_turns',[])).lower()
+    from app.services.document_authority_facts import is_authority_request
+    if is_authority_request(text):return 'authority'
     from app.services.document_catalog import catalog_kind
     precise_kind=catalog_kind(text)
     if precise_kind:return precise_kind
     kinds = {'договор': 'contract', 'контракт': 'contract', 'иск': 'claim', 'исковое': 'claim',
              'претензия': 'pretense', 'претензию': 'pretense', 'жалоба': 'complaint', 'жалобу': 'complaint',
-             'ходатайство': 'procedural', 'доверенность': 'authority', 'расписка': 'receipt', 'расписку': 'receipt', 'акт': 'act'}
-    explicit = re.search(r'\b(?:нужен|нужна|нужно|составь|составить|подготовь|подготовить|оформи|оформить|напиши|написать|заключить)\s+(?:(?:мне|проект|новый|новую|такой|такую)\s+){0,3}(договор|контракт|исковое|иск|претензи[яю]|жалоб[ау]|ходатайство|доверенность|расписк[ау]|акт)\b', text)
+             'ходатайство': 'procedural', 'доверенность': 'authority', 'расписка': 'receipt', 'расписку': 'receipt', 'акт': 'act', 'требование': 'pretense'}
+    explicit = re.search(r'\b(?:нужен|нужна|нужно|составь|составить|подготовь|подготовить|оформи|оформить|напиши|написать|заключить)\s+(?:(?:мне|проект|новый|новую|такой|такую|письменное|досудебное)\s+){0,3}(договор|контракт|исковое|иск|претензи[яю]|жалоб[ау]|ходатайство|доверенность|расписк[ау]|акт|требование)\b', text)
     if re.search(r'апелляционн\w* жалоб', text): return 'appeal'
     if explicit: return kinds[explicit[1]]
     if state.get('scenario'):
@@ -75,6 +85,14 @@ def document_kind(state):
     if "ходатайств" in text: return "procedural"
     if re.search(r"\bиск\b|\bисков\w*", text): return "claim"
     if "претенз" in text: return "pretense"
+    from app.services.document_catalog import is_rent_deposit_return
+    if is_rent_deposit_return(text):
+        # Destination answers are enough to continue an unresolved interview;
+        # the user need not know the catalogue's exact document title.
+        if re.search(r'(?:обратиться|обращение|подать|подавать|направить)\s+в\s+суд', text):
+            return 'claim'
+        if re.search(r'требован|(?:напрямую|непосредственно)\s+к\s+(?:собственник|наймодател)|(?:собственник|наймодател)\w*\s*$', text):
+            return 'pretense'
     if "жалоб" in text and not re.search(r"апелляц|судебн", text):
         return state.get("document_kind", "complaint")
     if re.search(r'доверенност', text): return 'authority'
@@ -94,8 +112,13 @@ def infer_scenario(state, message):
     if kind == 'contract':
         if re.search(r'купл[ия].{0,4}продаж', text) and re.search(r'нежил\w* помещен', text): return 'contract_sale_nonresidential'
         if re.search(r'квартир|жиль|жил(?:ое|ого) помещен|жил(?:ой|ого) дом', text) and re.search(r'найм|на[её]м|аренд|сда(?:ть|вать|ю)|сня(?:ть|тия)|снимать', text): return 'contract_housing'
-        if re.search(r'подряд|ремонт|выполнени\w* работ', text): return 'contract_work'
-        if re.search(r'услуг', text): return 'contract_services'
+        # An explicit later choice takes precedence over an earlier general
+        # description of the job (or a question about employment).
+        choices=re.findall(r'(?:составь|подготовь|нужен)\s+договор\s+(услуг|подряда)',text)
+        if choices:return 'contract_services' if choices[-1]=='услуг' else 'contract_work'
+        if re.search(r'подряд|ремонт|вы[паи]?олнени\w*\s+работ', text): return 'contract_work'
+        if re.search(r'услуг|фотограф|фотосъ[её]м|видеосъ[её]м', text): return 'contract_services'
+        if re.search(r'(?:создани|разработк|изготовлени)\w*\s+(?:веб[- ]?)?сайт',text):return 'contract_work'
         if re.search(r'за[её]м|займ|в долг|одолж', text): return 'contract_loan'
         return None
     if kind == 'authority': return 'power_of_attorney'
@@ -105,8 +128,9 @@ def infer_scenario(state, message):
         if re.search(r'работ|подряд', text): return 'act_work'
         return None
     if kind == 'appeal':
-        return ('appeal_arbitration' if re.search(r'арбитраж', text) else
-                ('appeal_civil' if re.search(r'гражданск|районн\w* суд|миров\w* судь|суд\w* общей юрисдикц', text) else None))
+        from app.services.document_appeal_routing import appeal_proceeding
+        proceeding=appeal_proceeding(text)
+        return 'appeal_'+proceeding if proceeding in {'civil','arbitration'} else None
     if kind == "complaint" and re.search(r"трудов\w* инспекц|инспекц\w* (?:по )?труд|роструд", text):
         return "complaint_labor_agency"
     if kind == "procedural" and re.search(r"отлож|перен[её]с|перенос", text):
@@ -141,6 +165,10 @@ def scenario_candidates(state):
 
 def classification_guidance(state):
     kind = document_kind(state)
+    if kind == 'appeal':
+        from app.services.document_appeal_routing import appeal_clarification
+        from app.services.document_routing import scope_text
+        return appeal_clarification(scope_text(state))
     if kind == 'contract':
         return 'Готовим договор. Что именно стороны хотят согласовать: трудовые отношения, наём жилья, услуги, выполнение работ, заём или другую сделку?'
     if kind == 'act': return 'Готовим акт. Он подтверждает выполненные работы, оказанные услуги или другое действие?'
@@ -220,8 +248,13 @@ def field_guidance(state, key, scenario):
 
 
 def normalize_address(raw):
+    raw=re.sub(r'^\s*адрес\s+(?:исполнител\w*|подрядчик\w*|заказчик\w*|займодав\w*|за[её]мщик\w*|нанимател\w*|наймодател\w*)(?:\s+[^:;\n]{1,110})?\s*:\s*','',raw,flags=re.I)
     raw=re.sub(r'^\s*(?:место (?:работы|жительства)|почтовый адрес|адрес(?: работодателя| истца| ответчика| заявителя)?)\s*[:—-]\s*','',raw,flags=re.I)
     value = re.sub(r"\s+", " ", raw.strip()).rstrip(".")
+    comma_parts = [p.strip() for p in value.split(',')]
+    if (len(comma_parts) in {3,4} and all(re.fullmatch(r'[А-Яа-яЁё -]+',p) for p in comma_parts[:2])
+            and all(re.fullmatch(r'\d+[А-Яа-яЁё/-]*',p) for p in comma_parts[2:])):
+        value = comma_parts[0]+', '+comma_parts[1]+' '+comma_parts[2]+(', '+comma_parts[3] if len(comma_parts)==4 else '')
     from app.services.document_addresses import RELATIVE
     if RELATIVE.search(value):
         return value

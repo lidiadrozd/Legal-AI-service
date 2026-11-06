@@ -213,7 +213,10 @@ def detect_requested_rules(scenario: str | None, text: str | None) -> set[str]:
     statutory input later.
     """
     source = text or ""
+    source = re.sub(r'[^.!?;]*\b(?:не заявляю|не требую|не прошу)\b[^.!?;]*','',source,flags=re.I)
     found = {rule_id for rule_id, pattern in _REQUEST_PATTERNS if pattern.search(source)}
+    if re.search(r'(?:в договоре|по договору|договор предусматривает)[^.!?;]{0,80}(?:неустойк|пени)',source,re.I):
+        found.add('contract_penalty')
     family = scenario_family(scenario)
     # An explicit request for delay interest *by law* supplies the otherwise
     # ambiguous legal basis for Article 395.  Do not override an equally
@@ -496,6 +499,8 @@ def _input_question(rule_id: str, missing: Sequence[str]) -> str:
         return ("Укажите условие договора о процентах: ставку и период (за день, месяц или год), а также даты, "
                 "за которые их нужно начислить.")
     if rule_id == "contract_penalty":
+        if requested <= {'days', 'start_date', 'end_date'}:
+            return 'По какую дату включительно нужно рассчитать неустойку? Ставка и срок возврата уже сохранены.'
         return ("Укажите условие договора о неустойке: ставку или фиксированную сумму, за какой период она начисляется, "
                 "и даты просрочки. Неустойку нельзя назначить без условия договора или иной подтверждённой нормы.")
     if rule_id == "penalty_basis":
@@ -629,6 +634,9 @@ def _calculate_basis_choice(rule: FormulaRule, data: Mapping[str, Any]) -> dict[
 
 
 def _calculate_contract_rate(rule: FormulaRule, data: Mapping[str, Any], fields: Mapping[str, Any] | None, *, kind: str) -> dict[str, Any]:
+    payments = data.get('partial_payments') or []
+    if payments and any(not payment.get('date') for payment in payments):
+        return _entry(rule, NEEDS_INPUT, inputs=data, missing=['payment_year'], question='В каком году был частичный возврат займа? Сумма возврата и остаток долга уже сохранены.')
     fixed = _decimal(data.get("fixed_amount"))
     if fixed is not None:
         if fixed < 0:
@@ -655,9 +663,44 @@ def _calculate_contract_rate(rule: FormulaRule, data: Mapping[str, Any], fields:
     if not data.get("source") and not data.get("contract_clause"):
         return _entry(rule, REVIEW_REQUIRED, inputs=data, review_reason="Условие договора о ставке не подтверждено.", system_action="verify_contract_clause")
     if period in {"day", "daily", "день", "за день"}:
-        total = principal * rate / _HUNDRED * days
-        expression = f"{_money(principal)} × {_percent(rate)} × {days} дн."
+        if payments:
+            from datetime import timedelta
+            start, end = _date(data.get('start_date')), _date(data.get('end_date'))
+            policy = data.get('payment_day_policy')
+            if not start or not end or not data.get('explicit_interval'):
+                return _entry(rule, NEEDS_INPUT, inputs=data, missing=['start_date','end_date'], question='Укажите период расчёта неустойки, включая конечную дату.')
+            if policy not in {'same_day', 'next_day'}:
+                return _entry(rule, NEEDS_INPUT, inputs=data, missing=['payment_day_policy'], question='По договору частичный платёж уменьшает долг для начисления неустойки в день поступления или со следующего дня?')
+            stop = start + timedelta(days=days)
+            balance, cursor, parts, total = principal, start, [], Decimal('0')
+            for payment in sorted(payments, key=lambda item: item['date']):
+                paid_on, paid = _date(payment['date']), _decimal(payment['amount'])
+                if paid_on is None or paid is None or paid < 0 or paid > balance:
+                    return _entry(rule, NEEDS_INPUT, inputs=data, missing=['partial_payments'], question='Проверьте суммы и даты частичных возвратов займа.')
+                effective = paid_on + timedelta(days=1 if policy == 'next_day' else 0)
+                boundary = min(stop, max(cursor, effective))
+                count = (boundary-cursor).days
+                if count:
+                    total += balance * rate / _HUNDRED * count
+                    parts.append(f'{_money(balance)} × {_percent(rate)} × {count} дн.')
+                if effective >= stop:
+                    cursor = stop
+                    break
+                balance -= paid
+                cursor = boundary
+            if cursor < stop:
+                count = (stop-cursor).days
+                total += balance * rate / _HUNDRED * count
+                parts.append(f'{_money(balance)} × {_percent(rate)} × {count} дн.')
+            expression = ' + '.join(parts)
+        else:
+            total = principal * rate / _HUNDRED * days
+            expression = f"{_money(principal)} × {_percent(rate)} × {days} дн."
     elif period in {"year", "annual", "год", "в год"}:
+        if payments:
+            return _entry(rule, REVIEW_REQUIRED, inputs=data,
+                          review_reason='Годовая ставка при частичных возвратах требует расчёта по отдельным периодам.',
+                          system_action='expand_contract_payment_periods')
         divisor = _decimal(data.get("day_divisor"))
         if divisor is None or divisor <= 0:
             return _entry(rule, NEEDS_INPUT, inputs=data, missing=["day_divisor"], question=_input_question(rule.id, ["day_divisor"]))
@@ -1376,5 +1419,11 @@ def render_calculation_lines(plan: Mapping[str, Any]) -> list[str]:
                 continue
         formula = str(entry.get("formula") or "").strip()
         if formula:
+            data=entry.get('inputs') or {}
+            if data.get('explicit_interval'):
+                start,end=_date(data.get('start_date')),_date(data.get('end_date'))
+                if start and end:
+                    inclusive=' включительно' if data.get('days')==(end-start).days+1 else ''
+                    formula=f"За период с {start:%d.%m.%Y} по {end:%d.%m.%Y}{inclusive}: "+formula
             lines.append(formula.rstrip("." ) + ".")
     return list(dict.fromkeys(lines))

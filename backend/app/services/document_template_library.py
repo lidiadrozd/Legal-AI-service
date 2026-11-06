@@ -90,6 +90,9 @@ def format_template_fields(scenario, fields):
             values[spec.key] = "Отсутствуют" if spec.key in {"other_participants", "attachments"} else "Не применимо"
             continue
         if stored.get("status") != "filled" or not stored.get("value"):
+            if scenario.key=='power_of_attorney' and spec.key in {'principal_details','agent_details'}:
+                person='доверителя' if spec.key=='principal_details' else 'представителя'
+                values[spec.key]='[паспорт '+person+': серия, номер, кем и когда выдан; дата рождения]'
             continue
         value = stored["value"]
         if spec.key == "attachments":

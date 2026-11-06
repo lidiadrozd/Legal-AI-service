@@ -148,7 +148,7 @@ def local_candidate(key,source,mode,scenario):
         r'заключ[её]н\w*|обязуется|обязуются|прошу|требую|возражаю|работал[аи]?|проживает|'
         r'передал[аи]?|передан\w*|получил[аи]?|получен\w*|оплатил[аи]?|уплатил[аи]?|'
         r'выплачен\w*|направил[аи]?|направлен\w*|выполнен\w*|оказан\w*|нарушен\w*|'
-        r'отмен[её]н\w*|вступил\w*|расторгнут\w*|уволен\w*|согласован\w*|предусмотрен\w*|'
+        r'отмен[её]н\w*|вынес(?:ла|ли)?|вступил\w*|расторгнут\w*|уволен\w*|согласован\w*|предусмотрен\w*|'
         r'расположен\w*|подлежит|подлежат|осуществляется|производится|уплачивается|оплачивается|'
         r'согласовали|несут|нес[её]т|обеспечивает|вносит|прекращены|представляю|находил(?:ся|ась)|назначено|'
         r'не было|отсутству\w*)\b',candidate,re.I))
@@ -174,9 +174,33 @@ def local_candidate(key,source,mode,scenario):
 
 
 def _validate_slot(key,text,source,mode):
+    if re.search(r'мужском\s+роде|женском\s+роде|(?:грамматическ\w*|фактическ\w*)\s+(?:род|пол)|согласу\w*\s+в\s+роде|неизрасходован\w*\s+аванс\s+не\s+(?:равен|приравнивается)',text,re.I) and not re.search(r'\bрод\w*|\bпол\w*|неизрасходован',source,re.I):return False
+    if key=='acceptance' and re.search(r'(?:с\s+момента|со\s+дня|после)\s+(?:выполнения|завершения|передачи)',text,re.I) and not re.search(r'момент|со\s+дня|после|передач|завершени',source,re.I):return False
+    if re.search(r'(?:ранее|первоначально|впоследствии).{0,30}(?:заявл|требован|обращен)',text,re.I) and not re.search(r'ранее|первоначально|впоследствии|обращал|требовал|просил|а потом',source,re.I):return False
+    if key in {'return_facts','deposit_terms'} and re.search(r'(?:передач\w*|передан\w*).{0,65}\b(?:нанимателю|арендатору)\b',text,re.I) and not re.search(r'\b(?:нанимателю|арендатору)\b',source,re.I):return False
+    if key=='repairs' and re.search(r'неисправност\w*.{0,65}устраняет\s+наймодатель',source,re.I) and re.search(r'Наниматель.{0,100}устранени\w*\s+неисправност',text,re.I):return False
+    if re.search(r'\bнеотработан\w*',source,re.I) and not re.search(r'\bнеотработан\w*',text,re.I):return False
+    if re.search(r'\b(?:Исполнитель|Подрядчик|Заказчик)\s+обязана\b',text,re.I):return False
+    if key=='acceptance' and re.search(r'проверяет\s+результат',source,re.I) and re.search(r'результат\s+при[её]мки',text,re.I):return False
+    if key=='powers' and re.search(r'(?:соверш\w*|осуществ\w*)\s+(?:люб\w*|ин\w*|друг\w*)\s+действи[яй]',text,re.I) and not re.search(r'(?:соверш\w*|осуществ\w*)\s+(?:люб\w*|ин\w*|друг\w*)\s+действи[яй]',source,re.I):return False
+    if key=='appeal_term' and re.search(r'копи\w*\s+решения',source,re.I) and not re.search(r'копи\w*\s+(?:решения|судебного\s+(?:решения|акта))',text,re.I):return False
+    if key=='requests' and re.search(r'не\s+обжалую',source,re.I) and not re.search(r'не\s+(?:обжалу\w*|оспарива\w*)',text,re.I):return False
+    # The editor must not invent a narrator ("Женщина указал") or turn a
+    # negative answer about future contract terms into a past defect report.
+    if re.search(r'\b(?:женщина|мужчина|пользователь|пользовательница)\b',text,re.I) and not re.search(r'\b(?:женщина|мужчина|пользователь|пользовательница)\b',source,re.I):return False
+    if key=='scope' and 'обработан' in source.casefold() and not re.search(r'обработ|коррекц',text,re.I):return False
+    if key=='changes' and re.search(r'дополнительн\w*\s+час\w*.{0,80}только\s+после',source,re.I) and re.search(r'(?:требуются|необходимы|заказаны)\s+дополнительные\s+часы',text,re.I):return False
+    if key in {'quality','liability','materials'}:
+        from app.services.document_case_facts import absence_reply
+        if absence_reply(source) and re.search(r'выявлен|доказательств|представлен|указал|сообщил',text,re.I):return False
     from app.services.document_drafting import validate_edit
     from app.services.document_field_safety import field_value_problem
     if not text.strip() or requires_prose_edit(text) or not formal_text(text) or not validate_edit(text,source):return False
+    if re.match(r'^Относится к (?:условиям|полю|разделу)\b',text,re.I) and not re.match(r'^Относится к\b',source,re.I):return False
+    # A photo's existence is not proof of the alleged fault when the user
+    # explicitly says the photo cannot establish it. Preserve that limit.
+    if re.search(r'по ним не скажешь|по (?:фото|снимкам|документам).{0,20}(?:нельзя|невозможно) (?:определить|установить)',source,re.I):
+        if not re.search(r'нельзя|невозможно|не позволяют|не подтвержда|недостаточно|не дают возможности',text,re.I):return False
     if field_value_problem(key, text):return False
     if re.search(r'[{}<>`]',text) or not re.search(r'[А-Яа-яЁёA-Za-z0-9]',text):return False
     if mode=='sentence' and (not re.search(r'[А-Яа-яЁёA-Za-z]',text) or len(text.split())<2):return False
@@ -192,7 +216,7 @@ def _validate_slot(key,text,source,mode):
     if re.search(r'\b(?:требуется рассмотреть|в претензии|в заявлении|в документе указано)\b',text,re.I) and not re.search(r'\b(?:требуется рассмотреть|в претензии|в заявлении|в документе указано)\b',source,re.I):return False
     if re.search(r'неизвестн|не известн|не располагаю|не знаю',text,re.I) and not re.search(r'неизвестн|не известн|не располагаю|не знаю',source,re.I):return False
     if re.search(r'\b(?:в связи|по причине|вследствие)\b',text,re.I) and not re.search(r'\b(?:в связи|по причине|вследствие|потому|так как|из-за)\b',source,re.I):return False
-    if re.search(r'\b(?:должен|обязан|обязуется|вправе|разрешено|запрещено)\b',text,re.I) and not re.search(r'\b(?:должен|обязан|обязуется|вправе|разреш|запрещ|можно|нельзя|пусть|нужно|надо|соглас|будет|будут)\b',source,re.I):
+    if re.search(r'\b(?:должен|обязан|обязуется|вправе|разрешено|запрещено)\b',text,re.I) and not re.search(r'\b(?:должен|обязан|обязуется|вправе|разреш\w*|запрещ\w*|можно|нельзя|пусть|нужно|надо|соглас\w*|будет|будут)\b',source,re.I):
         # The authoring template supplies duties. A free editor cannot add them.
         return False
     return not re.search(r'\b(?:стать[яиею]|ст\.)\s*\d|\b(?:ГК|СК|ТК|ГПК|АПК|НК)\s*РФ',text) or bool(re.search(r'\b(?:стать|ст\.)',source,re.I))
@@ -209,7 +233,7 @@ async def prepare_form_document(state,client=None,*,source_keys=None):
         prepare_form_rules(result)
     specs={f.key:f for f in SCENARIOS[result['scenario']].fields};package=_package(result)
     formats=package.get('field_formats',{});edits={};missing=[];usage=[]
-    author_gender={'male':'мужской','female':'женский'}.get(narrator_gender(result.get('fields',{}),result))
+    author_gender=None if result['scenario'].startswith('contract_') else {'male':'мужской','female':'женский'}.get(narrator_gender(result.get('fields',{}),result))
     cache=result.setdefault('draft_cache',{});pending=[]
     for key in form_narrative_keys(result) if source_keys is None else source_keys:
         source=source_text(result,key);mode=formats.get(key,'sentence')
@@ -224,6 +248,7 @@ async def prepare_form_document(state,client=None,*,source_keys=None):
         canonical=canonical_editorial(key,source,result['scenario'])
         candidate=local_candidate(key,source,mode,result['scenario']) if client is None or canonical or key=='contacts' else None
         if candidate:
+            result.setdefault('draft_review',{}).pop(key,None)
             edits[key]=candidate;continue
         pending.append(key)
     # Batch by document purpose; schema IDs and slot contexts prevent fields
@@ -237,6 +262,9 @@ async def prepare_form_document(state,client=None,*,source_keys=None):
         if author_gender:
             for slot in data.values():
                 slot['author_grammatical_gender']=author_gender
+        if result['scenario'].startswith('contract_'):
+            for slot in data.values():
+                slot['grammar']='Согласуй грамматический род наименования стороны. Это инструкция редактору: не включай её в текст документа.'
         try:
             from app.services.document_slot_editor import edit_slots
             valid, items = await edit_slots(client, data, _validate_slot, document=SCENARIOS[result['scenario']].title)
@@ -254,6 +282,9 @@ async def prepare_form_document(state,client=None,*,source_keys=None):
                         'Для каждого поля отдельно проверь meaning_preserved, business_style, fits_context и объясни reason. '
                         'true — все числа, даты, роли, отрицания, время, условия и смысл сохранены; стиль официальный; новых фактов, прав и обязанностей нет. '
                         'Проверяй также готовое предложение после подстановки в template_context: согласование, отсутствие повторов и ясность. '
+                        'Назначение поля задаётся purpose и template_context, а НЕ английским идентификатором. '
+                        'Цель покупки «хранение продуктов» сохраняй как цель, не отклоняй из-за отсутствия слов о личных нуждах. '
+                        'Не требуй новых фактов и не подменяй проверку смысла проверкой юридической достаточности ответа. '
                         'Дословное копирование разговорного ответа не является редакцией. «Лежать», «дивана тоже нет», «уже 28 октября» — бытовой стиль. '
                         'Допустимо раскрыть короткий ответ в пределах назначения поля: цель «лежать» — личное использование для отдыха. '
                         'false — есть добавление, потеря, двусмысленность, неофициальный стиль или инструкция редактору. '
@@ -339,6 +370,18 @@ def _repeats_structured_debt_facts(candidate, sources):
 def _set_presentation(fields,key,value,*,status='filled',origin='debt_claim_composition'):
     stored=fields.get(key,{})
     fields[key]={**stored,'status':status,'value':value,'origin':origin,'error':None}
+
+
+def _compose_attachment_list(state,fields,source):
+    from app.services.document_case_composition import _document_list
+    from app.services.document_export_contract import formal_text,UNCERTAIN
+    from app.services.document_dialogue import conversational_value
+    if not source or _is_absence_reply(source) or state['fields'].get('attachments',{}).get('status')!='filled':return
+    candidate=_document_list(source)
+    if formal_text(candidate) and not conversational_value(source) and not UNCERTAIN.search(source):
+        _set_presentation(fields,'attachments',candidate,origin='source_bound_attachment_list')
+    else:
+        _set_presentation(fields,'attachments',None,status='review_required',origin='attachment_review')
 
 
 def _loan_receipt_sentence(source):
@@ -514,10 +557,16 @@ def _compose_debt_pretense_presentation(state,fields):
     if scenario not in DEBT_PRETENSE_SCENARIOS:
         return
     raw={key:_clean_space(source_text(state,key)) for key in state.get('fields',{})}
-    attachments=raw.get('attachments','')
-    if attachments and not _is_absence_reply(attachments):
-        from app.services.document_case_composition import _document_list
-        _set_presentation(fields,'attachments',_document_list(attachments),origin='source_bound_attachment_list')
+    # Lists retain their item boundaries. Narrative whitespace normalization
+    # would merge separate attachments before the numbering pass.
+    attachments=source_text(state,'attachments') if 'attachments' in state['fields'] else ''
+    _compose_attachment_list(state,fields,attachments)
+    if scenario=='pretense_debt_loan':
+        from app.services.document_case_composition import _money
+        transfer=_loan_transfer_sentence(raw.get('transfer',''),_money(raw['amount']) if raw.get('amount') else '')
+        if transfer:_set_presentation(fields,'transfer',transfer.replace('ответчику','заёмщику'))
+        if re.search(r'платежи.{0,40}не поступали|ничего не возвращено',raw.get('payments',''),re.I):
+            _set_presentation(fields,'payments','не поступали')
     if scenario!='pretense_debt_services':
         return
     agreement=_services_agreement_reference(raw.get('agreement',''))
@@ -705,13 +754,8 @@ def _compose_debt_claim_presentation(state,fields):
         if pretrial:
             _set_presentation(fields,'pretrial',pretrial)
 
-    attachments=raw.get('attachments','')
-    if attachments and not _is_absence_reply(attachments):
-        # Application lists are deterministic evidence inventories.  They do
-        # not need a prose-editor round trip, and a malformed legacy phrase
-        # such as "расписку и притензию" must not become a blank placeholder.
-        from app.services.document_case_composition import _document_list
-        _set_presentation(fields,'attachments',_document_list(attachments),origin='source_bound_attachment_list')
+    attachments=source_text(state,'attachments') if 'attachments' in state['fields'] else ''
+    _compose_attachment_list(state,fields,attachments)
 
     # A field may have been completed from the opening description, then a
     # later question received the same narrative again.  Prefer the named
@@ -778,6 +822,9 @@ def form_presentation_fields(state):
                 if pair:value='Дата рождения: '+pair[1]+'\nМесто рождения: '+pair[2].strip(' .')
             stored['value']=value
     key=state['scenario']
+    if key=='power_of_attorney' and fields.get('recipient',{}).get('status')=='filled':
+        from app.services.document_authority_facts import recipient_accusative
+        fields['recipient']['value']=recipient_accusative(state)
     # The operative amount comes from the typed source field, never a model's
     # summary.  Some DOCX assets intentionally mark ``amount`` as
     # intake-only because the number is rendered inside the calculation or
@@ -812,6 +859,14 @@ def form_presentation_fields(state):
         if re.fullmatch(r'\s*(?:(?:прошу|хочу|требую)\s+)?(?:возврат (?:оплаты|денег|уплаченной суммы)|вернуть (?:деньги|оплату|уплаченную сумму))[.! ]*',request,re.I):
             from app.services.document_presentation import format_money
             fields['requests']={**fields.get('requests',{}),'status':'filled','value':'Прошу вернуть уплаченную сумму в размере '+format_money(amount['value'])+' рублей.','origin':'typed_request_composition'}
+    if 'consumer' in key:
+        purchase=state.get('fields',{}).get('purchase',{})
+        # A missing purchase date does not erase the already supplied item
+        # and price from an explicitly requested draft.
+        if purchase.get('status')=='incomplete' and (purchase.get('error') or '').startswith('Когда приобретён товар?'):
+            candidate=local_candidate('purchase',purchase.get('value') or '', 'sentence',key)
+            if candidate:
+                fields['purchase']={**purchase,'status':'filled', 'value':candidate+' Дата приобретения: [дата покупки].'}
     if key in {'order_alimony','claim_alimony_share'}:
         share=fields.get('share',{}).get('value') or ''
         fraction=re.search(r'\b(\d+)\s*/\s*(\d+)\b',share)
@@ -828,4 +883,11 @@ def form_presentation_fields(state):
     _compose_debt_claim_presentation(state,fields)
     _compose_debt_pretense_presentation(state,fields)
     _compose_damage_property_presentation(state,fields)
+    if key=='contract_work':
+        from app.services.document_contract_facts import TERM_KEYS
+        replacements={'исполнитель':'Подрядчик','исполнителя':'Подрядчика','исполнителю':'Подрядчику','исполнителем':'Подрядчиком'}
+        for field_key in TERM_KEYS:
+            item=fields.get(field_key,{})
+            if item.get('value'):
+                item['value']=re.sub(r'\bисполнител(?:ь|я|ю|ем)\b',lambda m:replacements[m[0].lower()],item['value'],flags=re.I)
     return align_narrator_gender(fields,state)

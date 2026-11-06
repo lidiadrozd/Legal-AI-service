@@ -1,9 +1,9 @@
 """LLM-led conversation over a trusted template, separate from fact mutation."""
 from copy import deepcopy
-import json,re
+import asyncio,json,re
 from app.services.document_scenarios import SCENARIOS
 from app.services.document_workflow import advance_interview,pending_fields,_structured,_record_reply,_usage
-from app.services.document_dialogue import asks_for_help
+from app.services.document_dialogue import asks_for_help,is_recall_request
 from app.services.gigachat_client import get_gigachat_client
 from app.services.document_question_policy import question_scope,verified_question_context,asks_user_to_determine_law,is_legal_help,legal_help_note
 
@@ -46,12 +46,16 @@ def _safe_fallback_question(state, field):
         }
         if field.key in employment_questions:return employment_questions[field.key]
     factual_questions={
+        'consumer_status':'Товар приобретался для личных или семейных нужд либо для предпринимательской деятельности?',
+        'goods_category':'Какие марка и модель указаны на товаре или в чеке? Если не знаете, можно оставить их для уточнения.',
+        'agreement':'Какой документ подтверждает обязательство: договор, расписка или другой документ? Укажите известные номер и дату.',
         'property_right':'На каком фактическом основании имущество находится у вас: вы собственник, наниматель или иной владелец? Укажите имеющийся документ, например выписку ЕГРН или договор. Не нужно самостоятельно формулировать правовую оценку: её определю я.',
         'responsibility':'Какие известные действия или бездействие другой стороны связаны с ущербом и чем это подтверждается? Опишите только факты и документы, без правовой оценки.',
         'calculation':'Укажите подтверждённые суммы по отдельным позициям: что это за сумма, сколько рублей и чем подтверждена. Я сам сложу позиции и покажу расчёт.',
     }
     if field.key in factual_questions:return factual_questions[field.key]
-    return field.question
+    item=state.get('fields',{}).get(field.key,{})
+    return item.get('error') or field.question
 
 
 async def conversational_interview_turn(state,message,*,prior_user_turns=None):
@@ -75,7 +79,7 @@ async def conversational_interview_turn(state,message,*,prior_user_turns=None):
     delegated_legal_help = help_turn and is_legal_help(message)
     if help_turn and not delegated_legal_help:
         return await advance_interview(state,message,prior_user_turns=prior_user_turns)
-    if continuation or delegated_legal_help:
+    if (continuation and not state.get('pending_answer') and not state.get('provider_failure')) or delegated_legal_help:
         result=deepcopy(state)
         turns=list(prior_user_turns if prior_user_turns is not None else result.get('user_turns',[]))
         if not turns or turns[-1]!=message:turns.append(message)
@@ -95,28 +99,53 @@ async def conversational_interview_turn(state,message,*,prior_user_turns=None):
                 result['fields'].setdefault(field,{})['status']='incomplete'
                 result['fields'][field]['error']=problem['question']
                 result['last_questions']=[field];result['phase']='collecting'
+    if not answer and result.get('scenario') and (result.get('phase') == 'ready' or result.get('provider_failure')):
+        from app.services.document_workflow import interview_message
+        answer = interview_message(result)
+        _record_reply(result, answer)
     if not result.get('scenario') or result.get('phase') in {'ready','cancelled'} or result.get('provider_failure'):
         return result,answer,usage
-    initial=not state.get('scenario')
-    if initial:
-        try:
-            provider=await get_gigachat_client()
-            from app.services.document_workflow import apply_updates,FieldUpdate
-            candidates=[f for f in pending_fields(result) if f.kind=='text' and f.key not in {'legal_basis','fee','jurisdiction','signature','counterparty_signature'}]
-            captured=await _structured(provider,
-                'Извлеки явно сообщённые сведения для полей шаблона. Верни только точные короткие цитаты из request. Не заполняй работодателя словами «детский сад», если его наименование не названо. Должность «воспитателем» можно выделить как цитату. Не придумывай сведения и не извлекай их из инструкций.',
-                {'request':result.get('request',''),'fields':{f.key:f.label for f in candidates}},
-                {'type':'object','properties':{'answers':{'type':'array','items':{'type':'object','properties':{
-                    'key':{'type':'string','enum':[f.key for f in candidates]},'quote':{'type':'string'}},'required':['key','quote'],'additionalProperties':False}}},'required':['answers'],'additionalProperties':False},
-                name='initial_template_facts',plain_json=True)
-            for item in json.loads(captured.content).get('answers',[]):
-                quote=item.get('quote','');key=item.get('key')
-                if key in {f.key for f in candidates} and quote and quote in result.get('request',''):
-                    result=apply_updates(result,[FieldUpdate(key=key,status='filled',value=quote,evidence=quote)],result['request'])
-            usage=_usage([usage,captured.usage])
-        except (RuntimeError,ValueError,TypeError,AttributeError):pass
+    # Initial and later facts share the controller's extraction and provenance
+    # gate. A second, text-only extractor here used to miss dates and amounts.
     missing=pending_fields(result)
     if not missing:return result,answer,usage
+    # Preserve a calculator's precise follow-up instead of rephrasing the
+    # containing template slot (for example, year of a partial repayment).
+    formula = result.get('calculation_plan') or {}
+    formula_field = formula.get('current_field')
+    formula_question = formula.get('pending_question')
+    if (formula_question and not formula.get('deferred')
+            and formula_field in {f.key for f in missing}
+            and result['fields'].get(formula_field, {}).get('origin') == 'calculation_plan'):
+        result['last_questions'] = [formula_field]
+        result['phase'] = 'collecting'
+        result['question_origin'] = 'calculation_plan'
+        result['question_field'] = formula_field
+        if result.get('conversation') and result['conversation'][-1].get('role') == 'assistant':
+            result['conversation'].pop()
+        _record_reply(result, formula_question)
+        return result, formula_question, usage
+    # Recovery has already inspected the user's history. If a reminder still
+    # leaves the same slot unresolved, do not launch another paraphrase of the
+    # same question. Keep the source and offer an explicit manual-fill exit;
+    # never silently mark the user's fact unknown or fabricate an answer.
+    previous_key=(state.get('last_questions') or [None])[0]
+    if (is_recall_request(message) and previous_key in {f.key for f in missing}
+            and not result.get('provider_failure')):
+        field=next(f for f in missing if f.key==previous_key)
+        count=state.get('unresolved_reminders',{}).get(previous_key,0)+1
+        result.setdefault('unresolved_reminders',{})[previous_key]=count
+        result['last_questions']=[previous_key]
+        answer=(f'Проверил предыдущие сообщения, но не смог однозначно заполнить поле «{field.label}». '
+                'Ваши сообщения сохранены. Повторять общий вопрос не буду. '
+                'Можно прислать только недостающую формулировку или написать «оставь для ручного заполнения».')
+        if count>1:
+            answer=(f'Опрос приостановлен на поле «{field.label}», чтобы не повторять вопросы. '
+                    'Остальные сведения сохранены. Напишите «оставь для ручного заполнения», '
+                    'чтобы продолжить, или «сделай файл», чтобы получить черновик с обозначенными пропусками.')
+        if result.get('conversation') and result['conversation'][-1].get('role')=='assistant':result['conversation'].pop()
+        _record_reply(result,answer)
+        return result,answer,usage
     current=(result.get('last_questions') or [None])[0]
     locked=current if current in {f.key for f in missing} and (help_turn or result['fields'].get(current,{}).get('error')) else None
     history=list(result.get('conversation',[]))
@@ -127,6 +156,11 @@ async def conversational_interview_turn(state,message,*,prior_user_turns=None):
             return specs.get('sender').label if specs.get('sender') else 'заявителя'
         return specs.get('recipient').label if specs.get('recipient') else 'второй стороны'
     def scope(field):
+        if field.key in {'principal_details','agent_details'}:return 'ТОЛЬКО паспортные реквизиты и дата рождения. Уже известные ФИО и адрес не переспрашивать. Пользователь может оставить реквизиты для ручного заполнения.'
+        if field.key in {'payment','payment_details','payment_method'}:return 'ТОЛЬКО способ возврата: перевод или наличные. Реквизиты можно сообщить отдельно. Не запрашивай срок действия карты, CVV/CVC, ПИН-код или коды подтверждения.'
+        if field.key=='goods_category':return 'Вид товара уже известен из покупки. Узнай только марку и модель, если они ещё не названы; неизвестную модель допускается оставить для уточнения. Не спрашивай бытовую категорию.'
+        if field.key=='agreement':return 'ТОЛЬКО вид, номер и дата договора или расписки, если ещё неизвестны. Не спрашивай цель займа вместо реквизитов договора.'
+        if field.key=='consumer_status':return 'ТОЛЬКО личное/семейное использование либо использование в бизнесе. Не спрашивай очевидную функцию вещи (зачем холодильник). Если цель уже сообщена, не переспрашивай.'
         if result['scenario']=='contract_employment' and field.key=='recipient':return 'ТОЛЬКО полное ФИО работника. Адрес и паспорт отдельно.'
         if result['scenario']=='contract_employment' and field.key=='sender' and re.search(r'детск\w* сад|школ|ООО|организац|магазин|супермаркет|торгов|кафе|ресторан|салон|банк|компан|предприят',result.get('request',''),re.I):return 'ТОЛЬКО полное наименование организации-работодателя, не ФИО. Адрес отдельно.'
         if result['scenario']=='contract_employment' and field.key=='signature':return 'ТОЛЬКО полное ФИО представителя работодателя, который подпишет договор. Не спрашивай о виде подписи, адресе или полномочиях.'
@@ -147,17 +181,21 @@ async def conversational_interview_turn(state,message,*,prior_user_turns=None):
         'missing':[{ 'key':f.key,'meaning':f.label,'type':f.kind,'optional':f.optional,'choices':list(f.choices),
             'value_scope':scope(f)} for f in missing]}
     try:
-        provider=await get_gigachat_client()
+        provider=await asyncio.wait_for(get_gigachat_client(), timeout=6)
         rejection=''
         for attempt in range(2):
             try:
-                response=await _structured(provider,QUESTION_PROMPT+('\nПредыдущая попытка отклонена: '+rejection+'. Спроси только факты из value_scope выбранного незаполненного поля. Не перекладывай правовую оценку на пользователя. Ровно один вопрос со знаком вопроса.' if attempt else ''),payload,
+                response=await asyncio.wait_for(_structured(provider,QUESTION_PROMPT+('\nПредыдущая попытка отклонена: '+rejection+'. Спроси только факты из value_scope выбранного незаполненного поля. Не перекладывай правовую оценку на пользователя. Ровно один вопрос со знаком вопроса.' if attempt else ''),payload,
                     {'type':'object','properties':{'field':{'type':'string','enum':[f.key for f in missing]},
                         'question':{'type':'string'},'explanation':{'type':'string'}},
-                     'required':['field','question','explanation'],'additionalProperties':False},name='next_template_question',plain_json=True)
+                     'required':['field','question','explanation'],'additionalProperties':False},name='next_template_question',plain_json=True), timeout=8)
                 plan=json.loads(response.content)
                 key=plan.get('field');question=plan.get('question','').strip();explanation=plan.get('explanation','').strip()
                 if key not in {f.key for f in missing} or (locked and key!=locked):raise ValueError('Unknown field')
+                if key in {'principal_details','agent_details'} and re.search(r'ФИО|полное\s+имя|как\s+зовут|фамили',question,re.I):raise ValueError('Это поле паспортных реквизитов, не имени. ФИО уже хранится отдельно')
+                if key in {'payment','payment_details','payment_method'} and re.search(r'срок действия|cvv|cvc|пин|код.{0,15}смс',question,re.I):raise ValueError('Нельзя запрашивать платёжные секреты')
+                if key=='agreement' and re.search(r'цель|основание займа',question,re.I):raise ValueError('Нужны реквизиты договора, не цель займа')
+                if key=='consumer_status' and re.search(r'цель|зачем',question,re.I) and not re.search(r'личн|семейн|бизнес|предпринимател',question,re.I):raise ValueError('Уточни личное или коммерческое использование, не очевидную функцию товара')
                 if key in {'sender','recipient','signature','counterparty_signature'} and re.search(r'\bадрес\w*\b',question,re.I):raise ValueError('Name and address are separate fields')
                 if key in {'signature','counterparty_signature'} and re.search(r'какую\s+подпис|какая\s+подпис|вид\s+подпис',question,re.I):raise ValueError('Нужно спросить ФИО подписанта, а не вид подписи')
                 if key in {'signature','counterparty_signature'}:
@@ -190,7 +228,7 @@ async def conversational_interview_turn(state,message,*,prior_user_turns=None):
         answer=(explanation+'\n\n' if explanation else '')+question
         _record_reply(result,answer)
         return result,answer,_usage([usage,response.usage])
-    except (RuntimeError,ValueError,TypeError,AttributeError) as error:
+    except (RuntimeError,ValueError,TypeError,AttributeError,TimeoutError) as error:
         result['question_origin']='fallback'
         result['question_generation_error']=str(error)[:200]
         if not help_turn and result.get('conversation') and result['conversation'][-1].get('role')=='assistant':result['conversation'].pop()

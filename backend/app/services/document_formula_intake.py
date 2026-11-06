@@ -53,7 +53,7 @@ _DAYS = re.compile(r"\b(\d{1,5})\s*(?:календарн\w*\s*)?(?:дн(?:я|е�
 _NO_PAYMENTS = re.compile(
     r"\b(?:не\s+(?:платил\w*|возвращал\w*|оплачивал\w*|получал\w*)|"
     r"платеж(?:ей|и)?\s+не\s+(?:было|поступал\w*)|частичн\w*\s+платеж(?:ей|и)?\s+не\s+было|"
-    r"ничего\s+не\s+(?:вернул\w*|оплатил\w*))\b",
+    r"ничего\s+не\s+(?:вернул\w*|возвращено|оплатил\w*))\b",
     re.I,
 )
 _PAYMENT_CONTEXT = re.compile(
@@ -276,6 +276,28 @@ def _set_dates(
     consumer: bool = False,
     ignored_dates: set[date] | None = None,
 ) -> None:
+    # An explicit calculation interval wins over unrelated dates of transfer,
+    # contract and demand. "с 1 по 30 октября" shares month and year.
+    endpoint = re.fullmatch(r'\s*(?:(?:до|по)\s+)?(?P<date>' + _DATE.pattern + r')\s*(?:включительно)?[.!]?\s*', text, re.I)
+    if (current in _FORMULA_REPLY_FIELDS and endpoint and data.get('start_date')
+            and not data.get('end_date') and re.search(r'\d{4}', text)):
+        candidates = _dates(endpoint['date'])
+        if len(candidates) == 1 and len(text.strip()) < 65:
+            left, right = _as_date(data['start_date']), candidates[0]
+            if left and right >= left:
+                data.update(end_date=right.isoformat(), days=(right-left).days + 1, explicit_interval=True)
+                return
+    interval=re.search(r'\bс\s+(\d{1,2})\s+по\s+(\d{1,2})\s+('+'|'.join(_MONTHS)+r')\s+(\d{4})(?:\s+года)?\s*(включительно)?',text,re.I)
+    if interval:
+        try:
+            left=date(int(interval[4]),_MONTHS[interval[3].lower()],int(interval[1]))
+            right=date(int(interval[4]),_MONTHS[interval[3].lower()],int(interval[2]))
+        except ValueError:return
+        if right>=left:
+            data.update(start_date=left.isoformat(),end_date=right.isoformat(),days=(right-left).days+(1 if interval[5] else 0),explicit_interval=True)
+        return
+    if data.get('explicit_interval') and not re.search(r'период|расч[её]т\s+(?:с|по)|считать\s+(?:с|по)',text,re.I):
+        return
     found = [item for item in _dates(text) if item not in (ignored_dates or set())]
     start, end = _source_dates(state, consumer=consumer)
     if current in {"due_date", "delivery_due", "payment_due", "wages_due"} and found:
@@ -312,6 +334,8 @@ def _set_dates(
 
 def _set_contract_rate(data: dict[str, Any], text: str) -> None:
     match = _RATE.search(text or "")
+    if not match:
+        match=re.search(r'(\d+(?:[,.]\d{1,4})?)\s*%[^.!?;]{0,100}?за\s+(?:каждый\s+)?(?:календарный\s+)?(день|год|месяц)\b',text,re.I)
     if match:
         period = match[2].casefold()
         data["rate_percent"] = match[1].replace(",", ".")
@@ -412,6 +436,35 @@ def _consumer_policy(state: Mapping[str, Any]) -> dict[str, Any]:
     return data
 
 
+def _contract_payment_balance(state, data, text):
+    """Keep the opening calculation base separate from the remaining debt."""
+    from decimal import Decimal
+    opening=re.search(r'(?:оставшиеся|остаток\s+(?:долга|задолженности)(?:\s+составлял)?)\s+('+_MONEY.pattern+r')',text,re.I)
+    if opening:
+        amount=_money_matches(opening[0])
+        if amount:data.update(principal=amount[0][0],opening_evidence=opening[0])
+    if re.search(r'(?:со\s+дня|в\s+день)\s+(?:поступления|оплаты|платежа)',text,re.I):
+        data['payment_day_policy']='same_day'
+    elif re.search(r'со\s+следующего\s+дня',text,re.I):
+        data['payment_day_policy']='next_day'
+    payments=data.get('partial_payments') or []
+    start=_as_date(data.get('start_date'))
+    if not payments or not start:return
+    payments=[p for p in payments if _as_date(p.get('date')) and _as_date(p['date'])>=start]
+    data['partial_payments']=payments
+    if not payments:return
+    if not data.get('opening_evidence'):
+        # The amount field may be today's balance, not the opening balance.
+        # Never charge the whole period on it without a dated starting base.
+        data['principal']=None
+        return
+    remaining=Decimal(data['principal'])-sum((Decimal(p['amount']) for p in payments),Decimal('0'))
+    if remaining<0:return
+    evidence=data['opening_evidence']+'; '+'; '.join(p.get('evidence','') for p in payments)
+    state['fields']['amount']={'status':'filled','value':format(remaining,'.2f'),
+        'evidence':evidence,'origin':'source_bound_arithmetic','inputs':{'opening':data['principal'],'payments':payments}}
+
+
 def _capture_rule_facts(state: dict[str, Any], text: str, current: str | None, rule_ids: set[str]) -> None:
     facts = state.setdefault("calculation_facts", {})
     if not isinstance(facts, dict):
@@ -427,22 +480,37 @@ def _capture_rule_facts(state: dict[str, Any], text: str, current: str | None, r
             rule_facts = facts[rule_id] = {}
         rule_facts.setdefault("evidence", []).append(text)
         if rule_id in {"civil_395", "labor_delay_236", "contract_interest", "contract_penalty"}:
-            if _NO_PAYMENTS.search(text):
+            loan = state.get('loan_facts', {}) if rule_id in {'contract_interest', 'contract_penalty'} else {}
+            if loan.get('principal'):
+                rule_facts['principal'] = loan['principal']
+                if loan.get('payments'):
+                    rule_facts['partial_payments'] = deepcopy(loan['payments'])
+                if re.search(r'(?:со\s+дня|в\s+день)\s+(?:поступления|оплаты|платежа)', text, re.I):
+                    rule_facts['payment_day_policy'] = 'same_day'
+                elif re.search(r'со\s+следующего\s+дня', text, re.I):
+                    rule_facts['payment_day_policy'] = 'next_day'
+            if _NO_PAYMENTS.search(re.sub(r'Других\s+платежей\s+не\s+было','',text,flags=re.I)):
                 rule_facts["partial_payments"] = []
                 payment_dates: set[date] = set()
             else:
                 payments = _payment_events_from_text(text)
                 payment_dates = {parsed for item in payments if (parsed := _as_date(item.get("date")))}
-                if payments and rule_id in {"civil_395", "labor_delay_236"}:
+                if payments and not loan.get('principal'):
                     existing = rule_facts.get("partial_payments")
                     merged = list(existing) if isinstance(existing, list) else []
                     for payment in payments:
                         if payment not in merged:
                             merged.append(payment)
                     rule_facts["partial_payments"] = merged
-            _set_dates(rule_facts, state, text, current, ignored_dates=payment_dates)
+            formula_date_reply = current in _FORMULA_REPLY_FIELDS and len(text.strip()) < 65 and bool(_dates(text))
+            if loan.get('principal') and not formula_date_reply and not re.search(r'\bс\s+\d.{0,45}\bпо\s+\d|период|первый день', text, re.I):
+                _set_dates(rule_facts, state, '', current, ignored_dates=payment_dates)
+            else:
+                _set_dates(rule_facts, state, text, current, ignored_dates=payment_dates)
             if rule_id in {"contract_interest", "contract_penalty"}:
                 _set_contract_rate(rule_facts, text)
+                if not loan.get('principal'):
+                    _contract_payment_balance(state, rule_facts, text)
         elif rule_id == "consumer_delay_penalty":
             rule_facts.update(_consumer_policy(state))
             _set_dates(rule_facts, state, text, current, consumer=True)

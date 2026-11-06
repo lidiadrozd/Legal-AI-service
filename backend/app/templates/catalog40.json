@@ -32,14 +32,14 @@
     {
       "scenario": "contract_services",
       "title": "Договор возмездного оказания услуг",
-      "version": 7,
+      "version": 8,
       "questions": 24,
       "lawyer_reviewed": false
     },
     {
       "scenario": "contract_work",
       "title": "Договор подряда",
-      "version": 7,
+      "version": 8,
       "questions": 24,
       "lawyer_reviewed": false
     },
@@ -356,6 +356,13 @@
       "title": "Договор купли-продажи нежилого помещения",
       "version": 1,
       "questions": 26,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "pretense_rent_deposit",
+      "title": "Требование о возврате обеспечительного платежа по договору найма",
+      "version": 2,
+      "questions": 19,
       "lawyer_reviewed": false
     }
   ]

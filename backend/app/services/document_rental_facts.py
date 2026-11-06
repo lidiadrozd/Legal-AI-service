@@ -36,7 +36,7 @@ def collect_rental_turn(state,text,current,put):
         if re.search(r'\bаванс\b',text,re.I) and not re.search(r'не аванс|назвал\w* авансом',text,re.I):
             save(current,text,text)
             state['rental_payment_confirmation']={'original':text,'amount':amounts[0] if len(amounts)==1 else None,'receipt':bool(re.search(r'есть чек|имеется чек',text,re.I))}
-            state['fields'][current].update(status='incomplete',error='Вы назвали сумму авансом, а готовим иск о возврате обеспечительного платежа. Как именно эта сумма названа в договоре: «аванс» или «обеспечительный платёж»?')
+            state['fields'][current].update(status='incomplete',error='Вы назвали сумму авансом, а готовим документ о возврате обеспечительного платежа. Как именно эта сумма названа в договоре: «аванс» или «обеспечительный платёж»?')
             return consumed
     # Mechanical removal of an accidental slash between letters preserves the
     # source spelling otherwise. Keep the untouched message as evidence.

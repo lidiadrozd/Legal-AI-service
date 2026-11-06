@@ -124,6 +124,12 @@ def validate_edit(text, source):
     # Preserve the narrator rather than allowing an inferred grammatical
     # gender to replace the user's first-person statement.
     if re.search(r'\bя\b', source, re.I) and re.search(r'\bзаявител[ьяею][а-яё]*\b', text, re.I): return False
+    if re.search(r'\bавтор\w*\s+(?:жалобы|заявления|претензии)\b', text, re.I) and not re.search(r'\bавтор\w*\s+(?:жалобы|заявления|претензии)\b', source, re.I): return False
+    # The date a document was submitted is not its issue date. Matching the
+    # set of numbers alone cannot detect this change of the underlying fact.
+    date_pattern = r'\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+\d{4}(?:\s+года)?)?|\d{1,2}[./]\d{1,2}[./]\d{2,4}'
+    for dated in re.finditer(r'\b(?:документ\w*|подтверждени\w*|выписк\w*|квитанци\w*)\s+от\s+('+date_pattern+r')', text, re.I):
+        if not re.search(r'\b(?:документ\w*|подтверждени\w*|выписк\w*|квитанци\w*)\s+от\s+'+re.escape(dated[1]), source, re.I):return False
     if re.search(r'\bв день\b', source, re.I) and not re.search(r'\bв (?:тот же )?день\b|\bне позднее дня\b', text, re.I): return False
     if set(re.findall(r"\[[^\]]+\]", text)) - set(re.findall(r"\[[^\]]+\]", source)): return False
     if _numbers(text) != _numbers(source): return False
@@ -170,12 +176,77 @@ def canonical_editorial(key, source, scenario):
     never completion of missing facts or inferred causes/consequences.
     """
     text = source.strip().rstrip(".")
+    if key=='additional_claims' and re.fullmatch(r'Других требований нет',text,re.I):return 'Другие требования не заявляются.'
+    if key in {'payment','payment_details'} and re.fullmatch(r'Банковским переводом(?: на сч[её]т)?[,;]?\s*реквизиты (?:сообщу|будут сообщены) отдельно',text,re.I):return 'Банковским переводом; реквизиты будут сообщены отдельно.'
+    if key=='deposit_terms':
+        returned=re.fullmatch(r'(?:вернуть обеспечительный плат[её]ж|(?:обеспечительный плат[её]ж )?возвращается)\s+(в течение .+ после передачи квартиры и ключей)',text,re.I)
+        if returned:return 'Обеспечительный платёж возвращается '+returned[1]+'.'
+    if scenario=='contract_housing':
+        if key=='deposit_terms':
+            from app.services.document_case_facts import MONEY
+            deposit=re.fullmatch(r'Обеспечительный плат[её]ж ('+MONEY+r') возвращается (в течение [^.]+ после возврата квартиры)\. Удержания возможны только в сумме документально подтвержд[её]нной задолженности или ущерба',text,re.I)
+            if deposit:return 'Обеспечительный платёж в размере '+deposit[1]+' возвращается '+deposit[2]+'. Удержания допускаются только в размере документально подтверждённой задолженности или ущерба.'
+        if key=='repairs' and re.fullmatch(r'Наниматель меняет расходные материалы, неисправности оборудования без его вины устраняет наймодатель',text,re.I):
+            return 'Наниматель заменяет расходные материалы. Наймодатель устраняет неисправности оборудования, возникшие не по вине Нанимателя.'
+        if key=='residents' and re.fullmatch(r'Проживает только наниматель, другие жильцы не согласованы',text,re.I):
+            return 'Другие проживающие лица не согласованы; в помещении проживает только Наниматель.'
+        if key=='utilities' and re.fullmatch(r'Наниматель оплачивает электричество и воду по сч[её]тчикам; остальные коммунальные платежи включены в плату за на[её]м',text,re.I):
+            return 'Наниматель оплачивает электричество и воду по показаниям приборов учёта; остальные коммунальные платежи включены в плату за наём.'
+        if key=='liability' and re.fullmatch(r'Дополнительные штрафы и неустойки не согласованы',text,re.I):return text+'.'
+    if key=='return_facts':
+        from app.services.document_case_facts import DATE
+        returned=re.fullmatch(r'Квартиру и ключи передал[аи]?\s+('+DATE+r')[.]\s*Подписан акт возврата без замечаний[.]\s*Плата за на[её]м и коммунальные услуги внесена полностью',text,re.I)
+        if returned:return 'Квартира и ключи переданы '+returned[1]+'. Акт возврата подписан без замечаний. Плата за наём и коммунальные услуги внесена полностью.'
+    if key=='documents':
+        from app.services.document_case_composition import _document_list
+        if re.match(r'^(?:Банковская выписка|Копия|Справка|Акт|Договор)\b',text,re.I):
+            return _document_list(text)
+    if key=='additional_terms' and re.fullmatch(r'Курение\s+в\s+(?:квартире|помещении)\s+запрещено',text,re.I):return text+'.'
+    if key=='deposit_payment':
+        from app.services.document_case_facts import MONEY, DATE
+        paid=re.fullmatch(r'('+MONEY+r')\s+перечислил[аи]?\s+('+DATE+r')',text,re.I)
+        if paid:return 'Обеспечительный платёж в размере '+paid[1]+' перечислен '+paid[2]+'.'
+    if scenario=='power_of_attorney' and key=='powers':
+        from app.services.document_authority_facts import authority_powers_candidate
+        candidate=authority_powers_candidate(source)
+        if candidate:return candidate
+    from app.services.document_contract_facts import SERVICE_CONTRACTS, contract_candidate
+    if scenario in SERVICE_CONTRACTS:
+        candidate = contract_candidate(key, source)
+        if candidate: return candidate
+    if scenario.startswith('appeal_') and key=='appeal_term' and re.fullmatch(r'Копию\s+решения\s+(?:я\s+)?получил[аи]?\s+(?:\d{1,2}\s+[а-яё]+(?:\s+\d{4}(?:\s+года)?)?|\d{1,2}[./]\d{1,2}[./]\d{2,4})',text,re.I):
+        return text[:1].upper()+text[1:]+'.'
+    if key=='copy_notice' and re.fullmatch(r'Копию\s+(?:апелляционной\s+)?жалобы\s+(?:истцу|ответчику|участникам(?:\s+дела)?)\s+(?:ещ[её]\s+)?не\s+(?:направлял[аи]?|отправлял[аи]?|направил[аи]?|отправил[аи]?)',text,re.I):
+        return text[:1].upper()+text[1:]+'.'
+    if key=='agreement' and re.fullmatch(r'(?:письменный\s+)?договор\s+займа\s*№\s*[\w/-]+(?:\. За[её]м беспроцентный)?',text,re.I):return 'Основание обязательства — '+text[:1].lower()+text[1:]+'.'
+    if key=='consumer_status' and re.fullmatch(r'(?:для\s+)?хранени[ея]\s+продуктов',text,re.I):return 'хранения продуктов'
+    if key=='consumer_status' and re.fullmatch(r'(?:для\s+)?личн\w*\s+(?:семейн\w*\s+)?(?:пользовани\w*|использовани\w*|нужд\w*)',text,re.I):return re.sub(r'^для\s+','',text,flags=re.I)
+    if key in {'payment','payment_details'} and re.fullmatch(r'(?:перевод\s+)?на карту',text,re.I):return 'банковским переводом на карту; реквизиты будут сообщены отдельно'
+    if key in {'goods_category','category'} and re.fullmatch(r'бытовая техника|мебель|продукты питания',text,re.I):
+        return text.lower()
+    if key=='defect_evidence':
+        if re.fullmatch(r'испорченная еда,? можно прийти лично и посмотреть,? что холодильник не морозит',text,re.I):
+            return 'Имеется испорченная еда. Возможен осмотр холодильника для проверки того, что он не морозит.'
+        photos = re.fullmatch(r'(?:у меня )?есть фото,? но по ним не скажешь(?: особо)?,? (.+?) или нет[.]\s*можно самим прийти и убедиться в этом',text,re.I)
+        if photos:
+            predicate = photos[1].strip().split(' ',1)
+            question = ' ли '.join(predicate) if len(predicate)==2 else photos[1].strip()
+            return 'Фотографии имеются, однако по ним нельзя определить, '+question+'. Возможен осмотр товара для проверки его состояния.'
+    # Exact grammatical edits must not depend on a reviewer guessing that
+    # "consumer_status" means legal status instead of the stated purpose.
+    if key=='consumer_status' and re.fullmatch(r'для\s+(?:хранения|использования|приготовления|перевозки|обогрева)\s+[А-Яа-яЁё -]+',text,re.I):
+        return re.sub(r'^для\s+','',text,flags=re.I)
+    if key in {'defect','defects'} and 'consumer' in scenario:
+        if re.fullmatch(r'(?:Через\s+(?:\d+|одну|две|три|четыре|пять)\s+(?:день|дня|дней|неделю|недели|недель|месяц|месяца|месяцев)\s+)?он\s+перестал\s+[а-яё]+',text,re.I):
+            return re.sub(r'\bон\b','товар',text,flags=re.I).capitalize()+'.'
     if key=='seller_response':
         corrected=re.sub(r'\bотвенить\b','отменить',text,flags=re.I)
         stages=re.fullmatch(r'((?:доставить|устранить|заменить|выполнить)\s+[^.!?]+?)\s*,?\s+а потом\s+(?:и\s+)?((?:отменить|вернуть|расторгнуть)\s+[^.!?]+)',corrected,re.I)
         if stages and not re.search(r'\bесли|в случае|\?|\bну\b',corrected,re.I):
             later=re.sub(r'\bвернуть деньги\b','возвратить уплаченные денежные средства',stages[2],flags=re.I)
             return 'Первоначально продавцу предъявлялось требование: '+stages[1]+'. Впоследствии заявлялось требование: '+later+'.'
+    if key in {'facts','seller_response','previous_contact'} and re.fullmatch(r'я ни к кому не обращалась,? сейчас только пишу пр[еи]тензию',text,re.I):
+        return 'Ранее я ни к кому не обращалась. Настоящая претензия составляется впервые.'
     if key=='payment' and 'consumer' in scenario:
         card=re.fullmatch(r'(?:переводом\s+)?на\s+(?:ту же\s+)?(?:банковскую\s+)?карту\s*,?\s*(?:по которой я платил[аи]?|с которой был произвед[её]н плат[её]ж|указанную при оплате|с которой (?:была произведена )?оплата)',text,re.I)
         if card:return 'путём перечисления денежных средств на банковскую карту, использованную при оплате'
@@ -216,13 +287,16 @@ def canonical_editorial(key, source, scenario):
         heads = (r'акт\w*|фотограф\w*|фото|отч[её]т\w*|справк\w*|чек\w*|договор\w*|'
                  r'выписк\w*|копи\w*|письменн\w* обращен\w*|приказ\w*|переписк\w*|'
                  r'расписк\w*|пр[еи]тензи\w*|исков\w* заявлен\w*|уведомлен\w*|'
-                 r'квитанц\w*|опи[сьс]\w*|почтов\w* отправлен\w*|плат[её]жн\w* поручен\w*')
+                 r'гаранти\w*|квитанц\w*|опи[сьс]\w*|почтов\w* отправлен\w*|плат[её]жн\w* поручен\w*')
         items = re.split(r"\s*[,;\n]\s*|\s+и\s+(?=(?:" + heads + r')\b)', listing, flags=re.I)
         if formal_text(listing) and all(item and len(item) < 180 for item in items):
             forms = {'письменного обращения': 'письменное обращение', 'банковской выписки': 'банковская выписка',
                      'трудового договора': 'трудовой договор', 'переписку':'переписка', 'отчёта оценщика': 'отчёт оценщика',
                       'отчета оценщика': 'отчёт оценщика', 'фотографий': 'фотографии', 'копию': 'копия',
-                      'притензию': 'претензию', 'притензия': 'претензия'}
+                      'притензию': 'претензия', 'притензия': 'претензия',
+                      'гарантию':'гарантия', 'расписку':'расписка', 'претензию':'претензия',
+                      'справку':'справка', 'квитанцию':'квитанция', 'выписку':'выписка',
+                      'гарантийный талон':'гарантийный талон'}
             items = [next((new + item[len(old):] for old, new in forms.items()
                            if re.match(re.escape(old) + r'\b', item, re.I)), item) for item in items]
             return "\n".join(item[:1].upper() + item[1:].rstrip(".") + "." for item in items)
@@ -280,6 +354,11 @@ def canonical_editorial(key, source, scenario):
         # unchanged preserves written-out amounts and dates exactly.
         return text + "."
     if key == "purchase":
+        from app.services.document_case_facts import DATE, MONEY
+        bought=re.fullmatch(r'('+DATE+r')\s+(?:я\s+)?(купила|купил|приобрела|приобрёл|приобрел)\s+(.+?)\s+за\s+('+MONEY+r')\s+(в|у)\s+(.+)',text,re.I)
+        if bought:
+            verb='приобрела' if bought[2].lower().endswith('ла') else 'приобрёл'
+            return bought[1]+' '+verb+' '+bought[3]+' стоимостью '+bought[4]+' '+bought[5]+' '+bought[6]+'.'
         match = re.fullmatch(r"(.{2,100}?)\s+для себя[,]?\s*(?:чтобы звонить)?", text, re.I)
         if match and match[1].lower() in {"телефон", "ноутбук", "аккумулятор", "товар"}:
             return match[1][:1].upper() + match[1][1:] + ", приобретённый для личного использования."

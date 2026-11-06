@@ -25,13 +25,15 @@ from complete_form_cases import make_state
 ])
 @pytest.mark.asyncio
 async def test_user_document_purposes_start_correct_intake_without_provider(text,key,monkeypatch):
-    provider=AsyncMock(side_effect=AssertionError('This purpose is unambiguous'))
+    # Classification remains deterministic; optional extraction of additional
+    # facts from a detailed request must tolerate provider unavailability.
+    provider=AsyncMock(side_effect=RuntimeError('offline'))
     monkeypatch.setattr('app.services.document_workflow.get_gigachat_client',provider)
     state,reply,_=await advance_interview(new_state(text),text)
     assert state['scenario']==key and state['phase']=='collecting'
     assert state['last_questions']==['sender']
     assert 'Пока не найден' not in reply and 'Что именно стороны' not in reply
-    provider.assert_not_called()
+    assert not state.get('provider_failure')
     if key=='contract_employment':
         assert state['fields']['position']['value']=='учитель'
         assert state['fields']['is_pedagogue']['value']=='да'

@@ -57,6 +57,7 @@ PROFILES={
 }
 
 PROFILE_BY_FORM={
+ 'pretense_rent_deposit':'deposit',
  'contract_employment':'employment',
  'contract_housing':'housing','act_housing_handover':'housing_act','act_housing_return':'housing_act','contract_housing_addendum':'addendum',
  'contract_services':'services','contract_work':'work','contract_loan':'loan','act_loan_receipt':'loan',

@@ -10,6 +10,7 @@ SCOPES = {
     'act_housing_handover':r'квартир|жил|найм', 'act_housing_return':r'квартир|жил|найм',
     'contract_housing_addendum':r'дополнител\w* соглашен',
     'claim_rent_deposit':r'депозит|обеспечительн\w* плат[её]ж',
+    'pretense_rent_deposit':r'депозит|залог|обеспечительн\w* плат[её]ж',
     'claim_labor_salary':r'зарплат|заработн\w* плат|трудов|расч[её]т',
     'claim_labor_reinstatement':r'увольнен|восстанов.{0,20}работ',
     'labor_resignation':r'увольнен|уволить', 'pretense_labor_settlement':r'работодател|зарплат|увольнен|заработн\w* плат',
@@ -41,7 +42,7 @@ SCOPES = {
     'motion_attach': r'приобщ|прилож|добавить.{0,20}(?:доказател|документ)',
     'motion_costs': r'судебн\w* расход|расход\w* на (?:суд|представител|юрист)',
     'motion_objection': r'возраж|не соглас\w*.{0,20}иск',
-    'contract_services': r'услуг', 'contract_work': r'подряд|ремонт|работ',
+    'contract_services': r'услуг|фотограф|фотосъ[её]м|видеосъ[её]м', 'contract_work': r'подряд|ремонт|работ|(?:создани|разработк|изготовлени)\w*\s+(?:веб[- ]?)?сайт',
     'contract_housing': r'найм|на[её]м|аренд|сда(?:ть|ю|вать)|сня(?:ть|тия)|снимать',
     'contract_loan': r'за[её]м|займ|в долг|одолж',
     'contract_sale_nonresidential': r'нежил\w* помещен',
@@ -56,12 +57,22 @@ def scope_text(state):
 
 
 def scenario_has_evidence(key,state):
+    if key=='power_of_attorney':
+        from app.services.document_authority_facts import is_authority_request
+        return bool(re.search(SCOPES[key],scope_text(state),re.I) or is_authority_request(scope_text(state)))
+    if key in {'appeal_civil','appeal_arbitration'}:
+        from app.services.document_appeal_routing import appeal_proceeding
+        return appeal_proceeding(scope_text(state)) == key.removeprefix('appeal_')
     topic=re.sub(r'^(?:claim|pretense)_','',key)
     pattern=SCOPES.get(key) or SCOPES.get(topic)
     return bool(pattern and re.search(pattern,scope_text(state),re.I))
 
 
 def unavailable_form_message(state):
+    from app.services.document_dialogue import document_kind
+    if document_kind(state)=='appeal':
+        from app.services.document_appeal_routing import appeal_clarification
+        return appeal_clarification(scope_text(state))
     if re.search(r'алимент',scope_text(state),re.I):
         return ('Для ситуации с алиментами в библиотеке пока нет настроенной формы. '
             'Иск по договору оказания услуг для неё не подходит. '

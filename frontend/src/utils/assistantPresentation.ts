@@ -45,12 +45,10 @@ export function presentAssistantMessage(content: string): string {
       // Incomplete streaming JSON is left intact until the object is complete.
     }
   }
-  const levels: Record<string, string> = { high: 'высокая', medium: 'средняя', low: 'низкая' };
-  return capitalizeSentences(text.replace(/\bconfidence\s*[:=]\s*(high|medium|low)\b/gi,
-    (_, level: string) => `\n\n**Уверенность:** ${levels[level.toLowerCase()]}`)
+  return capitalizeSentences(text
+    .replace(/(?:\*{1,2})?\bconfidence\s*[:=]\s*(?:high|medium|low)(?:\*{1,2})?/gi, '')
+    .replace(/\*{0,2}(?:Уверенность|Достоверность)\*{0,2}\s*:\*{0,2}\s*(?:высокая|средняя|низкая)\*{0,2}[^\S\n]*\.?/gi, '')
     .replace(/\[РЕКОМЕНДАЦИЯ\]\s*/gi, '\n\n**Рекомендация:** ')
-    .replace(/\*{0,2}(?:Уверенность|Достоверность)\*{0,2}\s*:\*{0,2}\s*(высокая|средняя|низкая)/gi,
-      (_, level: string) => `\n\n**Уверенность:** ${level.toLowerCase()}`)
     .replace(/\*{0,2}Рекомендация\*{0,2}\s*:\*{0,2}\s*/gi, '\n\n**Рекомендация:** ')
     // These markers remain in the backend text for verified source tracking.
     .replace(/[ \t]*(?:\*{1,2})?\[Источник\s+[1-9]\d*\](?:\*{1,2})?/gi, '')

@@ -9,14 +9,14 @@
     "recipient": "requisite",
     "recipient_address": "auto",
     "recipient_details": "requisite",
-    "subject": "phrase",
-    "scope": "phrase",
-    "materials": "phrase",
+    "subject": "sentence",
+    "scope": "sentence",
+    "materials": "sentence",
     "term": "sentence",
     "amount": "auto",
-    "payment": "phrase",
+    "payment": "sentence",
     "acceptance": "sentence",
-    "changes": "phrase",
+    "changes": "sentence",
     "quality": "sentence",
     "liability": "sentence",
     "termination": "sentence",
@@ -28,8 +28,8 @@
     "counterparty_signature": "requisite",
     "legal_basis": "sentence"
   },
-  "version": 7,
-  "schema_version": 3,
+  "version": 8,
+  "schema_version": 4,
   "coverage": "structured",
   "source": "Самостоятельная полная форма с отдельными условиями сторон и проверяемыми нормативными ориентирами",
   "usage_basis": "Самостоятельная редакция; чужие коммерческие формы и их условия не копируются автоматически.",
@@ -96,7 +96,7 @@
       "when_values": null
     },
     {
-      "text": "Исполнитель выполняет задание Заказчика: {{subject}}. Объём и требования: {{scope}}.",
+      "text": "{{subject}}",
       "role": "body",
       "when_field": null,
       "when_value": null,
@@ -104,7 +104,15 @@
       "when_values": null
     },
     {
-      "text": "Предоставление материалов, оборудования и исходных данных: {{materials}}.",
+      "text": "{{scope}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{materials}}",
       "role": "body",
       "when_field": null,
       "when_value": null,
@@ -136,7 +144,15 @@
       "when_values": null
     },
     {
-      "text": "Согласованная цена договора: {{amount}}. Порядок расчётов: {{payment}}.",
+      "text": "Согласованная цена договора: {{amount}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{payment}}",
       "role": "body",
       "when_field": null,
       "when_value": null,
@@ -160,7 +176,7 @@
       "when_values": null
     },
     {
-      "text": "Порядок изменения задания, цены и сроков: {{changes}}.",
+      "text": "{{changes}}",
       "role": "body",
       "when_field": null,
       "when_value": null,
@@ -297,9 +313,9 @@
     }
   ],
   "docx_asset": {
-    "template": "contract_services/v7/template.docx",
-    "schema": "contract_services/v7/schema.json",
-    "template_sha256": "fbc6e1241324a40681190fd39162c84a57ed48324b85f8b5a0b30fa7e0755c14",
-    "schema_sha256": "ddd3a562dd3c13726ce02248813c2c93099f64e12ba26c205522eae23f8d9071"
+    "template": "contract_services/v8/template.docx",
+    "template_sha256": "96f7749d8737e90efe015db2a37371cf3e7e36be45650440496420c2c7ddbc9d",
+    "schema": "contract_services/v8/schema.json",
+    "schema_sha256": "2a5fb03bdd9bec8777aa79afde2e4bcbdc29e3518a8c4b075cb4239d3fb73033"
   }
 }

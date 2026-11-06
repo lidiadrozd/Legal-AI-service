@@ -9,7 +9,16 @@ from pathlib import Path
 # template.  A sofa, wardrobe or kitchen set is still a consumer good, and a
 # user should not have to call it a generic "товар" for the appropriate form
 # to be selected.
-_CONSUMER_GOODS = r'(?:товар|заказ|телефон|ноутбук|техник\w*|диван\w*|мебел\w*|шкаф\w*|кресл\w*|матрас\w*|стол\w*|стул\w*|кухн\w*)'
+_CONSUMER_GOODS = r'(?:товар|заказ|телефон|ноутбук|холодильник|стиральн\w* машин|телевизор|техник\w*|диван\w*|мебел\w*|шкаф\w*|кресл\w*|матрас\w*|стол\w*|стул\w*|кухн\w*)'
+
+
+def is_rent_deposit_return(text):
+    """A housing security payment, not unpaid rent or a bank deposit."""
+    return bool(
+        re.search(r'обеспечительн\w*\s+плат[её]ж|депозит|залог', text, re.I)
+        and re.search(r'квартир|жиль|жил\w*\s+помещен|найм|аренд|собственник|съех|выех', text, re.I)
+        and re.search(r'возврат|возвращ|верну|верн[её]|удерж|не\s+отда', text, re.I)
+    )
 
 @lru_cache(maxsize=1)
 def catalog_forms():
@@ -40,6 +49,8 @@ def catalog_kind(text):
 def infer_catalog_scenario(kind,text):
     """Specific purpose wins before broad transaction keywords such as rent."""
     t=text.lower()
+    if kind in {'claim', 'pretense'} and is_rent_deposit_return(t):
+        return kind + '_rent_deposit'
     if kind=='contract' and re.search(r'(?:трудов|рудов)\w* (?:договор|контракт)|работа учител|работ[ау]\s+(?:учител|педагог)',t):return 'contract_employment'
     if kind=='contract' and re.search(r'дополнител\w* соглашен',t) and re.search(r'найм|квартир|жил|аренд',t):return 'contract_housing_addendum'
     if kind=='act' and re.search(r'квартир|жил|найм',t):
@@ -69,7 +80,6 @@ def infer_catalog_scenario(kind,text):
         if re.search(r'расторжен.{0,15}брак|развод',t):return 'claim_divorce'
         if re.search(r'восстанов.{0,20}работ|незаконн.{0,15}увольнен',t):return 'claim_labor_reinstatement'
         if re.search(r'зарплат|заработн\w* плат|расч[её]т.{0,20}увольнен',t):return 'claim_labor_salary'
-        if re.search(r'(?:возврат|верну|вернуть).{0,40}(?:депозит|обеспечительн\w* плат[её]ж)',t):return 'claim_rent_deposit'
         # Consumer claims split by their factual basis before the broad
         # consumer form: delayed delivery concerns prepayment and the agreed
         # transfer date, whereas defective goods concern a product defect.
@@ -86,6 +96,10 @@ def infer_catalog_scenario(kind,text):
         if re.search(r'поврежд|разбил|сломал|имущественн\w* ущерб|(?:взыскан|возмещен)\w*.{0,35}ущерб|ущерб.{0,35}(?:взыскан|возмещен)',t) and not re.search(r'залив|затоп|потребител|товар',t):return 'claim_damage_property'
     if kind=='pretense':
         if re.search(r'работодател|зарплат|увольнен|заработн\w* плат',t):return 'pretense_labor_settlement'
+        if re.search(r'недостат|некачествен|плох|нарушен',t) and re.search(r'услуг|ремонт|\bработ(?:ы|у|ам|ах)\b',t):
+            return 'pretense_consumer_defective_service'
+        if re.search(_CONSUMER_GOODS,t) and re.search(r'недостат|некачествен|брак|дефект|плох|слом\w*|не работает|перестал\w*\s+\w+',t):
+            return 'pretense_consumer_defective_goods'
         if re.search(r'достав|не (?:привез|достав|передал).{0,20}товар',t):return 'pretense_consumer_late_delivery'
         if re.search(r'недостат|некачествен|плох|нарушен',t) and re.search(r'услуг|ремонт|работ',t):return 'pretense_consumer_defective_service'
         if re.search(r'поврежд|разбил|сломал|имущественн\w* ущерб|(?:возмещен|взыскан)\w*.{0,35}ущерб|ущерб.{0,35}(?:возмещен|взыскан)',t) and not re.search(r'залив|затоп|потребител|товар',t):return 'pretense_damage_property'

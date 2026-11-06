@@ -239,6 +239,12 @@ def prepare_form_intake(state):
     # fills a calculation slot before the interview reaches it and then causes
     # later identity/contract answers to be skipped.
     if not uses_form_composer(state):return
+    from app.services.document_contract_facts import repair_contract_facts
+    repair_contract_facts(state)
+    from app.services.document_explicit_facts import reuse_personal_signer
+    reuse_personal_signer(state)
+    from app.services.document_consumer_facts import prepare_consumer_facts
+    prepare_consumer_facts(state)
     if state['scenario']=='contract_employment':
         role=(state['fields'].get('position',{}).get('value') or '').lower()
         context=' '.join([state.get('request',''),state['fields'].get('sender',{}).get('value') or '']).lower()
@@ -346,6 +352,16 @@ def collect_form_turn(state,text,current):
         if key!=current and existing.get('status')=='filled':return
         if key in specs and set_field(state,key,value,evidence,status):
             consumed.add(key);state['fields'][key]['source_field']=current
+    if state['scenario']=='appeal_civil' and state['fields'].get('grounds',{}).get('status')!='filled':
+        for source in dict.fromkeys([state.get('request',''),text]):
+            sentence=_narrative_sentence(source,r'суд\w*.{0,60}взыск\w*.{0,50}(?:долг|задолжен)')
+            if sentence and re.search(r'хотя|не уч[её]л|без уч[её]та',sentence,re.I) and re.search(r'вернул|погасил|оплатил|плат[её]ж',sentence,re.I):
+                put('grounds',sentence,sentence)
+    from app.services.document_consumer_facts import collect_consumer_facts
+    collect_consumer_facts(state, text, put)
+    from app.services.document_contract_facts import collect_contract_turn
+    contract_fields = collect_contract_turn(state, text, current)
+    consumed.update(contract_fields)
     # A dense description of a damage event often already contains the
     # object, the event, a repair estimate and a pre-trial notice.  Split it
     # before the generic single-field fallback can put the entire chronology
@@ -467,10 +483,25 @@ def collect_form_turn(state,text,current):
     if 'payment' in specs:aliases['payment']+=['порядок расчётов','порядок расчетов','способ оплаты']
     if 'sender' in specs:aliases['sender']+=['ФИО '+specs['sender'].label]
     if 'recipient' in specs:aliases['recipient']+=['ФИО '+specs['recipient'].label]
+    if state['scenario'] in {'contract_services','contract_work'}:
+        aliases['recipient']+=['исполнитель','подрядчик']
     if 'sender_address' in specs:aliases['sender_address']+=['адрес '+specs['sender'].label]
     if 'recipient_address' in specs:aliases['recipient_address']+=['адрес '+specs['recipient'].label]
+    # "Заказчик — ФИО. Адрес: ..." answers both identity and address.
+    # A bare address belongs to the active party only when that party is
+    # explicitly named and no second party is named in the same message.
+    if current in {'sender','recipient'} and current+'_address' in specs:
+        other='recipient' if current=='sender' else 'sender'
+        own_label=re.escape(specs[current].label)
+        other_label=re.escape(specs[other].label)
+        if re.search(r'(?:^|[.;]\s*)'+own_label+r'\s*[:—-]',text,re.I) and not re.search(r'(?:^|[.;]\s*)'+other_label+r'\s*[:—-]',text,re.I):
+            aliases[current+'_address']+=['адрес']
+    if 'party_details' in specs:aliases['party_details']+=['дополнительные реквизиты сторон']
     patterns=[(name,alias) for name,values in aliases.items() for alias in values if len(alias)>2]
     matches=[]
+    if 'party_details' in specs:
+        for match in re.finditer(r'(?:^|(?<=\.)\s+)Дополнительные реквизиты сторон\s+(?=неизвестны\b)',text,re.I):
+            matches.append((match.start(),match.end(),'party_details'))
     if state['scenario']=='contract_employment':
         # Role labels can name any occupation supplied for this employee;
         # never hard-code school/teacher names into a general contract.
@@ -483,12 +514,26 @@ def collect_form_turn(state,text,current):
         pattern=r'(?:^|[;\n]|(?<=\.)\s+)\s*(?:руководитель|директор|заведующ[а-яё]*)\b[^:;\n]{0,70}:\s*'
         for match in re.finditer(pattern,text,re.I):matches.append((match.start(),match.end(),'sender_details'))
     for name,alias in patterns:
-        pattern=r'(?:^|[;\n]|(?<=\.)\s+)\s*'+re.escape(alias)+r'\s*[:—]\s*'
+        pattern=r'(?:^|[;,\n]|(?<=\.)\s+)\s*'+re.escape(alias)+r'\s*[:—–-]\s*'
         for match in re.finditer(pattern,text,re.I):matches.append((match.start(),match.end(),name))
     matches.sort()
     for i,(start,end,name) in enumerate(matches):
         stop=matches[i+1][0] if i+1<len(matches) else len(text)
         value=text[end:stop].strip(' ;\n')
+        if specs[name].kind in {'money','date'}:
+            scalar=re.match(MONEY if specs[name].kind=='money' else DATE,value,re.I)
+            if scalar:
+                value=scalar[0]
+                stop=end+scalar.end()
+        if name in {'sender','recipient','signature','counterparty_signature'}:
+            from app.services.document_explicit_facts import NAME
+            person=re.match(r'('+NAME+r')(?=[.,;\n]|$)',value)
+            if person:
+                value=person[1]
+                stop=end+person.end()
+            else:
+                from app.services.document_contract_facts import _clauses
+                value=(_clauses(value) or [value])[0].rstrip(' .')
         if value and name not in consumed:
             quote=text[start:stop].strip()
             if name=='sender_details' and state['scenario']=='contract_employment':

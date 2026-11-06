@@ -5,7 +5,7 @@ party assignment or deciding whether unchecked prose can be published.
 """
 import re
 
-EDITOR_VERSION = 15
+EDITOR_VERSION = 25
 ROLE_FIELDS = {'sender', 'recipient', 'employer', 'signature', 'counterparty_signature',
                'sender_address', 'recipient_address', 'employer_address', 'court', 'party_details',
                'property_address', 'source_address', 'sender_details', 'recipient_details'}
@@ -37,6 +37,31 @@ def editorial_roles(scenario):
 
 def role_evidence_allowed(key, source, state, *, direct=False):
     if key not in ROLE_FIELDS or direct: return True
+    if state.get('scenario')=='power_of_attorney':
+        from app.services.document_authority_facts import KIN
+        if key=='recipient' and re.search(r'\b(?:доверяю|уполномочиваю|поручаю)\b',source,re.I):return True
+        if key=='recipient_address' and re.search(r'адрес\s+'+KIN,source,re.I):return True
+    if state.get('scenario','').startswith('appeal_'):
+        role=(state.get('appellant_identity') or {}).get('role')
+        own={'истец':'истца','ответчик':'ответчика'}.get(role)
+        other={'истец':'ответчик','ответчик':'истец'}.get(role)
+        other_genitive={'истец':'ответчика','ответчик':'истца'}.get(role)
+        if key=='sender':return bool(re.search(r'\bя\s*[—–,:-]?\s*[А-ЯЁ]|меня зовут|заявител',source,re.I))
+        if key=='recipient' and other:return bool(re.search(r'\b'+other+r'\b',source,re.I))
+        if key=='sender_address':return bool(re.search(r'мой\s+(?:почтовый\s+)?адрес'+('|адрес '+own if own else ''),source,re.I))
+        if key=='recipient_address' and other_genitive:return bool(re.search(r'адрес\s+'+other_genitive,source,re.I))
+    if state.get('scenario') in {'claim_rent_deposit', 'pretense_rent_deposit'}:
+        housing_roles = {
+            'sender': r'нанимател|\bя\s*[—,:-]?\s*[А-ЯЁ][а-яё-]+\s+[А-ЯЁ]',
+            'recipient': r'наймодател|собственник|арендодател',
+            'sender_address': r'мой\s+(?:(?:нынешний|текущий|почтовый)\s+)?адрес|адрес нанимател',
+            'recipient_address': r'адрес\s+(?:наймодател|собственник|арендодател)',
+        }
+        if key in housing_roles and re.search(housing_roles[key], source, re.I):
+            return True
+    if key in {'recipient','seller'} and 'consumer' in state.get('scenario',''):
+        if re.search(r'(?:купил[аи]?|приобр[её]л[аи]?|заказал[аи]?)\b.{0,100}\b(?:в|у)\s+(?:ООО|АО|ПАО|ИП)\b',source,re.I):
+            return True
     if any(item.get('field') == key and item.get('text') == source for item in state.get('answer_bindings', [])):
         return True
     return bool(re.search(ROLE_HINTS[key], source, re.I))
@@ -49,6 +74,8 @@ UNCERTAIN = re.compile(r'\b(?:наверно\w*|кажется|вроде|пре
 def formal_text(text):
     """Mechanical style gate, in addition to semantic review by the model."""
     from app.services.document_editorial_grammar import requires_prose_edit
+    from app.services.document_dialogue import is_recall_request, leaves_blank
+    if is_recall_request(text) or leaves_blank(text):return False
     if requires_prose_edit(text): return False
     return not (re.search(r'(?i)\bsource[_ ]?text\b|&[A-Za-z]{2,}|\b(?:DNR|Duity|NR)\b|(?:я|мы)\s+(?:добавил[аи]?|отредактировал[аи]?)\s+(?:необходимые|роли|раздел)|отредактируйте|исходный текст остался',text) or CHATTER.search(text) or '?' in text or re.search(r'(?i)\bзаявитель\s+(?:приобрела|обратилась|получила|направила)\b|^просить\s', text.strip()) or re.search(
         r'(?i)укажите|впишите|как вы сообщили|спасибо за|ниже (?:текст|пример)|уточнение пользователя|\[(?:ДАННЫЕ|СУММА|ДАТА|ФИО)_', text))
@@ -62,8 +89,14 @@ def adds_request(key, text, source):
 def clean_requisite(key, source):
     """Extract identifiers without inventing a person, court or jurisdiction."""
     text = source.strip()
+    from app.services.document_field_safety import field_value_problem
+    from app.services.document_dialogue import conversational_value
+    if field_value_problem(key,text)=='identity_is_description' or conversational_value(text):return None
     if key in {'sender', 'recipient', 'employer'}:
-        return re.sub(r'^(?:работодатель|заявитель|истец|ответчик|адресат)\s*[:—-]\s*', '', text, flags=re.I)
+        # Legacy extraction sometimes saved the following labelled address in
+        # the person's name. Keep the identity only; the address has its slot.
+        text = re.split(r'[.;]\s*(?:мой\s+)?адрес(?:\s+[А-Яа-яЁё -]+)?\s*:', text, maxsplit=1, flags=re.I)[0]
+        return re.sub(r'^(?:работодатель|заявитель|истец|ответчик|адресат|заказчик|исполнитель|подрядчик|наймодатель|наниматель|продавец|покупатель)\s*[:—–-]\s*', '', text, flags=re.I).rstrip(' .')
     if key == 'case_number':
         candidates = re.findall(r'(?<!\w)[А-ЯЁA-Zа-яёa-z0-9]+(?:[-/][А-ЯЁA-Zа-яёa-z0-9]+)+', text)
         candidates = [value for value in candidates if re.search(r'\d', value) and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value)]

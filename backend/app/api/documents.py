@@ -148,6 +148,7 @@ async def prepare_interview_file(chat, user_id, db):
     if state.get('scenario'):
         state['text_package'] = export_package(state.get('text_package'), SCENARIOS[state['scenario']])
     if state.get("phase") != "ready" or not state.get("scenario") or pending_fields(state):
+        chat.document_workflow=state
         raise HTTPException(409, "Сначала завершите заполнение или отметьте неизвестные поля в чате")
     from app.services.document_quality import quality_issues
     issues = quality_issues(state)
@@ -281,6 +282,15 @@ async def interview_file_reply(chat, user_id, db, fallback):
     try:
         document = await prepare_interview_file(chat, user_id, db)
     except (HTTPException, RuntimeError, ValueError, OSError) as exc:
+        if isinstance(exc,HTTPException) and exc.status_code==409:
+            from copy import deepcopy
+            from app.services.document_workflow import pending_fields,interview_message
+            state=deepcopy(chat.document_workflow)
+            if state.get('scenario') and pending_fields(state):
+                answer=interview_message(state)
+                chat.document_workflow=state
+                return 'Нужно уточнить оставшееся поле или явно оставить его незаполненным. '+answer
+            return str(exc.detail)
         from app.services.document_drafting import DraftPreparationError
         cause = exc.__cause__
         if isinstance(cause, DraftPreparationError):

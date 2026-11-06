@@ -5,6 +5,7 @@ from copy import deepcopy
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 import json
+import asyncio
 import logging
 import re
 from typing import Literal
@@ -45,7 +46,7 @@ def provider_failure_kind(error):
     for _ in range(5):
         name = type(cause).__name__
         if name in {"ConnectTimeout", "ConnectError"}: return "connection"
-        if name in {"ReadTimeout", "WriteTimeout", "PoolTimeout"}: return "timeout"
+        if name in {"TimeoutError", "ReadTimeout", "WriteTimeout", "PoolTimeout"}: return "timeout"
         if getattr(cause, "status_code", None) in {401, 403}: return "authorization"
         if getattr(cause, "status_code", None) in {402, 429}: return "limit"
         if getattr(cause, "status_code", None): return "provider_http"
@@ -95,6 +96,22 @@ def normalize_money(raw: str) -> str | None:
 
 def normalize_field(spec, raw: str) -> tuple[str, str | None]:
     value = raw.strip()
+    if spec.key in {'sender','recipient','signature','counterparty_signature','termination'}:
+        from app.services.document_field_safety import field_value_problem, problem_question
+        problem=field_value_problem(spec.key,value)
+        if problem in {'identity_is_description','termination_is_vague'}:
+            return value,problem_question(problem)
+    if spec.key in {'payment','payment_details','payment_method'}:
+        from app.services.document_explicit_facts import safe_payment_value
+        value=safe_payment_value(value)
+    if spec.key in {'sender','recipient','signature','counterparty_signature'}:
+        from app.services.document_explicit_facts import nominative_name,NAME
+        self_name=re.fullmatch(r'(?:Я\s*[—–,:-]?\s+|Меня зовут\s+)('+NAME+r')(,\s*(?:истец|ответчик))?[. ]*',value)
+        if self_name:value=self_name[1]+(self_name[2] or '')
+        value=re.sub(r'^(?:Заказчик|Исполнитель|Подрядчик|Наймодатель|Наниматель|Продавец|Покупатель|Займодавец|За[её]мщик|Доверитель|Представитель)\s*[:—–-]\s*','',value,flags=re.I).rstrip(' .')
+        name_with_address=re.match(r'^('+NAME+r')\.\s+Адрес(?:\s+\w+)?\s*:',value)
+        if name_with_address:value=name_with_address[1]
+        value=nominative_name(value)
     if not value or re.search(r"\[[^]]+\]", value):
         return value, "Укажите значение либо прямо сообщите, что оно неизвестно."
     if spec.key=='contacts' and spec.label=='Контактные данные':
@@ -106,6 +123,12 @@ def normalize_field(spec, raw: str) -> tuple[str, str | None]:
         choice = normalize_choice(spec, value)
         return (choice, None) if choice else (value, 'Нужно выбрать один вариант: ' + ', '.join(spec.choices) + '. Какой подходит?')
     if spec.kind == 'duration':
+        if spec.key=='validity':
+            until=re.fullmatch(r'до\s+(.+?)(\s+включительно)?',value,re.I)
+            if until:
+                from dataclasses import replace
+                parsed,error=normalize_field(replace(spec,kind='date'),until[1])
+                if not error:return 'до '+datetime.fromisoformat(parsed).strftime('%d.%m.%Y')+(until[2] or ''),None
         duration = re.sub(r'^на\s+', '', value, flags=re.I)
         match = re.fullmatch(r'(\d+)\s*(?:год|года|лет|месяц(?:а|ев)?|день|дня|дней|недел[яьиь])', duration, re.I)
         if match and int(match[1]) > 0:
@@ -156,8 +179,24 @@ def apply_updates(state: dict, updates: list[FieldUpdate], message: str, *, late
     scenario = SCENARIOS[result["scenario"]]
     specs = {f.key: f for f in scenario.fields}
     for patch in updates:
+        if patch.status=='filled' and patch.value:
+            from app.services.document_source_quotes import literal_evidence
+            proof=literal_evidence(patch.value,message,patch.evidence)
+            if proof and _evidence_text(patch.evidence) not in _evidence_text(message):
+                patch=patch.model_copy(update={'value':proof[0],'evidence':proof[1]})
         if patch.key not in specs or _evidence_text(patch.evidence) not in _evidence_text(message):
             continue
+        if result.get('scenario')=='power_of_attorney' and patch.key=='attachments':
+            if patch.key not in result.get('last_questions',[]) and not re.search(r'приложени[яй]|прилага|приложу|приложить|прикладыва',patch.evidence,re.I):
+                # Documents the representative is to obtain are not already
+                # attached to the authority.
+                continue
+        if patch.key=='other_participants' and patch.value:
+            from app.services.document_explicit_facts import NAME
+            principals=' '.join(result['fields'].get(k,{}).get('value') or '' for k in ('sender','recipient'))
+            names=re.findall(NAME,patch.value)
+            if names and all(name in principals for name in names):
+                continue
         from app.services.document_export_contract import ROLE_FIELDS, role_evidence_allowed
         active = result.get('last_questions', [])
         direct = patch.key in active and _evidence_text(patch.evidence) in _evidence_text(latest_message if latest_message is not None else message)
@@ -177,6 +216,15 @@ def apply_updates(state: dict, updates: list[FieldUpdate], message: str, *, late
                     original = patch.evidence
                 else:
                     continue
+            from app.services.document_contract_facts import SERVICE_CONTRACTS, TERM_KEYS, contract_fragments, collect_contract_turn
+            if result['scenario'] in SERVICE_CONTRACTS and patch.key=='acceptance' and re.fullmatch(r'(?:в\s+формате\s+)?(?:JPEG|JPG|PNG|PDF|MP4)[.! ]*',original,re.I):
+                collect_contract_turn(result,original,'acceptance')
+                continue
+            if result['scenario'] in SERVICE_CONTRACTS and patch.key in TERM_KEYS and len(contract_fragments(original)) >= 2:
+                # The model may select a whole rich turn. Only verified
+                # literal evidence can be split into independent clauses.
+                collect_contract_turn(result, original)
+                continue
             value, error = normalize_field(specs[patch.key], original)
             if patch.key in {"sender", "recipient", "signature", "counterparty_signature"} and re.fullmatch(r"[а-яё-]+(?:\s+[а-яё-]+){1,2}", value) and not re.search(r"\b(?:ооо|ип|ао|пао|зао)\b", value):
                 value = value.title()
@@ -360,15 +408,23 @@ def _needs_contextual_fact_capture(scenario, key, message):
     Treating it as the answer to whichever question happened to be on screen
     is what led to repeated questions and duplicated document text.
     """
-    if not key or asks_for_help(message) or re.search(r"\b(?:исправь|измени|замени|убери)\b", message, re.I):
+    if not key or re.search(r"\b(?:исправь|измени|замени|убери)\b", message, re.I):
         return False
     spec = next((field for field in scenario.fields if field.key == key), None)
-    if not spec or spec.kind != "text" or key in {
-        "legal_basis", "fee", "jurisdiction", "signature", "counterparty_signature",
-        "sender", "recipient", "sender_details", "recipient_details", "party_details",
-    }:
+    if not spec:
         return False
     source = message.strip()
+    # A clarification can include an answer after the question. Extract only
+    # literal factual clauses; never store the question itself as a value.
+    if asks_for_help(source):
+        # A question at the end does not erase factual sentences before it.
+        from app.services.document_contract_facts import _clauses
+        source = '. '.join(clause for clause in _clauses(source)
+                           if '?' not in clause and not asks_for_help(clause))
+        if not source:
+            return False
+    if re.search(r'[.;]\s+\S|\n\s*\S|\b(?:и|а)\s+(?:мой адрес|живу|проживаю|продавец|цена|купил|купила)\b', source, re.I):
+        return True
     # Short procedural confirmations (for example, "да, 2.10.26, ответа
     # нет") are intentionally handled by the family-specific local parsers.
     # Sending those to the contextual model would make otherwise offline-safe
@@ -390,26 +446,55 @@ def _needs_contextual_fact_capture(scenario, key, message):
     return clauses >= 2 or dates >= 2 or amounts >= 2
 
 
-async def _capture_contextual_facts(state, scenario, key, message):
+async def _capture_contextual_facts(state, scenario, key, message, *, force=False):
     """Extract literal facts from a rich answer before the local fast path.
 
-    The model is allowed to choose *which* currently empty template slots the
-    answer covers, but it can only return literal snippets of the latest user
+    The model selects empty slots and additions to contract clauses, but it
+    can only return literal snippets of the latest user
     turn.  This preserves provenance and lets the deterministic field checks
     remain the final gate.  Failure is intentionally local: ordinary intake
     must still work when the provider is temporarily unavailable.
     """
-    if not _needs_contextual_fact_capture(scenario, key, message):
+    if conversational_value(message) and (is_recall_request(message) or re.fullmatch(r'(?:а\s+)?сам[а]?\s+подумай[.!? ]*',message,re.I)):
+        return state,None
+    if not force and not _needs_contextual_fact_capture(scenario, key, message):
         return state, None
+    from app.services.document_contract_facts import collect_contract_turn
+    collect_contract_turn(state, message, key)
+    from app.services.document_form_intake import collect_form_turn
+    if state.get('scenario') in {'contract_services', 'contract_work'}:
+        collect_form_turn(state, message, key)
+    from app.services.document_explicit_facts import collect_explicit_facts
+    from app.services.document_appeal_facts import collect_appeal_facts
+    collect_explicit_facts(state,message,key)
+    collect_appeal_facts(state,message,key)
+    from app.services.document_authority_facts import collect_authority_facts
+    collect_authority_facts(state,message,key)
+    # Explicitly labelled identity/address pairs are unambiguous in every
+    # form. Capture them even if the remote extractor returns malformed JSON.
+    identity = re.fullmatch(
+        r'\s*(?:Меня зовут\s+)?(?P<name>[А-ЯЁ][а-яё-]+(?:\s+[А-ЯЁ][а-яё-]+){2})[.;]\s*'
+        r'(?P<label>Мой адрес\s*:|Я проживаю по адресу\s*:?)\s*(?P<address>[^!?\n]+)\s*', message)
+    if identity and key in {'sender','sender_address'} and re.search(r'\b(?:ул\.|улица|проспект|пр-т|пер\.)',identity['address'],re.I):
+        available = {f.key for f in scenario.fields}
+        patches = [FieldUpdate(key=k,status='filled',value=v,evidence=message) for k,v in
+                   [('sender',identity['name']),('sender_address',identity['address'])]]
+        patches = [p for p in patches if p.key in available and state['fields'].get(p.key,{}).get('status')!='filled']
+        if patches:
+            return apply_updates(state,patches,message,latest_message=message), None
     blocked = {
         "legal_basis", "fee", "jurisdiction", "signature", "counterparty_signature",
-        "sender", "recipient", "sender_details", "recipient_details", "party_details",
     }
+    # A local clause parser can recognise part of a narrative slot. Let the
+    # model contribute other literal clauses from the same rich reply, rather
+    # than considering that slot fully read after its first recognised fact.
+    from app.services.document_contract_facts import SERVICE_CONTRACTS, TERM_KEYS
+    supplements=(TERM_KEYS-{'subject'}) if state.get('scenario') in SERVICE_CONTRACTS else set()
     eligible = [field for field in scenario.fields
                 if field.key not in blocked
-                and (field.key == key or state.get("fields", {}).get(field.key, {}).get("status")
+                and (field.key in supplements or (field.key == key and state.get('fields',{}).get(field.key,{}).get('origin') not in {'contract_clause_extraction','appeal_literal_facts','authority_literal_facts'}) or state.get("fields", {}).get(field.key, {}).get("status")
                      not in {"filled", "unknown", "not_applicable", "review_required"})]
-    if len(eligible) < 2:
+    if not eligible:
         return state, None
     keys = [field.key for field in eligible]
     schema = {
@@ -432,18 +517,26 @@ async def _capture_contextual_facts(state, scenario, key, message):
         "additionalProperties": False,
     }
     try:
-        completion = await _structured(
-            await get_gigachat_client(),
+        provider = await asyncio.wait_for(get_gigachat_client(), timeout=6)
+        completion = await asyncio.wait_for(_structured(
+            provider,
             "Извлеки из latest_message все уже названные факты для полей выбранного шаблона. "
             "Это не опрос и не редактура: верни только короткие дословные непрерывные цитаты из latest_message. "
+            'Формат ответа: {"answers":[{"key":"имя поля","quote":"цитата-значение"}]}. '
             "Не придумывай, не перефразируй и не копируй одну цитату в несколько полей. "
+            "Извлекай ВСЕ сообщённые поля независимо от active_field: стороны, адреса, даты, покупку, недостатки, оплату, требования и прежние обращения. "
+            "quote — только значение поля; его роль проверяется по окружающему тексту исходного сообщения. "
+            "quote содержит буквальное значение из текста, никогда название latest_message. Если факта нет, НЕ включай поле в answers. Разрешены только ключи из fields. "
+            "Для условий договора извлекай также дополнения к already_filled: новый пункт задания не отменяет прежние пункты. "
+            "Один field может иметь несколько answers с разными цитатами. Не повторяй уже сохранённые предложения. "
+            "Вопросы и команды не являются фактами, но факты рядом с ними необходимо сохранить. "
             "Договор — только его вид, номер, дату и стороны; исполнение — только выполненная работа или услуга; "
             "срок оплаты — только дата или период оплаты; обстоятельства нарушения — только факт просрочки, отсутствия оплаты или обращений. "
             "Основная задолженность — неоплаченный остаток, а не вся цена договора и не аванс. "
             "Не заполняй срок исполнения претензии датой, установленной для оплаты по договору. "
             "Не извлекай просьбу пользователя рассчитать проценты как денежный факт: её обработает калькулятор.",
             {
-                "scenario": scenario.as_dict(),
+                "scenario": {"key": scenario.key, "title": scenario.title},
                 "active_field": key,
                 "fields": [{"key": field.key, "label": field.label, "kind": field.kind,
                             "question": field.question} for field in eligible],
@@ -452,18 +545,31 @@ async def _capture_contextual_facts(state, scenario, key, message):
             },
             schema,
             name="contextual_template_facts",
-            plain_json=True,
-        )
+            plain_json=False,
+        ), timeout=15)
         payload = json.loads(completion.content)
+        if not isinstance(payload,dict) or not isinstance(payload.get('answers'),list):
+            raise ValueError('Invalid contextual extraction')
         seen = set()
         updates = []
         for item in payload.get("answers", []):
+            if not isinstance(item,dict):continue
             field_key = item.get("key")
             quote = str(item.get("quote") or "").strip()
-            if field_key not in keys or not quote or field_key in seen:
+            evidence = str(item.get("evidence") or '').strip()
+            if field_key not in keys or not quote or (field_key in seen and field_key not in supplements):
                 continue
-            if _evidence_text(quote) not in _evidence_text(message):
-                continue
+            from app.services.document_source_quotes import literal_evidence
+            proof=literal_evidence(quote,message,evidence)
+            if not proof:continue
+            quote,evidence=proof
+            if field_key in supplements:
+                from app.services.document_contract_facts import contract_fragments
+                classified=contract_fragments(quote)
+                if classified and field_key not in classified:
+                    # Already identified deadlines/payment/materials cannot
+                    # be relabelled as another section by a second extractor.
+                    continue
             spec = next(field for field in eligible if field.key == field_key)
             value = quote
             if spec.kind == "money" and normalize_money(value) is None:
@@ -471,11 +577,28 @@ async def _capture_contextual_facts(state, scenario, key, message):
                 if len(money) == 1:
                     value = money[0]
             seen.add(field_key)
-            updates.append(FieldUpdate(key=field_key, status="filled", value=value, evidence=quote))
+            updates.append(FieldUpdate(key=field_key, status="filled", value=value, evidence=evidence))
         if not updates:
             return state, completion.usage
-        return apply_updates(state, updates, message, latest_message=message), completion.usage
-    except (RuntimeError, ValueError, TypeError, AttributeError, json.JSONDecodeError):
+        for patch in updates:
+            old=deepcopy(state['fields'].get(patch.key,{}))
+            candidate=apply_updates(state,[patch],message,latest_message=message)
+            new=candidate['fields'].get(patch.key,{})
+            if patch.key in supplements and old.get('status')=='filled' and new.get('status')=='filled' and new!=old:
+                from app.services.document_contract_facts import _merge_clauses
+                prior=old.get('value') or ''
+                incoming=new.get('value') or ''
+                if incoming.rstrip('. ').casefold() in prior.casefold():
+                    candidate['fields'][patch.key]=old
+                else:
+                    from app.services.document_case_facts import set_field
+                    merged=_merge_clauses(prior,incoming)
+                    set_field(candidate,patch.key,merged,merged)
+                    candidate['fields'][patch.key].update(origin='contract_clause_extraction',
+                        source_quotes=[old.get('evidence',prior),new.get('evidence',incoming)])
+            state=candidate
+        return state, completion.usage
+    except (RuntimeError, ValueError, TypeError, AttributeError, TimeoutError, json.JSONDecodeError):
         return state, None
 
 
@@ -505,7 +628,7 @@ async def _structured(client, system, data, schema, *, name="document_interview"
         def shape(spec):
             if spec.get("type") == "object": return {key: shape(value) for key, value in spec.get("properties", {}).items()}
             if spec.get("type") == "boolean": return True
-            if spec.get("type") == "array": return []
+            if spec.get("type") == "array": return [shape(spec['items'])] if spec.get('items') else []
             return ""
         messages[0]["content"] += ("\nВерни ровно один заполненный JSON-объект без Markdown, вступления или описания схемы. "
             "Не выводи type, properties, required, description. Заполни эту форму значениями по исходным данным: "
@@ -567,6 +690,9 @@ def sanitize_interview(state):
     # left the conversation in classification/consultation indefinitely.
     exact = infer_scenario({"request": result.get("request", ""),
                             "title_hint": result.get("title_hint", "")}, "")
+    if result.get('scenario') in {'contract_services','contract_work'}:
+        choices=re.findall(r'(?:составь|подготовь|нужен)\s+договор\s+(услуг|подряда)',scope_text(result),re.I)
+        if choices:exact='contract_services' if choices[-1].lower()=='услуг' else 'contract_work'
     if exact and result.get("scenario") not in {None, exact}:
         from app.services.document_source_rag import select_document_template
         result["previous_scenario"] = result["scenario"]
@@ -685,6 +811,12 @@ def sanitize_interview(state):
             result['text_package'] = load_text_package(SCENARIOS[result['scenario']])
             if pending_fields(result) and result.get('phase') == 'ready':
                 result['phase'] = 'collecting'
+        from app.services.document_explicit_facts import reuse_personal_signer
+        from app.services.document_explicit_facts import repair_saved_dialogue
+        repair_saved_dialogue(result)
+        from app.services.document_contract_facts import repair_contract_facts
+        repair_contract_facts(result)
+        reuse_personal_signer(result)
     return result
 
 
@@ -695,6 +827,25 @@ def _record_reply(state, answer):
 
 
 async def _consult_interview(state, message, key=None):
+    if state.get('scenario') in {'contract_services','contract_work'}:
+        if key=='liability' and re.search(r'оптимальн|какой|предложи|посоветуй|например|пример|что указать',message,re.I):
+            answer=('Размер штрафа нужно согласовать сторонам с учётом конкретного нарушения. '
+                    'Самостоятельно назначать сумму и выдавать её за согласованное условие нельзя. '
+                    'Можно отдельно определить последствия задержки, непередачи результата и недостатков. '
+                    'За какое нарушение и какую ответственность стороны хотят установить?')
+            return _record_reply(state,answer),answer,_usage([])
+        if key=='materials':
+            answer=('Речь о том, кто предоставляет оборудование и исходные данные. Например, фотограф использует свою технику, '
+                    'а заказчик передаёт программу мероприятия — только если вы так договорились. '
+                    'Какие условия у вас согласованы? Если пока не обсуждали, можно так и написать.')
+            return _record_reply(state,answer),answer,_usage([])
+    if key in {'payment','payment_details','payment_method'} and re.search(r'карт|срок действия|cvv|cvc|пин',message,re.I):
+        from app.services.document_case_facts import set_field
+        if re.search(r'перевод|на карту|на сч[её]т|перечислен',message,re.I):
+            set_field(state,key,'Банковским переводом; реквизиты будут сообщены отдельно.',message)
+            return await _finish_interview(state,[], 'Способ возврата сохранён. Для претензии можно сообщить реквизиты отдельно. Срок действия карты, CVV/CVC, ПИН-код и коды из СМС не нужны — не присылайте их.')
+        answer='Номер карты не обязателен для подготовки претензии. Реквизиты для возврата можно сообщить продавцу отдельно. Срок действия карты, CVV/CVC, ПИН-код и коды из СМС не нужны. Какой способ возврата указать?'
+        return _record_reply(state,answer),answer,_usage([])
     if state.get('scenario')=='complaint_labor_agency' and key=='payment':
         answer=('Речь о том, куда инспекция направит вам ответ после рассмотрения жалобы: на почтовый адрес, электронную почту или в личный кабинет сервиса подачи. '
                 'Способ подачи самой жалобы — отдельный вопрос. Как хотите получить ответ?')
@@ -828,12 +979,13 @@ async def advance_interview(state: dict, message: str, *, prior_user_turns=None)
     if retry and retry_requested:
         message = retry["message"]
     try:
-        updated, answer, usage = await _advance_interview(state, message, prior_user_turns=prior_user_turns)
+        updated, answer, usage = await asyncio.wait_for(
+            _advance_interview(state, message, prior_user_turns=prior_user_turns), timeout=40)
         if not asks_for_help(message):
             updated.pop("pending_answer", None)
         updated.pop("provider_failure", None)
         return updated, answer, usage
-    except (RuntimeError, ValueError) as error:
+    except (RuntimeError, ValueError, TimeoutError) as error:
         # The API persists this JSON together with the assistant's reply. No raw
         # provider error or unvalidated model data becomes a document field.
         saved = sanitize_interview(state)
@@ -859,6 +1011,12 @@ async def advance_interview(state: dict, message: str, *, prior_user_turns=None)
 
 async def _advance_interview(state: dict, message: str, *, prior_user_turns=None):
     result = sanitize_interview(state)
+    # Explaining a short question must not silently add a signature. The
+    # normal inference still runs on the next factual answer or on export.
+    if asks_for_help(message) and len(message)<120:
+        for signature_key in ('signature','counterparty_signature'):
+            if signature_key not in state.get('fields',{}) and result.get('fields',{}).get(signature_key,{}).get('origin')=='personal_author_signature':
+                result['fields'].pop(signature_key,None)
     starting = not result.get("scenario")
     # DB history includes replies whose provider call failed before JSON was
     # saved. Prefer it to the older cached list so those facts are not forgotten.
@@ -881,6 +1039,34 @@ async def _advance_interview(state: dict, message: str, *, prior_user_turns=None
             result["last_questions"] = active
             result["phase"] = "collecting"
     key = active[0] if len(active) == 1 else None
+    if result.get('scenario') and is_recall_request(message) and len(message)<120:
+        # A recall is control input. Do this before local collectors can
+        # rediscover one old field and prematurely finish the turn.
+        usages=[]
+        try:
+            result,usage=await recover_interview_facts(result)
+            usages.append(usage)
+            result['progress_recovered']=True
+        except (RuntimeError,ValueError):
+            pass
+        return await _finish_interview(result,usages)
+    if result.get('scenario'):
+        from app.services.document_addresses import collect_role_addresses
+        from app.services.document_explicit_facts import collect_explicit_facts
+        addressed=collect_role_addresses(result,message)
+        collected=collect_explicit_facts(result,message,key)
+        from app.services.document_appeal_facts import collect_appeal_facts
+        collected.update(collect_appeal_facts(result,message,key))
+        from app.services.document_authority_facts import collect_authority_facts
+        collected.update(collect_authority_facts(result,message,key))
+        if addressed or collected:
+            # A local match (for example a name) must not swallow the address
+            # or other facts supplied in the same reply.
+            result, contextual_usage = await _capture_contextual_facts(
+                result, SCENARIOS[result['scenario']], key, message)
+            from app.services.document_formula_intake import synchronize_formula_plan
+            synchronize_formula_plan(result,message,key)
+            return await _finish_interview(result,[contextual_usage] if contextual_usage else [])
     # A completed draft deliberately has no active question.  A later concrete
     # correction or formula request must nevertheless remain in the document
     # workflow: otherwise ``рассчитай проценты`` falls through to generic legal
@@ -932,9 +1118,10 @@ async def _advance_interview(state: dict, message: str, *, prior_user_turns=None
             # A specialised parser sometimes recognises only the current
             # field in a long narrative.  Let the template-aware extractor
             # inspect the remaining explicit facts before ending that turn.
-            # When two or more fields were already captured, the local
-            # grammar has done the split and no extra provider call is useful.
-            if len(consumed) < 2:
+            # Capturing two fields does not prove that all the remaining
+            # clauses were read. Inspect the other slots before choosing a
+            # question, even when a local parser already found some facts.
+            if _needs_contextual_fact_capture(SCENARIOS[result['scenario']], key, message):
                 prior_revision = result.get('revision', 0)
                 result, contextual_usage = await _capture_contextual_facts(result, SCENARIOS[result['scenario']], key, message)
                 if result.get('revision', 0) != prior_revision:
@@ -982,9 +1169,16 @@ async def _advance_interview(state: dict, message: str, *, prior_user_turns=None
     if file_intent and result.get("scenario"):
         usages = []
         if pending_fields(result):
-            result, usage = await recover_interview_facts(result)
-            usages.append(usage)
+            try:
+                result, usage = await recover_interview_facts(result)
+                usages.append(usage)
+            except (RuntimeError, ValueError):
+                # Recovery is best effort. An unavailable provider must not
+                # prevent an explicitly requested draft with labelled gaps.
+                pass
         if file_intent == "create":
+            from app.services.document_form_intake import prepare_form_intake
+            prepare_form_intake(result)
             # An explicit request for the file allows a draft with labelled gaps,
             # never invented values. Ordinary answers/help do not skip intake.
             for spec in pending_fields(result):
@@ -993,7 +1187,8 @@ async def _advance_interview(state: dict, message: str, *, prior_user_turns=None
             result["revision"] += 1
         return await _finish_interview(result, usages)
     semantic_help = key == "requests" and "извинени" in message.lower()
-    if (asks_for_help(message) or semantic_help) and not (not result.get('scenario') and infer_scenario(result,message)):
+    if (asks_for_help(message) or semantic_help) and not (not result.get('scenario') and
+            (infer_scenario(result,message) or re.search(r'состав\w*|подготов\w*|оформ\w*|напиш\w*',message,re.I))):
         return await _consult_interview(result, message, key)
     if len(active) > 1 and leaves_blank(message):
         return state, "Уточните, к какому из вопросов относится этот ответ. После этого продолжим по одному полю.", _usage([])
@@ -1012,6 +1207,14 @@ async def _advance_interview(state: dict, message: str, *, prior_user_turns=None
         if result.get("scenario"):
             choice = result["scenario"]
         from app.services.document_routing import scope_text, unavailable_form_message
+        if not choice and result['document_kind']=='appeal':
+            from app.services.document_appeal_routing import appeal_proceeding, appeal_clarification
+            if appeal_proceeding(scope_text(result)) in {'criminal','administrative'}:
+                result['unsupported_subject']=True
+            else:
+                result.pop('unsupported_subject',None)
+            answer=appeal_clarification(scope_text(result))
+            return _record_reply(result,answer),answer,_usage(usages)
         from app.services.document_catalog import catalog_clarification
         clarification=catalog_clarification(result) if not choice else None
         if clarification:
@@ -1073,10 +1276,23 @@ async def _advance_interview(state: dict, message: str, *, prior_user_turns=None
     scenario = SCENARIOS[result["scenario"]]
     specs = {f.key: f for f in scenario.fields}
     if starting:
+        from app.services.document_explicit_facts import collect_explicit_facts
+        collect_explicit_facts(result,result.get('request',''),None)
         from app.services.document_case_facts import collect_case_turn
         collect_case_turn(result,message,None)
         from app.services.document_form_intake import collect_form_turn
         collect_form_turn(result,message,None)
+        # Classification may have required a follow-up. Recover the original
+        # request as well, before choosing any missing-field question.
+        source = '\n'.join(dict.fromkeys([result.get('request',''), *turns]))
+        # A bare document title contains no facts to extract. Detailed initial
+        # requests and classification follow-ups still share the same path.
+        if len(source) >= 120 or re.search(r'меня зовут|мой адрес|купил|купила',source,re.I):
+            result, captured_usage = await _capture_contextual_facts(result, scenario, None, source, force=True)
+            if captured_usage: usages.append(captured_usage)
+        from app.services.document_formula_intake import synchronize_formula_plan
+        synchronize_formula_plan(result,source,None)
+        return await _finish_interview(result, usages)
     if key in specs and specs[key].kind == 'address':
         from app.services.document_addresses import confirm_reference
         if confirm_reference(result, key, message):
@@ -1250,10 +1466,22 @@ def file_request_kind(message):
 
 async def recover_interview_facts(state):
     """Recover missed answers from user history; assistant examples are excluded."""
+    result=deepcopy(state)
     scenario = SCENARIOS[state["scenario"]]
+    sources = [state["request"], state.get("context", ""), *state.get("user_turns", [])]
+    usages=[]
+    # Rich replies need field-sized quotations, not the whole selected turn.
+    # Reuse the same intake path on recall, even when old provider metadata
+    # caused every quote in the original reply to be discarded.
+    for source in dict.fromkeys(sources):
+        if len(source)>=120 and not is_recall_request(source) and not file_request_kind(source):
+            result,usage=await _capture_contextual_facts(result,scenario,None,source,force=True)
+            if usage:usages.append(usage)
+    if result['fields']!=state['fields']:
+        return result,_usage(usages)
     missing = {f.key for f in pending_fields(state)} | {
         key for key, value in state["fields"].items() if value.get("origin") == "requested_draft"}
-    sources = [state["request"], state.get("context", ""), *state.get("user_turns", [])]
+    if not missing:return result,_usage(usages)
     schema = {"type": "object", "properties": {"updates": {"type": "array", "items": {
         "type": "object", "properties": {"key": {"type": "string", "enum": sorted(missing)},
             "source_turns": {"type": "array", "items": {"type": "integer"}}},
@@ -1272,7 +1500,6 @@ async def recover_interview_facts(state):
     if not isinstance(payload, dict) or not isinstance(payload.get("updates"), list):
         raise ValueError("Invalid recovery response")
     patches = payload["updates"]
-    result = deepcopy(state)
     specs = {f.key: f for f in scenario.fields}
     for patch in patches:
         if not isinstance(patch, dict):
@@ -1281,6 +1508,9 @@ async def recover_interview_facts(state):
         if not isinstance(key, str) or key not in missing or not isinstance(ids, list) or not ids or not all(type(i) is int and 0 <= i < len(sources) for i in ids):
             continue
         selected = [sources[i] for i in dict.fromkeys(ids)]
+        # Rich turns already went through quote extraction above. Never
+        # salvage an unparsed 1,000-character answer as a name or court.
+        if specs[key].kind not in {'date','money'} and any(len(s)>=120 for s in selected):continue
         if any(not s or asks_for_help(s) or conversational_value(s) or leaves_blank(s) or file_request_kind(s) for s in selected):
             continue
         source = "\n".join(selected)
@@ -1311,7 +1541,7 @@ async def recover_interview_facts(state):
         result = apply_updates(result, [FieldUpdate(key=key, status="filled", value=value, evidence=source)], source)
         if result["fields"].get(key, {}).get("status") == "filled":
             result["fields"][key]["origin"] = "recovered_user_turns"
-    return result, completion.usage
+    return result, _usage(usages+[completion.usage])
 
 
 def _usage(items):
