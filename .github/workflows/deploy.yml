@@ -1,8 +1,8 @@
 name: Deploy Legal AI to Production
 
 on:
-  push:
-    branches: [ main ]
+  # Legacy deployment is manual-only until its paths and backup procedure
+  # match the verified production configuration in docs/deploy-notes.md.
   workflow_dispatch:  # Ручной запуск
 
 env:
