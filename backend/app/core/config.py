@@ -102,6 +102,9 @@ class Settings(BaseSettings):
     SMTP_USER: str = os.getenv("SMTP_USER", "")
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
     SMTP_FROM: str = os.getenv("SMTP_FROM", "")
+    # None selects implicit TLS on port 465, STARTTLS on other ports.
+    SMTP_USE_TLS: Optional[bool] = None
+    SMTP_TIMEOUT: float = 15.0
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
     # ========================================

@@ -25,7 +25,7 @@ from app.services.llm_cost import TokenUsage, estimate_usage
 logger = logging.getLogger(__name__)
 
 _OAUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
-_CHAT_URL = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+_CHAT_URL = "https://api.giga.chat/v1/chat/completions"
 
 # Запас времени перед истечением токена, чтобы не использовать
 # токен на границе срока действия.

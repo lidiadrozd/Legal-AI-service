@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from html import escape
 
 import aiosmtplib
 
@@ -12,9 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 async def send_reset_password_email(to_email: str, reset_url: str) -> None:
+    if not all((settings.SMTP_HOST, settings.SMTP_USER, settings.SMTP_PASSWORD)):
+        raise RuntimeError("SMTP_HOST, SMTP_USER and SMTP_PASSWORD must be configured")
+    use_tls = settings.SMTP_USE_TLS
+    if use_tls is None:
+        use_tls = settings.SMTP_PORT == 465
     message = MIMEMultipart("alternative")
     message["Subject"] = "Сброс пароля — Legal AI"
-    message["From"] = settings.SMTP_FROM
+    message["From"] = settings.SMTP_FROM or settings.SMTP_USER
     message["To"] = to_email
 
     text = (
@@ -32,7 +38,7 @@ async def send_reset_password_email(to_email: str, reset_url: str) -> None:
   <p style="color:#555;margin-bottom:24px;">
     Вы запросили сброс пароля для вашего аккаунта в <strong>Legal AI</strong>.
   </p>
-  <a href="{reset_url}"
+  <a href="{escape(reset_url, quote=True)}"
      style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;
             border-radius:8px;text-decoration:none;font-weight:600;margin-bottom:24px;">
     Сбросить пароль
@@ -54,6 +60,8 @@ async def send_reset_password_email(to_email: str, reset_url: str) -> None:
         port=settings.SMTP_PORT,
         username=settings.SMTP_USER,
         password=settings.SMTP_PASSWORD,
-        start_tls=True,
+        use_tls=use_tls,
+        start_tls=not use_tls,
+        timeout=settings.SMTP_TIMEOUT,
     )
     logger.info("Reset password email sent to %s", to_email)

@@ -118,7 +118,7 @@ async def forgot_password(body: ForgotPasswordRequest, db: AsyncSession = Depend
     finally:
         await redis.aclose()
 
-    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+    reset_url = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?token={token}"
     try:
         await send_reset_password_email(user_obj.email, reset_url)
     except Exception:
@@ -135,15 +135,14 @@ async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(
 
     redis = AsyncRedis.from_url(settings.REDIS_URL, decode_responses=True)
     try:
-        email = await redis.get(f"password_reset:{body.token}")
+        email = await redis.getdel(f"password_reset:{body.token}")
         if not email:
             raise HTTPException(status_code=400, detail="Ссылка недействительна или истекла")
-        await redis.delete(f"password_reset:{body.token}")
     finally:
         await redis.aclose()
 
     user_obj = await user.get_by_email(db, email=email)
-    if not user_obj:
+    if not user_obj or not user_obj.is_active:
         raise HTTPException(status_code=400, detail="Пользователь не найден")
 
     await user.update_password(db, user_obj=user_obj, new_password=body.new_password)
