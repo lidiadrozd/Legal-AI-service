@@ -65,6 +65,12 @@ const DocsBar = styled(Link)`
   font-size: var(--font-size-sm);
   text-decoration: none;
   flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    margin: 0 12px 8px;
+    padding: 8px 12px;
+  }
+
   transition:
     border-color var(--transition-fast),
     color var(--transition-fast),

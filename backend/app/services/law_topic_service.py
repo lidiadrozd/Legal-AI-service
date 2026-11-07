@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.law_changes import LawChange
 from app.models.user_law_interest import UserLawInterest
 
+
 TOPIC_DEFINITIONS: dict[str, dict[str, object]] = {
     "housing_rental": {
         "label": "Аренда и найм жилья",
@@ -25,39 +26,98 @@ TOPIC_DEFINITIONS: dict[str, dict[str, object]] = {
     },
     "employment": {
         "label": "Трудовые отношения",
-        "keywords": ["труд", "увольн", "зарплат", "работодат", "сотрудник", "тк рф", "отпуск"],
+        "keywords": [
+            "труд",
+            "увольн",
+            "зарплат",
+            "работодат",
+            "сотрудник",
+            "тк рф",
+            "отпуск",
+        ],
     },
     "consumer_rights": {
         "label": "Защита прав потребителей",
-        "keywords": ["потребител", "возврат", "зозпп", "гарант", "магазин", "услуг"],
+        "keywords": [
+            "потребител",
+            "возврат",
+            "зозпп",
+            "гарант",
+            "магазин",
+        ],
     },
     "tax": {
         "label": "Налоги",
-        "keywords": ["налог", "ндс", "ндфл", "фнс", "налогов", "нк рф"],
+        "keywords": [
+            "налог",
+            "ндс",
+            "ндфл",
+            "фнс",
+            "налогов",
+            "нк рф",
+        ],
     },
     "family_law": {
         "label": "Семейное право",
-        "keywords": ["развод", "алим", "брак", "семейн", "ск рф", "ребен"],
+        "keywords": [
+            "развод",
+            "алим",
+            "брак",
+            "семейн",
+            "ск рф",
+            "ребен",
+        ],
     },
     "civil_contracts": {
         "label": "Гражданские договоры",
-        "keywords": ["договор", "гк рф", "обязательств", "подряд", "поставк", "купл", "продаж"],
+        "keywords": [
+            "договор",
+            "гк рф",
+            "обязательств",
+            "подряд",
+            "поставк",
+            "купл",
+            "продаж",
+        ],
     },
     "agriculture": {
         "label": "Сельское хозяйство",
-        "keywords": ["сельск", "агро", "ферм", "урож", "минсельхоз"],
+        "keywords": [
+            "сельск",
+            "агро",
+            "ферм",
+            "урож",
+            "минсельхоз",
+        ],
     },
     "bankruptcy": {
         "label": "Банкротство",
-        "keywords": ["банкрот", "несостоятель", "127-фз"],
+        "keywords": [
+            "банкрот",
+            "несостоятель",
+            "127-фз",
+        ],
     },
     "personal_data": {
         "label": "Персональные данные",
-        "keywords": ["персональн", "152-фз", "пдн", "обработк данных"],
+        "keywords": [
+            "персональн",
+            "152-фз",
+            "пдн",
+            "обработк данных",
+        ],
     },
     "court_procedure": {
         "label": "Судебное производство",
-        "keywords": ["иск", "суд", "апелляц", "кассац", "процессуальн", "апк", "гпк"],
+        "keywords": [
+            "иск",
+            "суд",
+            "апелляц",
+            "кассац",
+            "процессуальн",
+            "апк",
+            "гпк",
+        ],
     },
 }
 
@@ -69,37 +129,103 @@ class ExtractedTopic:
     keywords: tuple[str, ...]
 
 
+# Слова, которые слишком общие для определения конкретной темы.
+# Они не должны самостоятельно давать совпадение.
+GENERIC_INTEREST_KEYWORDS = {
+    "услуг",
+}
+
+
 def extract_topics_from_text(text: str) -> list[ExtractedTopic]:
     normalized = (text or "").lower()
+
     if not normalized.strip():
         return []
 
     found: list[ExtractedTopic] = []
+
     for topic_key, definition in TOPIC_DEFINITIONS.items():
         raw_keywords = definition.get("keywords") or []
-        matched = [keyword for keyword in raw_keywords if keyword in normalized]
+
+        matched = [
+            keyword
+            for keyword in raw_keywords
+            if keyword in normalized
+        ]
+
         if not matched:
             continue
+
         found.append(
             ExtractedTopic(
                 topic_key=topic_key,
-                topic_label=str(definition.get("label") or topic_key),
-                keywords=tuple(str(keyword) for keyword in raw_keywords),
+                topic_label=str(
+                    definition.get("label") or topic_key
+                ),
+                keywords=tuple(
+                    str(keyword)
+                    for keyword in raw_keywords
+                ),
             )
         )
+
     return found
 
 
-def build_change_search_text(*, title: str | None, description: str | None, category: str | None = None) -> str:
-    parts = [title or "", description or "", category or ""]
-    return " ".join(part.strip() for part in parts if part and part.strip()).lower()
+def build_change_search_text(
+    *,
+    title: str | None,
+    description: str | None,
+    category: str | None = None,
+) -> str:
+    parts = [
+        title or "",
+        description or "",
+        category or "",
+    ]
+
+    return " ".join(
+        part.strip()
+        for part in parts
+        if part and part.strip()
+    ).lower()
 
 
-def change_matches_interest(change_text: str, keywords: list[str] | tuple[str, ...]) -> bool:
+def interest_match_score(
+    change_text: str,
+    keywords: list[str] | tuple[str, ...],
+) -> int:
+    """
+    Подсчитывает количество специфичных совпадений
+    между изменением закона и интересом пользователя.
+
+    Общие слова вроде 'услуг' не учитываются.
+    """
+
     normalized = (change_text or "").lower()
+
     if not normalized:
-        return False
-    return any(keyword.lower() in normalized for keyword in keywords if keyword)
+        return 0
+
+    return sum(
+        1
+        for keyword in (keywords or [])
+        if keyword
+        and keyword.lower() not in GENERIC_INTEREST_KEYWORDS
+        and keyword.lower() in normalized
+    )
+
+
+def change_matches_interest(
+    change_text: str,
+    keywords: list[str] | tuple[str, ...],
+) -> bool:
+    """
+    Проверяет, есть ли хотя бы одно специфичное
+    совпадение с интересом пользователя.
+    """
+
+    return interest_match_score(change_text, keywords) > 0
 
 
 async def sync_user_interests_from_message(
@@ -109,12 +235,16 @@ async def sync_user_interests_from_message(
     chat_id: int,
     text: str,
 ) -> list[UserLawInterest]:
+
     topics = extract_topics_from_text(text)
+
     if not topics:
         return []
 
     excerpt = (text or "").strip()[:500]
+
     saved: list[UserLawInterest] = []
+
     for topic in topics:
         result = await db.execute(
             select(UserLawInterest).where(
@@ -123,7 +253,9 @@ async def sync_user_interests_from_message(
                 UserLawInterest.topic_key == topic.topic_key,
             )
         )
+
         interest = result.scalar_one_or_none()
+
         if interest is None:
             interest = UserLawInterest(
                 user_id=user_id,
@@ -133,17 +265,30 @@ async def sync_user_interests_from_message(
                 keywords=list(topic.keywords),
                 source_excerpt=excerpt,
             )
+
             db.add(interest)
+
         else:
-            merged_keywords = list(dict.fromkeys([*interest.keywords, *topic.keywords]))
+            merged_keywords = list(
+                dict.fromkeys(
+                    [
+                        *(interest.keywords or []),
+                        *topic.keywords,
+                    ]
+                )
+            )
+
             interest.keywords = merged_keywords
             interest.topic_label = topic.topic_label
             interest.source_excerpt = excerpt
+
         saved.append(interest)
 
     await db.commit()
+
     for item in saved:
         await db.refresh(item)
+
     return saved
 
 
@@ -154,26 +299,60 @@ async def get_relevant_law_changes_for_user(
     chat_id: int | None = None,
     limit: int = 3,
 ) -> list[LawChange]:
-    query = select(UserLawInterest).where(UserLawInterest.user_id == user_id)
+
+    query = select(UserLawInterest).where(
+        UserLawInterest.user_id == user_id
+    )
+
     if chat_id is not None:
-        query = query.where(UserLawInterest.chat_id == chat_id)
+        query = query.where(
+            UserLawInterest.chat_id == chat_id
+        )
+
     interests_result = await db.execute(query)
-    interests = list(interests_result.scalars().all())
+
+    interests = list(
+        interests_result.scalars().all()
+    )
+
     if not interests:
         return []
 
-    changes_result = await db.execute(select(LawChange).order_by(LawChange.created_at.desc()).limit(100))
-    changes = list(changes_result.scalars().all())
+    changes_result = await db.execute(
+        select(LawChange)
+        .order_by(LawChange.created_at.desc())
+        .limit(100)
+    )
+
+    changes = list(
+        changes_result.scalars().all()
+    )
+
     matched: list[LawChange] = []
+
     for change in changes:
-        category = change.diff.get("category") if isinstance(change.diff, dict) else None
+        category = (
+            change.diff.get("category")
+            if isinstance(change.diff, dict)
+            else None
+        )
+
         change_text = build_change_search_text(
             title=change.change_title,
             description=change.description,
             category=category,
         )
-        if any(change_matches_interest(change_text, interest.keywords) for interest in interests):
+
+        if any(
+            change_matches_interest(
+                change_text,
+                interest.keywords or [],
+            )
+            for interest in interests
+        ):
             matched.append(change)
+
         if len(matched) >= limit:
             break
+
     return matched

@@ -8,7 +8,8 @@ const Wrap = styled.div`
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  overflow-anchor: none;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 24px 0 8px;
   display: flex;
   flex-direction: column;

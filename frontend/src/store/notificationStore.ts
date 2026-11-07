@@ -64,6 +64,7 @@ export type IncomingNotification = {
 interface NotificationActions {
   addNotification: (n: IncomingNotification) => void;
   hydrateFromServer: (rows: ServerNotificationRow[]) => void;
+  markAsRead: (id: string) => Promise<void>;
   markAllRead: () => Promise<void>;
   clearAll: () => void;
 }
@@ -114,13 +115,62 @@ export const useNotificationStore = create<NotificationState & NotificationActio
     set({ notifications, unreadCount });
   },
 
-  markAllRead: async () => {
+ markAsRead: async (id) => {
+  const notification = useNotificationStore
+    .getState()
+    .notifications.find((item) => item.id === id);
+
+  if (!notification || notification.read) return;
+
+  set((state) => {
+    const notifications = state.notifications.map((item) =>
+      item.id === id ? { ...item, read: true } : item
+    );
+
+    return {
+      notifications,
+      unreadCount: notifications.filter((item) => !item.read).length,
+    };
+  });
+
+  if (id.startsWith('db-')) {
+    const numericId = Number(id.slice(3));
+
+    try {
+      await notificationsApi.markAsRead(numericId);
+    } catch (error) {
+      console.error('Ошибка отметки уведомления:', error);
+
+      set((state) => {
+        const notifications = state.notifications.map((item) =>
+          item.id === id ? { ...item, read: false } : item
+        );
+
+        return {
+          notifications,
+          unreadCount: notifications.filter((item) => !item.read).length,
+        };
+      });
+
+      throw error;
+    }
+  }
+}, markAllRead: async () => {
     const unread = useNotificationStore
       .getState()
-      .notifications.filter((n) => !n.read && n.id.startsWith('db-'));
+      .notifications.filter(
+        (notification) =>
+          !notification.read &&
+          notification.id.startsWith('db-'),
+      );
 
-    set((s) => ({
-      notifications: s.notifications.map((n) => ({ ...n, read: true })),
+    set((state) => ({
+      notifications: state.notifications.map(
+        (notification) => ({
+          ...notification,
+          read: true,
+        }),
+      ),
       unreadCount: 0,
     }));
 
@@ -136,4 +186,3 @@ export const useNotificationStore = create<NotificationState & NotificationActio
 
   clearAll: () => set({ notifications: [], unreadCount: 0 }),
 }));
-
