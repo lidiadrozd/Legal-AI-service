@@ -41,7 +41,7 @@
       "revision": "2026-05-25",
       "verified_on": "2026-10-14",
       "coverage": "часть 1",
-      "sha256": "d401c54f76afd594a593f963ccfb8c18f40cc87d15d78487d4c1e6588fbfb084"
+      "sha256": "fb9fa427df7aecf3d77ee11bb80cd2a5c09fbf4bfebfc1ab7069b5f8741f3079"
     },
     {
       "file": "tk_rf_article_140.txt",
@@ -53,7 +53,7 @@
       "revision": "2026-05-25",
       "verified_on": "2026-10-14",
       "coverage": "полный текст статьи и отдельно обозначенное пояснение области применения",
-      "sha256": "c11cc65e866d9c520befb3f32f7c4ed75e63bfe7353972223993f8be86f34274"
+      "sha256": "a8a5c4e82e47e4112ada40d050e5dc6dcb02beed6e6b5b58f884d4ece0747a9d"
     },
     {
       "file": "tk_rf_article_80_summary.txt",

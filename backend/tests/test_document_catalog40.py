@@ -116,7 +116,7 @@ def test_labor_form_has_no_rent_transaction():
     text=' '.join(f.question for f in s.fields)+' '.join(b['text'] for b in p['blocks'])
     assert 'аренд' not in text.lower() and 'наймодател' not in text.lower()
     assert {'sender','recipient','employer'} <= {f.key for f in s.fields}
-    assert len(KEYS)==51 and 'contract_employment' in KEYS
+    assert len(KEYS)==52 and {'contract_employment', 'pretense_rent_deposit'} <= set(KEYS)
     assert {'pretense_debt_rent','claim_debt_rent','pretense_debt_services','pretense_debt_supply',
             'claim_debt_supply','pretense_damage_property','claim_consumer_late_delivery',
             'claim_consumer_defective_goods','appeal_civil','contract_sale_nonresidential'} <= set(KEYS)

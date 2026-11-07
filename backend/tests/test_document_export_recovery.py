@@ -92,3 +92,18 @@ async def test_only_rejected_fragments_are_retried_without_publishing_them():
     assert client.chat_completion.await_count == 5
     assert result['draft_digest'] == facts_digest(state['fields'])
     assert result['fields'] == state['fields']
+
+
+@pytest.mark.parametrize('text', [
+    'Договор заключён на неопределённый срок.',
+    'Трудовой договор заключен на неопределенный срок.',
+])
+def test_indefinite_contract_term_is_a_fact_not_a_missing_answer(text):
+    from app.services.document_export_contract import formal_text
+    assert not leaves_blank(text)
+    assert formal_text(text)
+
+
+@pytest.mark.parametrize('text', ['Не определён', 'Не определено', 'Не определена', 'Не знаю'])
+def test_unknown_answer_still_leaves_field_blank(text):
+    assert leaves_blank(text)

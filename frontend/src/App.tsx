@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { AppRouter } from './router';
 import { CookieBanner } from '@/components/common/CookieBanner';
 import { TermsUpdateBanner } from '@/components/common/TermsUpdateBanner';
@@ -17,11 +18,21 @@ async function restoreSession() {
 }
 
 function App() {
-  return (
-    <>
-      <AppRouter />
-      <CookieBanner />
-    </>
+  const session = useQuery({
+    queryKey: ['initial-session'],
+    queryFn: restoreSession,
+    staleTime: Infinity,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  if (session.isPending) return <div role="status">Проверяем вход...</div>;
+  if (session.isError) return (
+    <div role="alert">
+      Не удалось проверить вход. Проверьте соединение и попробуйте ещё раз.
+      <button onClick={() => void session.refetch()}>Повторить</button>
+    </div>
   );
 
   return (

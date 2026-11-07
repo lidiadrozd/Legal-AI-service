@@ -27,7 +27,7 @@ def test_money_is_exact_or_requires_clarification(raw, expected):
 
 
 def test_catalog_has_distinct_scenarios_and_honest_provenance():
-    assert len(SCENARIOS) == 54  # Expanded maintained forms plus 11 legacy structures.
+    assert len(SCENARIOS) == 55  # 52 maintained forms and three legacy structures.
     assert len({s.family for s in SCENARIOS.values()}) >= 10
     for item in SCENARIOS.values():
         assert item.review_status == "draft_structure"

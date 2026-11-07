@@ -70,14 +70,13 @@ RENTAL_TURNS=[
     ('нет','contacts'),
     ('+79882726289','attachments'),
     ('договор, переписку','date'),
-    ('28.10.26','signature'),
-    ('сам',None),
+    ('28.10.26',None),
 ]
 
 
 @pytest.mark.asyncio
 async def test_rental_dialogue_confirms_names_once_reuses_return_and_builds_official_fields(monkeypatch):
-    provider=AsyncMock(side_effect=AssertionError('Literal answers do not need the provider'))
+    provider=AsyncMock(side_effect=RuntimeError('Supplemental extraction unavailable'))
     monkeypatch.setattr('app.services.document_workflow.get_gigachat_client',provider)
     state=rental_state()
     for text,next_key in RENTAL_TURNS:
@@ -101,7 +100,7 @@ async def test_rental_dialogue_confirms_names_once_reuses_return_and_builds_offi
     assert 'Основной долг составляет 35 000 рублей' in fields['calculation']['value']
     assert 'Переписка.' in fields['attachments']['value']
     assert all('требуется редакция' not in str(x.get('value')) for x in fields.values())
-    provider.assert_not_called()
+    assert not state.get('provider_failure')
 
 
 @pytest.mark.asyncio

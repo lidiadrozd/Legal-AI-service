@@ -38,7 +38,7 @@ def leaves_blank(message):
     # A hesitant introduction must not erase the facts after it: "не знаю.
     # Работал ..." is an answer containing facts, not a request to leave blank.
     parts = re.split(r"[.!;]\s+|\bно\b|\bоднако\b", message, flags=re.I)
-    pattern = r"\bне знаю\b|\bне помню\b|\bне\s*извест\w*|не определил\w*|не\s*определ[её]н\w*|не выбрал\w*|ничего не выбирал\w*|впишу позже|остав\w* (?:пуст|пропуск)|сомневаюсь"
+    pattern = r"\bне знаю\b|\bне помню\b|\bне\s*извест\w*|не определил\w*|не\s*определ[её]н(?:а|о|ы)?\b|не выбрал\w*|ничего не выбирал\w*|впишу позже|остав\w* (?:пуст|пропуск)|сомневаюсь"
     meaningful = [p.strip() for p in parts if p.strip()]
     return bool(meaningful and all(re.search(pattern, p, re.I) for p in meaningful))
 

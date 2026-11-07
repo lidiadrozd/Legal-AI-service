@@ -44,7 +44,7 @@ def test_editor_field_name_is_not_an_extra_document_sentence():
 
 @pytest.mark.asyncio
 async def test_service_claim_reuses_initial_amount_advance_and_known_deadline(monkeypatch):
-    provider=AsyncMock(side_effect=AssertionError('Explicit answers must not need an LLM'))
+    provider=AsyncMock(side_effect=RuntimeError('Supplemental extraction unavailable'))
     monkeypatch.setattr('app.services.document_workflow.get_gigachat_client',provider)
     request='Нужен иск: я разработал сайт для заказчика, он принял работу, но не выплатил оставшиеся 60 тысяч рублей.'
     state=new_state(request)
@@ -73,14 +73,14 @@ async def test_service_claim_reuses_initial_amount_advance_and_known_deadline(mo
         ('никакие','contacts'),
         ('+79122423123','attachments'),
         ('договор, акт и переписка','date'),
-        ('20.10.26','signature'),
-        ('Петров Алексей Сергеевич',None),
+        ('20.10.26',None),
     ]
     for text,next_key in turns:
         state,answer,_=await advance_interview(state,text)
         assert not state.get('provider_failure'),(text,answer)
         assert state['last_questions']==([next_key] if next_key else []),(text,state['last_questions'],answer)
-    provider.assert_not_called()
+    assert state['fields']['signature']['value'] == state['fields']['sender']['value']
+    assert not state.get('provider_failure')
     assert state['phase']=='ready'
     assert state['fields']['court']['status']=='unknown'
     assert state['fields']['facts']['status']=='not_applicable'

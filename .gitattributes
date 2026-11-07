@@ -1,1 +1,7 @@
 *.sh text eol=lf
+
+# Hashed reference files must keep their committed bytes on Windows.
+backend/app/templates/form_sources/text/** text eol=lf
+backend/app/templates/form_sources/raw/** -text
+backend/rag_docs/*.txt text eol=lf
+backend/rag_docs/*.md text eol=lf

@@ -129,10 +129,10 @@ def test_catalog_is_audited_without_claiming_every_template_is_complete():
     # the current public catalog.  The nonresidential-sale form is now a
     # complete structured form, so these counts intentionally grew with the
     # supported library rather than silently excluding the new template.
-    assert len(rows) == 54 and not [r for r in rows if r['issues']]
+    assert len(rows) == 55 and not [r for r in rows if r['issues']]
     assert {'claim_damage_flood', 'contract_housing', 'contract_services', 'contract_work', 'contract_loan', 'complaint_consumer_agency'} <= {r['scenario'] for r in rows if r['coverage'] == 'structured'}
     assert next(r for r in rows if r['scenario'] == 'claim_debt_loan')['coverage'] == 'structured'
-    assert sum(r['coverage']=='structured' for r in rows)==51
+    assert sum(r['coverage']=='structured' for r in rows)==52
     scenario = SCENARIOS['claim_damage_flood']
     broken = deepcopy(load_text_package(scenario))
     broken['blocks'] = [b for b in broken['blocks'] if '{{property_right}}' not in b['text']]

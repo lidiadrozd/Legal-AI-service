@@ -47,7 +47,7 @@ async def test_help_and_acknowledgement_return_to_same_field_with_all_context(mo
     state = state_at('pretense_consumer_defective_goods', 'goods_category')
     state['request'] = 'Нужна претензия: испорченная рыба, цена 500 рублей'
     state['user_turns'] = ['Купил в магазине Ромашка', 'Рыба просрочена']
-    state['fields']['purchase'] = {'status': 'filled', 'value': 'Рыба за 500 рублей'}
+    state['fields']['purchase'] = {'status': 'filled', 'value': 'Рыба куплена 01.11.2026 за 500 рублей'}
     before = deepcopy(state['fields'])
     client = SimpleNamespace(chat_completion=AsyncMock(return_value=SimpleNamespace(
         content='Категория означает вид товара. Для продуктов достаточно назвать продукт и его вид; марка необязательна, если она неизвестна.',

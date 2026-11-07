@@ -415,3 +415,14 @@ async def test_unresolved_refresh_cannot_disable_previously_precise_change(norm_
     await persist_parsed_changes(db, [fallback])
     assert created.diff.get("scope_resolution", {}).get("status") != "unresolved"
     assert created.diff["norm_evidence"][0]["method"] == "consultant_explicit_link"
+
+
+def test_every_committed_legal_source_matches_its_manifest():
+    import hashlib
+    import json
+    root = Path(__file__).resolve().parents[1] / 'rag_docs'
+    entries = json.loads((root / 'legal_sources.json').read_text(encoding='utf8'))['sources']
+    assert entries
+    for entry in entries:
+        assert hashlib.sha256((root / entry['file']).read_bytes()).hexdigest() == entry['sha256'], entry['file']
+    assert len(load_legal_source_catalog(root)) == len(entries)
