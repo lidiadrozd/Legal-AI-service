@@ -1,0 +1,215 @@
+{
+  "scenario": "pretense_consumer_defective_service",
+  "title": "Претензия: недостатки работ или услуг",
+  "family": "consumer_pretense",
+  "version": 4,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Потребитель",
+      "question": "Какое полное ФИО или наименование у стороны «Потребитель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Потребитель»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Исполнитель",
+      "question": "Какое полное ФИО или наименование у стороны «Исполнитель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Продавец или исполнитель»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "purchase",
+      "label": "Приобретение товара, работ или услуг",
+      "question": "Что, у кого и когда приобретено или заказано? Назовите товар либо предмет работ или услуг и реквизиты договора.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "amount",
+      "label": "Уплаченная сумма",
+      "question": "Какую сумму вы фактически уплатили в рублях?",
+      "kind": "money",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "payment_evidence",
+      "label": "Подтверждение оплаты",
+      "question": "Чем подтверждается оплата? Укажите реквизиты чека, перевода или другие имеющиеся сведения.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "consumer_status",
+      "label": "Цель приобретения",
+      "question": "Товар, работа или услуга приобретались для личных нужд? Опишите цель приобретения.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "defect",
+      "label": "Выявленные недостатки",
+      "question": "Какие именно недостатки обнаружены и когда? Укажите известные сроки годности или гарантии, если они относятся к ситуации.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "defect_evidence",
+      "label": "Подтверждение недостатков",
+      "question": "Чем подтверждаются недостатки? Укажите имеющиеся документы, фотографии, результаты проверки или экспертизы.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "service_description",
+      "label": "Характеристики приобретения",
+      "question": "Какие вид, марка, модель товара или конкретный вид работ/услуг известны? Это нужно для проверки применимых правил.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "facts",
+      "label": "Развитие ситуации",
+      "question": "Какие ещё обстоятельства важны: даты обращений, последствия, проверка качества, ответы продавца?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "seller_response",
+      "label": "Обращения к продавцу или исполнителю",
+      "question": "Какие требования уже предъявлялись продавцу или исполнителю и каков его ответ?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "requests",
+      "label": "Требование потребителя",
+      "question": "Какой конкретный результат вы выбираете: возврат оплаты, замена, устранение недостатков или другое? Несовместимые варианты одновременно не включаем.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "additional_claims",
+      "label": "Дополнительные требования и расчёт",
+      "question": "Заявляете ли подтверждённые убытки или другие суммы? Укажите основание и расчёт отдельно либо ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "payment",
+      "label": "Способ исполнения денежного требования",
+      "question": "Как продавец может вернуть деньги? Неизвестные реквизиты можно дополнить позднее.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Потребитель»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

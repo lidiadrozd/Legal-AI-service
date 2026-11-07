@@ -1,0 +1,369 @@
+{
+  "revision": "2026-10-30",
+  "forms": [
+    {
+      "scenario": "contract_housing",
+      "title": "Договор найма жилого помещения",
+      "version": 6,
+      "questions": 31,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "act_housing_handover",
+      "title": "Акт приёма-передачи жилого помещения и имущества",
+      "version": 9,
+      "questions": 19,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "act_housing_return",
+      "title": "Акт возврата жилого помещения и имущества",
+      "version": 9,
+      "questions": 20,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "contract_housing_addendum",
+      "title": "Дополнительное соглашение к договору найма жилого помещения",
+      "version": 9,
+      "questions": 15,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "contract_services",
+      "title": "Договор возмездного оказания услуг",
+      "version": 8,
+      "questions": 24,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "contract_work",
+      "title": "Договор подряда",
+      "version": 8,
+      "questions": 24,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "contract_loan",
+      "title": "Договор займа",
+      "version": 7,
+      "questions": 22,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "act_loan_receipt",
+      "title": "Расписка о получении денежных средств в заём",
+      "version": 9,
+      "questions": 16,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "pretense_consumer_defective_goods",
+      "title": "Претензия в связи с недостатками приобретённого товара",
+      "version": 11,
+      "questions": 21,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "pretense_consumer_defective_service",
+      "title": "Претензия в связи с недостатками работ или услуг",
+      "version": 11,
+      "questions": 21,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "pretense_consumer_late_delivery",
+      "title": "Претензия в связи с нарушением срока передачи оплаченного товара",
+      "version": 11,
+      "questions": 20,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_consumer",
+      "title": "Исковое заявление о защите прав потребителя",
+      "version": 10,
+      "questions": 28,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_consumer_late_delivery",
+      "title": "Исковое заявление о возврате предварительной оплаты при нарушении срока передачи товара",
+      "version": 2,
+      "questions": 28,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_consumer_defective_goods",
+      "title": "Исковое заявление о возврате денег за товар с недостатком",
+      "version": 2,
+      "questions": 29,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "complaint_consumer_agency",
+      "title": "Жалоба о нарушении прав потребителя",
+      "version": 9,
+      "questions": 15,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "pretense_debt_loan",
+      "title": "Претензия о возврате займа",
+      "version": 9,
+      "questions": 18,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "pretense_debt_rent",
+      "title": "Претензия о взыскании задолженности по арендной плате",
+      "version": 2,
+      "questions": 16,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_debt_rent",
+      "title": "Исковое заявление о взыскании задолженности по договору аренды",
+      "version": 2,
+      "questions": 24,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "pretense_debt_services",
+      "title": "Претензия о погашении задолженности за оказанные услуги",
+      "version": 1,
+      "questions": 16,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_debt_loan",
+      "title": "Исковое заявление о взыскании долга по договору займа",
+      "version": 10,
+      "questions": 26,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_debt_services",
+      "title": "Исковое заявление о взыскании задолженности за оказанные услуги",
+      "version": 10,
+      "questions": 26,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "pretense_debt_supply",
+      "title": "Претензия о погашении задолженности по договору поставки",
+      "version": 1,
+      "questions": 16,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_debt_supply",
+      "title": "Исковое заявление о взыскании задолженности по договору поставки",
+      "version": 2,
+      "questions": 24,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_rent_deposit",
+      "title": "Исковое заявление о возврате обеспечительного платежа по договору найма",
+      "version": 11,
+      "questions": 26,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_damage_flood",
+      "title": "Исковое заявление о возмещении ущерба от залива квартиры",
+      "version": 7,
+      "questions": 37,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "pretense_damage_flood",
+      "title": "Претензия о возмещении ущерба от залива жилья",
+      "version": 8,
+      "questions": 20,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_damage_property",
+      "title": "Исковое заявление о возмещении имущественного ущерба",
+      "version": 9,
+      "questions": 27,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "pretense_damage_property",
+      "title": "Претензия о возмещении имущественного ущерба",
+      "version": 1,
+      "questions": 15,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "complaint_labor_agency",
+      "title": "Жалоба в государственную инспекцию труда о невыплате заработной платы",
+      "version": 8,
+      "questions": 22,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_labor_salary",
+      "title": "Исковое заявление о взыскании заработной платы и иных выплат",
+      "version": 9,
+      "questions": 27,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "pretense_labor_settlement",
+      "title": "Требование работодателю о выплате расчёта при увольнении",
+      "version": 8,
+      "questions": 18,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_labor_reinstatement",
+      "title": "Исковое заявление о восстановлении на работе",
+      "version": 9,
+      "questions": 26,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "labor_resignation",
+      "title": "Заявление об увольнении по собственному желанию",
+      "version": 8,
+      "questions": 13,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "order_alimony",
+      "title": "Заявление о вынесении судебного приказа о взыскании алиментов на несовершеннолетних детей",
+      "version": 8,
+      "questions": 26,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_alimony_share",
+      "title": "Исковое заявление о взыскании алиментов на несовершеннолетних детей в долях к доходу",
+      "version": 9,
+      "questions": 29,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_alimony_fixed",
+      "title": "Исковое заявление о взыскании алиментов на несовершеннолетних детей в твёрдой денежной сумме",
+      "version": 8,
+      "questions": 31,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "bailiff_alimony_arrears",
+      "title": "Заявление об определении задолженности по алиментам",
+      "version": 8,
+      "questions": 17,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_alimony_penalty",
+      "title": "Исковое заявление о взыскании неустойки за просрочку уплаты алиментов",
+      "version": 9,
+      "questions": 25,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "claim_divorce",
+      "title": "Исковое заявление о расторжении брака",
+      "version": 9,
+      "questions": 25,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "motion_postpone",
+      "title": "Ходатайство об отложении судебного заседания",
+      "version": 9,
+      "questions": 19,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "motion_attach",
+      "title": "Ходатайство о приобщении доказательств",
+      "version": 8,
+      "questions": 19,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "motion_costs",
+      "title": "Заявление о взыскании судебных расходов",
+      "version": 8,
+      "questions": 20,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "motion_objection",
+      "title": "Возражения относительно исковых требований",
+      "version": 8,
+      "questions": 19,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "motion_order_objection",
+      "title": "Возражения относительно исполнения судебного приказа",
+      "version": 8,
+      "questions": 20,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "motion_restore_term",
+      "title": "Заявление о восстановлении пропущенного процессуального срока",
+      "version": 8,
+      "questions": 21,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "motion_enforcement_writ",
+      "title": "Заявление о выдаче исполнительного листа",
+      "version": 8,
+      "questions": 20,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "complaint_bailiff_superior",
+      "title": "Жалоба в порядке подчинённости на постановление, действия или бездействие судебного пристава",
+      "version": 9,
+      "questions": 16,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "power_of_attorney",
+      "title": "Доверенность",
+      "version": 8,
+      "questions": 16,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "contract_employment",
+      "title": "Трудовой договор",
+      "version": 9,
+      "questions": 34,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "appeal_civil",
+      "title": "Апелляционная жалоба по гражданскому делу",
+      "version": 1,
+      "questions": 21,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "contract_sale_nonresidential",
+      "title": "Договор купли-продажи нежилого помещения",
+      "version": 1,
+      "questions": 26,
+      "lawyer_reviewed": false
+    },
+    {
+      "scenario": "pretense_rent_deposit",
+      "title": "Требование о возврате обеспечительного платежа по договору найма",
+      "version": 2,
+      "questions": 19,
+      "lawyer_reviewed": false
+    }
+  ]
+}

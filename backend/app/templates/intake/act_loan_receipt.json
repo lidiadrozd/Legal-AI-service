@@ -1,0 +1,165 @@
+{
+  "scenario": "act_loan_receipt",
+  "title": "Расписка о получении займа",
+  "family": "act",
+  "version": 4,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Заёмщик",
+      "question": "Какое полное ФИО или наименование у стороны «Заёмщик»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Заёмщик»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Займодавец",
+      "question": "Какое полное ФИО или наименование у стороны «Займодавец»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Займодавец»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "borrower_details",
+      "label": "Паспортные данные заёмщика",
+      "question": "Какие паспортные реквизиты заёмщика известны?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "lender_details",
+      "label": "Паспортные данные займодавца",
+      "question": "Какие паспортные реквизиты займодавца известны?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "amount",
+      "label": "Сумма полученного займа",
+      "question": "Какую сумму заёмщик фактически получил в рублях?",
+      "kind": "money",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "transfer",
+      "label": "Факт и способ получения",
+      "question": "Когда, где и каким способом деньги фактически получены? Если ещё не переданы, расписку о получении подписывать нельзя.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "repayment",
+      "label": "Возврат займа",
+      "question": "В какой срок и каким способом заёмщик обязуется вернуть деньги?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "interest",
+      "label": "Условия о процентах",
+      "question": "Какие условия о процентах согласованы: беспроцентный заём или ставка и порядок уплаты?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "agreement",
+      "label": "Связанный договор",
+      "question": "Есть ли отдельный договор займа? Укажите его реквизиты либо отсутствие договора.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Заёмщик»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

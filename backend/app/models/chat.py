@@ -1,7 +1,7 @@
 """
 Legal AI Service - Chat модели БД
 """
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from typing import List, Optional
@@ -18,6 +18,7 @@ class ChatSession(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     title: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, index=True)
+    document_workflow: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

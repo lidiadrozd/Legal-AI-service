@@ -1,0 +1,68 @@
+{
+  "scenario": "pretense_damage_property",
+  "version": 1,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "damage_object": {
+      "format": "sentence"
+    },
+    "facts": {
+      "format": "sentence"
+    },
+    "responsibility": {
+      "format": "sentence"
+    },
+    "evidence": {
+      "format": "sentence"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "payment_details": {
+      "format": "sentence"
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "311dbd1d190b61b2a6999664e9e8c2f156d8951d417d1c7f273e43174350fe29",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

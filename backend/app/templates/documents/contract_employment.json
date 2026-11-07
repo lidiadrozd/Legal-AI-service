@@ -1,0 +1,428 @@
+{
+  "scenario": "contract_employment",
+  "composition": "clause_document",
+  "version": 9,
+  "schema_version": 4,
+  "coverage": "structured",
+  "source": "Самостоятельная форма трудового договора с отдельными педагогическими условиями",
+  "usage_basis": "Самостоятельная редакция по трудовому законодательству.",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-29",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "contract",
+  "source_urls": [
+    "https://mintrud.gov.ru/ministry/programms/trudotn/dogovor",
+    "https://www.consultant.ru/document/cons_doc_LAW_34683/",
+    "https://publication.pravo.gov.ru/document/0001202505070004"
+  ],
+  "limitations": [
+    "Неизвестные обязательные условия требуют заполнения; их нельзя считать согласованными.",
+    "Учебная нагрузка, срок, испытание и отпуск не устанавливаются автоматически."
+  ],
+  "blocks": [
+    {
+      "text": "Трудовой договор",
+      "role": "title",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{place}}\t{{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Работодатель: {{sender}}. Адрес: {{sender_address}}. Реквизиты и представитель: {{sender_details}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Основание полномочий представителя работодателя: {{authority_basis}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Работник: {{recipient}}. Адрес: {{recipient_address}}. Документ, удостоверяющий личность: {{recipient_details}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Работодатель и Работник заключили настоящий трудовой договор о нижеследующем.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "1 Предмет договора",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Должность Работника: {{position}}. Место работы: {{workplace}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{job_function}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Характер занятости: {{employment_type}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Работник лично выполняет согласованную трудовую функцию и соблюдает правила внутреннего трудового распорядка. Работодатель предоставляет обусловленную договором работу и обеспечивает условия труда в соответствии с трудовым законодательством.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "2 Начало работы и срок договора",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата начала работы: {{start_date}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Договор заключён на неопределённый срок.",
+      "role": "body",
+      "when_field": "term_type",
+      "when_status": null,
+      "when_value": "на неопределённый срок",
+      "when_values": null
+    },
+    {
+      "text": "Срок и основание срочного договора: {{fixed_term}}.",
+      "role": "body",
+      "when_field": "term_type",
+      "when_status": null,
+      "when_value": "срочный",
+      "when_values": null
+    },
+    {
+      "text": "Условие об испытании: {{probation}}.",
+      "role": "body",
+      "when_field": "probation",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "3 Оплата труда",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Размер оклада или ставки заработной платы до удержания НДФЛ: {{amount}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{pay_conditions}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Дни и способ выплаты заработной платы: {{payment}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Заработная плата выплачивается не реже чем каждые полмесяца в сроки, установленные в соответствии с трудовым законодательством.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "4 Рабочее время и отдых",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{schedule}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Условия образовательной деятельности: {{leave_context}}.",
+      "role": "body",
+      "when_field": "is_pedagogue",
+      "when_status": null,
+      "when_value": "да",
+      "when_values": null
+    },
+    {
+      "text": "Ежегодный оплачиваемый отпуск: {{vacation}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "5 Условия труда и гарантии",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{work_conditions}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{compensations}}",
+      "role": "body",
+      "when_field": "compensations",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Работник подлежит обязательному социальному страхованию в соответствии с законодательством Российской Федерации.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "6 Особенности педагогической работы",
+      "role": "heading",
+      "when_field": "is_pedagogue",
+      "when_status": null,
+      "when_value": "да",
+      "when_values": null
+    },
+    {
+      "text": "Отдельно согласованная педагогическая нагрузка: {{teaching_load}}.",
+      "role": "body",
+      "when_field": "teaching_load",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{education_details}}",
+      "role": "body",
+      "when_field": "is_pedagogue",
+      "when_status": null,
+      "when_value": "да",
+      "when_values": null
+    },
+    {
+      "text": "Продолжительность рабочего времени, учебная нагрузка и ежегодный удлинённый оплачиваемый отпуск определяются с учётом специальных требований к педагогическим работникам. Норма часов преподавания за ставку не заменяет условия обо всём рабочем времени.",
+      "role": "body",
+      "when_field": "is_pedagogue",
+      "when_status": null,
+      "when_value": "да",
+      "when_values": null
+    },
+    {
+      "text": "Изменение и прекращение договора",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Изменение условий договора оформляется в установленном законом порядке. Основания и порядок прекращения трудового договора определяются трудовым законодательством.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{additional_terms}}",
+      "role": "body",
+      "when_field": "additional_terms",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Правовое регулирование",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Договор составлен в двух экземплярах, имеющих одинаковую юридическую силу, по одному для каждой стороны.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{contacts}}",
+      "role": "body",
+      "when_field": "contacts",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Подписи сторон",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Работодатель: ______________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Работник: ______________ / {{counterparty_signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    }
+  ],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "sender_details": "requisite",
+    "authority_basis": "requisite",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "recipient_details": "requisite",
+    "position": "phrase",
+    "workplace": "phrase",
+    "job_function": "sentence",
+    "employment_type": "auto",
+    "start_date": "auto",
+    "term_type": "auto",
+    "fixed_term": "phrase",
+    "amount": "auto",
+    "pay_conditions": "sentence",
+    "payment": "phrase",
+    "schedule": "sentence",
+    "work_conditions": "sentence",
+    "compensations": "sentence",
+    "is_pedagogue": "auto",
+    "teaching_load": "phrase",
+    "education_details": "sentence",
+    "leave_context": "phrase",
+    "vacation": "phrase",
+    "probation": "phrase",
+    "additional_terms": "sentence",
+    "contacts": "sentence",
+    "attachments": "list",
+    "place": "requisite",
+    "date": "auto",
+    "signature": "requisite",
+    "counterparty_signature": "requisite",
+    "legal_basis": "sentence"
+  },
+  "intake_only_fields": [],
+  "docx_asset": {
+    "template": "contract_employment/v9/template.docx",
+    "template_sha256": "69d2e7cd760ba73d2ba66698f29c3f44775d18679170fdf1958cfe1d6ecdb146",
+    "schema": "contract_employment/v9/schema.json",
+    "schema_sha256": "5e85fabb97b857012ca26a0c02fc184599e579a43c47b5801d4f7f4e6e5d1c03"
+  }
+}

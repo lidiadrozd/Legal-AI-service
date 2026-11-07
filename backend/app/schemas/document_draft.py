@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -58,3 +58,17 @@ class DocumentDraftResponse(BaseModel):
     title: str = Field(alias="заголовок", min_length=3, max_length=500)
     text: str = Field(alias="текст", min_length=20)
     requisites: DocumentRequisites = Field(alias="реквизиты")
+
+
+class DocumentClarificationResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["needs_clarification"]
+    questions: list[str] = Field(min_length=1, max_length=3)
+
+    @field_validator("questions")
+    @classmethod
+    def require_questions(cls, value: list[str]) -> list[str]:
+        if any(not question.strip() for question in value):
+            raise ValueError("Уточняющие вопросы не должны быть пустыми")
+        return [question.strip() for question in value]

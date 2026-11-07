@@ -1,0 +1,209 @@
+{
+  "scenario": "claim_damage_flood",
+  "version": 3,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "recipient_details": {
+      "format": "phrase"
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "phrase"
+    },
+    "property_address": {
+      "format": "phrase"
+    },
+    "property_right": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "flood_date": {
+      "format": "phrase"
+    },
+    "source_address": {
+      "format": "phrase"
+    },
+    "source_relation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "facts": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "damage_object": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "restoration": {
+      "format": "phrase"
+    },
+    "restoration_costs": {
+      "format": "phrase"
+    },
+    "restoration_estimate": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "calculation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "evidence": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "pretrial": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "litigation_costs": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence"
+    },
+    "expertise": {
+      "format": "phrase"
+    },
+    "expertise_details": {
+      "format": "phrase"
+    },
+    "security": {
+      "format": "phrase"
+    },
+    "security_details": {
+      "format": "phrase"
+    },
+    "copy_status": {
+      "format": "phrase"
+    },
+    "copy_notice": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {
+    "branch_3": {
+      "field": "other_participants"
+    },
+    "unknown_14": {
+      "field": "restoration",
+      "unknown": true
+    },
+    "branch_15": {
+      "field": "restoration",
+      "value": "не восстановлено"
+    },
+    "branch_16": {
+      "field": "restoration",
+      "value": "восстановлено"
+    },
+    "branch_17": {
+      "field": "restoration",
+      "value": "частично восстановлено"
+    },
+    "branch_18": {
+      "field": "restoration",
+      "values": [
+        "восстановлено",
+        "частично восстановлено"
+      ]
+    },
+    "branch_19": {
+      "field": "restoration",
+      "values": [
+        "не восстановлено",
+        "частично восстановлено"
+      ]
+    },
+    "branch_26": {
+      "field": "litigation_costs"
+    },
+    "branch_29": {
+      "field": "litigation_costs"
+    },
+    "unknown_30": {
+      "field": "expertise",
+      "unknown": true
+    },
+    "branch_31": {
+      "field": "expertise",
+      "value": "да"
+    },
+    "branch_32": {
+      "field": "expertise",
+      "value": "да"
+    },
+    "unknown_33": {
+      "field": "security",
+      "unknown": true
+    },
+    "branch_34": {
+      "field": "security",
+      "value": "да"
+    },
+    "branch_35": {
+      "field": "security",
+      "value": "да"
+    },
+    "unknown_36": {
+      "field": "copy_status",
+      "unknown": true
+    },
+    "branch_37": {
+      "field": "copy_status",
+      "value": "направлены"
+    }
+  },
+  "blocks_sha256": "ff23ac88fab5abc5ceb0cca0c8a4da12b4a21a3386d08459fe8e79cfefd6231b",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

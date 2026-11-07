@@ -1,0 +1,213 @@
+{
+  "scenario": "pretense_rent_deposit",
+  "composition": "clause_document",
+  "intake_only_fields": [],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "agreement": "sentence",
+    "property": "auto",
+    "deposit_payment": "sentence",
+    "deposit_terms": "sentence",
+    "return_facts": "sentence",
+    "withholding": "sentence",
+    "amount": "auto",
+    "legal_basis": "sentence",
+    "contacts": "sentence",
+    "attachments": "list",
+    "date": "auto",
+    "signature": "requisite",
+    "additional_claims": "sentence",
+    "deadline": "phrase",
+    "payment_details": "sentence"
+  },
+  "version": 2,
+  "schema_version": 1,
+  "coverage": "structured",
+  "source": "Самостоятельная предметная форма по нормативным источникам и открытым официальным образцам",
+  "usage_basis": "Самостоятельная редакция. Исходные образцы используются для проверки состава сведений, а не как факты пользователя.",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-27",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "letter",
+  "source_urls": [
+    "https://www.consultant.ru/document/cons_doc_LAW_9027/",
+    "https://www.consultant.ru/document/cons_doc_LAW_39570/",
+    "https://www.consultant.ru/document/cons_doc_LAW_5142/"
+  ],
+  "limitations": [
+    "Черновик требует проверки фактов, применимости процедуры, сроков, подсудности и правового обоснования.",
+    "Неизвестные данные обозначаются полями для заполнения; условия и доказательства не предполагаются."
+  ],
+  "blocks": [
+    {
+      "text": "Наймодатель: {{recipient}}\nАдрес: {{recipient_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Наниматель: {{sender}}\nАдрес для корреспонденции: {{sender_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{contacts}}",
+      "role": "addressee",
+      "when_field": "contacts",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Требование о возврате обеспечительного платежа по договору найма",
+      "role": "title",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{agreement}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Адрес жилого помещения по договору: {{property}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{deposit_payment}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{deposit_terms}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{return_facts}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{withholding}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Требования",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Прошу вернуть сумму обеспечительного платежа в размере {{amount}}.",
+      "role": "request",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Срок исполнения требования: {{deadline}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{payment_details}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{additional_claims}}",
+      "role": "request",
+      "when_field": "additional_claims",
+      "when_value": null,
+      "when_status": "filled",
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "pretense_rent_deposit/v2/template.docx",
+    "template_sha256": "4a1504bef988145b78fe18b9437489a724a633f3cf5c723a743512263d56c130",
+    "schema": "pretense_rent_deposit/v2/schema.json",
+    "schema_sha256": "211c20700293010f694f25881665d3b74a81dcf04671eed31b9da7ed8640975a"
+  }
+}

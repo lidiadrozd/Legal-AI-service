@@ -1,0 +1,99 @@
+{
+  "scenario": "motion_restore_term",
+  "version": 7,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "requisite"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "requisite"
+    },
+    "case_number": {
+      "format": "requisite"
+    },
+    "case_subject": {
+      "format": "phrase"
+    },
+    "missed_action": {
+      "format": "phrase"
+    },
+    "deadline": {
+      "format": "phrase"
+    },
+    "reasons": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "evidence": {
+      "format": "phrase"
+    },
+    "concurrent_action": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "sender_details"
+    },
+    "branch_3": {
+      "field": "contacts"
+    },
+    "branch_5": {
+      "field": "party_details"
+    }
+  },
+  "blocks_sha256": "5a7d6ac241f9d433e72e9011e2969f325fbbe6bfc6939e1b9925c2443cfac456",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

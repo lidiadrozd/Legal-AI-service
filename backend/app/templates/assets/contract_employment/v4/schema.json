@@ -1,0 +1,173 @@
+{
+  "scenario": "contract_employment",
+  "version": 4,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "place": {
+      "format": "requisite"
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "recipient_details": {
+      "format": "requisite"
+    },
+    "position": {
+      "format": "phrase"
+    },
+    "workplace": {
+      "format": "phrase"
+    },
+    "job_function": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "employment_type": {
+      "format": "phrase"
+    },
+    "start_date": {
+      "format": "phrase"
+    },
+    "term_type": {
+      "format": "phrase"
+    },
+    "fixed_term": {
+      "format": "phrase"
+    },
+    "probation": {
+      "format": "phrase"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "pay_conditions": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "payment": {
+      "format": "phrase"
+    },
+    "schedule": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "vacation": {
+      "format": "phrase"
+    },
+    "work_conditions": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "compensations": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "is_pedagogue": {
+      "format": "phrase"
+    },
+    "teaching_load": {
+      "format": "phrase"
+    },
+    "education_details": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "additional_terms": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "contacts": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "signature": {
+      "format": "requisite"
+    },
+    "counterparty_signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "unknown_12": {
+      "field": "term_type",
+      "unknown": true
+    },
+    "branch_13": {
+      "field": "term_type",
+      "value": "на неопределённый срок"
+    },
+    "branch_14": {
+      "field": "term_type",
+      "value": "срочный"
+    },
+    "branch_15": {
+      "field": "probation"
+    },
+    "branch_26": {
+      "field": "compensations"
+    },
+    "unknown_28": {
+      "field": "is_pedagogue",
+      "unknown": true
+    },
+    "branch_29": {
+      "field": "is_pedagogue",
+      "value": "да"
+    },
+    "branch_30": {
+      "field": "teaching_load"
+    },
+    "branch_31": {
+      "field": "is_pedagogue",
+      "value": "да"
+    },
+    "branch_32": {
+      "field": "is_pedagogue",
+      "value": "да"
+    },
+    "branch_35": {
+      "field": "additional_terms"
+    },
+    "branch_39": {
+      "field": "contacts"
+    }
+  },
+  "blocks_sha256": "4da4ac2da852fa4663e2540726307f87c63238dfc2594b470ddf0fc18771918f",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

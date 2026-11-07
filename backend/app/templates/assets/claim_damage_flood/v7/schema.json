@@ -1,0 +1,215 @@
+{
+  "scenario": "claim_damage_flood",
+  "version": 7,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "requisite"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "recipient_details": {
+      "format": "requisite"
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "claim_price": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "phrase"
+    },
+    "property_address": {
+      "format": "phrase"
+    },
+    "property_right": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "flood_date": {
+      "format": "phrase"
+    },
+    "source_address": {
+      "format": "phrase"
+    },
+    "source_relation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "facts": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "damage_object": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "restoration": {
+      "format": "phrase"
+    },
+    "restoration_costs": {
+      "format": "phrase"
+    },
+    "restoration_estimate": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "calculation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "evidence": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "pretrial": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "litigation_costs": {
+      "format": "phrase",
+      "preserve_list_numbers": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "expertise": {
+      "format": "phrase"
+    },
+    "expertise_details": {
+      "format": "phrase",
+      "preserve_list_numbers": true
+    },
+    "security": {
+      "format": "phrase"
+    },
+    "security_details": {
+      "format": "phrase",
+      "preserve_list_numbers": true
+    },
+    "copy_status": {
+      "format": "phrase"
+    },
+    "copy_notice": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_3": {
+      "field": "other_participants"
+    },
+    "unknown_14": {
+      "field": "restoration",
+      "unknown": true
+    },
+    "branch_15": {
+      "field": "restoration",
+      "value": "не восстановлено"
+    },
+    "branch_16": {
+      "field": "restoration",
+      "value": "восстановлено"
+    },
+    "branch_17": {
+      "field": "restoration",
+      "value": "частично восстановлено"
+    },
+    "branch_18": {
+      "field": "restoration",
+      "values": [
+        "восстановлено",
+        "частично восстановлено"
+      ]
+    },
+    "branch_19": {
+      "field": "restoration",
+      "values": [
+        "не восстановлено",
+        "частично восстановлено"
+      ]
+    },
+    "branch_26": {
+      "field": "litigation_costs"
+    },
+    "branch_29": {
+      "field": "litigation_costs"
+    },
+    "unknown_30": {
+      "field": "expertise",
+      "unknown": true
+    },
+    "branch_31": {
+      "field": "expertise",
+      "value": "да"
+    },
+    "branch_32": {
+      "field": "expertise",
+      "value": "да"
+    },
+    "unknown_33": {
+      "field": "security",
+      "unknown": true
+    },
+    "branch_34": {
+      "field": "security",
+      "value": "да"
+    },
+    "branch_35": {
+      "field": "security",
+      "value": "да"
+    },
+    "unknown_36": {
+      "field": "copy_status",
+      "unknown": true
+    },
+    "branch_37": {
+      "field": "copy_status",
+      "value": "направлены"
+    }
+  },
+  "blocks_sha256": "ed5a9531ee1ab3ea09a5f62963b8bedf2dd839cf0775de921a547a76a65ca133",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

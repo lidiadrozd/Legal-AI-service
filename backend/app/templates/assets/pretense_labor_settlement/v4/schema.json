@@ -1,0 +1,75 @@
+{
+  "scenario": "pretense_labor_settlement",
+  "version": 4,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "employment": {
+      "format": "phrase"
+    },
+    "dismissal": {
+      "format": "phrase"
+    },
+    "wages": {
+      "format": "phrase"
+    },
+    "debt_period": {
+      "format": "phrase"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "evidence": {
+      "format": "phrase"
+    },
+    "previous_contact": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "payment": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "70680f92b50c8152010e3077a96f0e4493c1367ed71d3a4aae57b52794631f26",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

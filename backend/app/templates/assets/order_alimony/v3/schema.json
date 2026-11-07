@@ -1,0 +1,93 @@
+{
+  "scenario": "order_alimony",
+  "version": 3,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "phrase"
+    },
+    "children": {
+      "format": "phrase"
+    },
+    "parentage": {
+      "format": "phrase"
+    },
+    "living": {
+      "format": "phrase"
+    },
+    "existing_support": {
+      "format": "phrase"
+    },
+    "other_dependants": {
+      "format": "phrase"
+    },
+    "assistance": {
+      "format": "phrase"
+    },
+    "income": {
+      "format": "phrase"
+    },
+    "share": {
+      "format": "phrase"
+    },
+    "start": {
+      "format": "phrase"
+    },
+    "payment": {
+      "format": "phrase"
+    },
+    "eligibility": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "fee": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "126c1176b54241151e533c804ee661baf17fd901e6ce703969c2c386c57f22bc",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

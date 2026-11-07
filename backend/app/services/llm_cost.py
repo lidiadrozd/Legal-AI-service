@@ -49,6 +49,7 @@ async def record_llm_usage(
     model: str,
     cached: bool,
     usage: TokenUsage,
+    commit: bool = True,
 ) -> LlmUsageEvent:
     event = LlmUsageEvent(
         user_id=user_id,
@@ -63,6 +64,9 @@ async def record_llm_usage(
         usage_estimated=usage.usage_estimated,
     )
     db.add(event)
-    await db.commit()
-    await db.refresh(event)
+    if commit:
+        await db.commit()
+        await db.refresh(event)
+    else:
+        await db.flush()
     return event

@@ -1,0 +1,327 @@
+{
+  "scenario": "claim_alimony_share",
+  "composition": "clause_document",
+  "intake_only_fields": [
+    "copy_notice",
+    "payment"
+  ],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "court": "requisite",
+    "party_details": "requisite",
+    "children": "phrase",
+    "parentage": "sentence",
+    "living": "sentence",
+    "existing_support": "sentence",
+    "other_dependants": "sentence",
+    "assistance": "sentence",
+    "income": "phrase",
+    "share": "phrase",
+    "start": "phrase",
+    "pretrial": "sentence",
+    "calculation": "sentence",
+    "legal_basis": "sentence",
+    "fee": "sentence",
+    "requests": "sentence",
+    "other_participants": "phrase",
+    "contacts": "sentence",
+    "attachments": "list",
+    "date": "auto",
+    "signature": "requisite",
+    "claim_price": "phrase",
+    "sender_details": "requisite"
+  },
+  "version": 9,
+  "schema_version": 5,
+  "coverage": "structured",
+  "source": "Самостоятельная предметная форма по нормативным источникам и открытым официальным образцам",
+  "usage_basis": "Самостоятельная редакция. Исходные образцы используются для проверки состава сведений, а не как факты пользователя.",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-27",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "claim",
+  "source_urls": [
+    "https://www.consultant.ru/document/cons_doc_LAW_8982/",
+    "https://www.consultant.ru/document/cons_doc_LAW_39570/"
+  ],
+  "limitations": [
+    "Черновик требует проверки фактов, применимости процедуры, сроков, подсудности и правового обоснования.",
+    "Неизвестные данные обозначаются полями для заполнения; условия и доказательства не предполагаются."
+  ],
+  "blocks": [
+    {
+      "text": "В {{court}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Истец: {{sender}}\nАдрес: {{sender_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{sender_details}}",
+      "role": "addressee",
+      "when_field": "sender_details",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{contacts}}",
+      "role": "addressee",
+      "when_field": "contacts",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Ответчик: {{recipient}}\nАдрес: {{recipient_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{party_details}}",
+      "role": "addressee",
+      "when_field": "party_details",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Другие участники: {{other_participants}}",
+      "role": "addressee",
+      "when_field": "other_participants",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Цена иска: {{claim_price}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{fee}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Исковое заявление о взыскании алиментов на несовершеннолетних детей в долях к доходу",
+      "role": "title",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Сведения о ребёнке и родителях",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Сведения о детях, на содержание которых заявляется требование: {{children}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{parentage}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{living}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{existing_support}}",
+      "role": "body",
+      "when_field": "existing_support",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{other_dependants}}",
+      "role": "body",
+      "when_field": "other_dependants",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Материальное содержание",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{assistance}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Известные сведения о заработке и иных доходах обязанного родителя: {{income}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Просимая доля заработка и иного дохода: {{share}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Начало периода, за который заявляется взыскание: {{start}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Досудебное урегулирование",
+      "role": "heading",
+      "when_field": "pretrial",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{pretrial}}",
+      "role": "body",
+      "when_field": "pretrial",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Расчёт денежных требований",
+      "role": "heading",
+      "when_field": "calculation",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{calculation}}",
+      "role": "body",
+      "when_field": "calculation",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Правовое обоснование",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "На основании изложенного прошу",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{requests}}",
+      "role": "request",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "claim_alimony_share/v9/template.docx",
+    "schema": "claim_alimony_share/v9/schema.json",
+    "template_sha256": "ac3786ee8a60b7be113c1e13a37dcdcdc3ac384da2ff7c99bc650635091e6d5c",
+    "schema_sha256": "d91e54cd3b2d4b25c6816db9cbd45feb520475cc4616c55a290ef9874226b2d3"
+  }
+}

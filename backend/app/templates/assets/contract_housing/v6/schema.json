@@ -1,0 +1,144 @@
+{
+  "scenario": "contract_housing",
+  "version": 6,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "recipient_details": {
+      "format": "requisite"
+    },
+    "property": {
+      "format": "phrase"
+    },
+    "property_description": {
+      "format": "sentence",
+      "paragraph_number": "1.2"
+    },
+    "ownership": {
+      "format": "sentence",
+      "paragraph_number": "1.3"
+    },
+    "residents": {
+      "format": "sentence",
+      "paragraph_number": "1.4"
+    },
+    "start_date": {
+      "format": "phrase"
+    },
+    "term": {
+      "format": "phrase"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "payment": {
+      "format": "sentence",
+      "paragraph_number": "3.2"
+    },
+    "utilities": {
+      "format": "sentence",
+      "paragraph_number": "3.3"
+    },
+    "deposit": {
+      "format": "phrase"
+    },
+    "deposit_amount": {
+      "format": "phrase"
+    },
+    "deposit_terms": {
+      "format": "sentence",
+      "paragraph_number": "3.5"
+    },
+    "handover": {
+      "format": "sentence",
+      "paragraph_number": "2.2"
+    },
+    "repairs": {
+      "format": "sentence",
+      "paragraph_number": "4.2"
+    },
+    "access": {
+      "format": "sentence",
+      "paragraph_number": "4.3"
+    },
+    "liability": {
+      "format": "sentence",
+      "paragraph_section": "5",
+      "paragraph_headings": true
+    },
+    "termination": {
+      "format": "sentence",
+      "paragraph_number": "6.1"
+    },
+    "return_terms": {
+      "format": "sentence",
+      "paragraph_number": "6.2"
+    },
+    "additional_terms": {
+      "format": "sentence",
+      "paragraph_number": "7.2"
+    },
+    "attachments": {
+      "format": "sentence",
+      "paragraph_section": "8"
+    },
+    "place": {
+      "format": "phrase"
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    },
+    "counterparty_signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {
+    "deposit_yes": {
+      "field": "deposit",
+      "value": "да"
+    },
+    "deposit_no": {
+      "field": "deposit",
+      "value": "нет"
+    },
+    "deposit_unknown": {
+      "field": "deposit",
+      "unknown": true
+    },
+    "additional": {
+      "field": "additional_terms"
+    }
+  },
+  "layout": {
+    "page": "A4",
+    "margins_cm": {
+      "top": 2.5,
+      "bottom": 2.5,
+      "left": 3,
+      "right": 2
+    },
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "body_first_line_cm": 1.25
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false,
+  "blocks_sha256": "38ca0469a8502303dd6bc86a6e387098c0eddd5a1cdd7e10e3a7ffb0f5a8ad0a"
+}

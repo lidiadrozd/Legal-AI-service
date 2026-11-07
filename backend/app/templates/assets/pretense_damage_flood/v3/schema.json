@@ -1,0 +1,81 @@
+{
+  "scenario": "pretense_damage_flood",
+  "version": 3,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "property": {
+      "format": "phrase"
+    },
+    "property_right": {
+      "format": "phrase"
+    },
+    "event": {
+      "format": "phrase"
+    },
+    "responsibility": {
+      "format": "phrase"
+    },
+    "damage": {
+      "format": "phrase"
+    },
+    "evidence": {
+      "format": "phrase"
+    },
+    "restoration": {
+      "format": "phrase"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "payment": {
+      "format": "phrase"
+    },
+    "previous_contact": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "efdbff5a0c547cb44c1e53ed168a4b5442c6426d58c8f64d548ec72abec5de31",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

@@ -1,0 +1,103 @@
+{
+  "scenario": "contract_sale_nonresidential",
+  "version": 1,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "place": {
+      "format": "phrase"
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "property_address": {
+      "format": "requisite"
+    },
+    "cadastral_number": {
+      "format": "requisite"
+    },
+    "area": {
+      "format": "phrase"
+    },
+    "property_description": {
+      "format": "sentence"
+    },
+    "ownership": {
+      "format": "sentence"
+    },
+    "encumbrances": {
+      "format": "sentence"
+    },
+    "land_rights": {
+      "format": "sentence"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "payment_method": {
+      "format": "sentence"
+    },
+    "payment_date": {
+      "format": "phrase"
+    },
+    "payment_details": {
+      "format": "requisite"
+    },
+    "handover": {
+      "format": "sentence"
+    },
+    "registration": {
+      "format": "sentence"
+    },
+    "expenses": {
+      "format": "sentence"
+    },
+    "additional_terms": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "seller_details": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "buyer_details": {
+      "format": "requisite"
+    },
+    "signature": {
+      "format": "requisite"
+    },
+    "counterparty_signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "61cadc4d06d25efcbf577b9b39c543202514dd466f9da2a82bf3efbd5c8256f6",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

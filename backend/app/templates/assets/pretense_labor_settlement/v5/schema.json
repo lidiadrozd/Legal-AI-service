@@ -1,0 +1,100 @@
+{
+  "scenario": "pretense_labor_settlement",
+  "version": 5,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "employment": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "dismissal": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "wages": {
+      "format": "phrase"
+    },
+    "debt_period": {
+      "format": "phrase"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "evidence": {
+      "format": "phrase"
+    },
+    "previous_contact": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "payment": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "contacts"
+    },
+    "branch_6": {
+      "field": "dismissal"
+    },
+    "branch_7": {
+      "field": "wages"
+    },
+    "branch_12": {
+      "field": "previous_contact"
+    },
+    "branch_17": {
+      "field": "payment"
+    }
+  },
+  "blocks_sha256": "1f5505b8011636d8666d528859a7d61a3e1fe5826137a0cedee87fbaf8571b4d",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

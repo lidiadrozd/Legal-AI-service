@@ -1,0 +1,72 @@
+{
+  "scenario": "bailiff_alimony_arrears",
+  "version": 4,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "debtor": {
+      "format": "phrase"
+    },
+    "enforcement": {
+      "format": "phrase"
+    },
+    "support_basis": {
+      "format": "phrase"
+    },
+    "support_terms": {
+      "format": "phrase"
+    },
+    "arrears_period": {
+      "format": "phrase"
+    },
+    "received_payments": {
+      "format": "phrase"
+    },
+    "income_information": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "65461fe37ae9703372ecaae5600bbb9e6cb4c67a1a22139325673cb8263d0b60",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

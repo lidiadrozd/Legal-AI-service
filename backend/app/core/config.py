@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     GIGACHAT_CLIENT_SECRET: str = os.getenv('GIGACHAT_CLIENT_SECRET', "")  # ✅ Дефолт!
     GIGACHAT_AUTH_KEY: str = ""  # Optional ready-made Base64 authorization key.
     GIGACHAT_MODEL: str = "GigaChat"
+    GIGACHAT_PROXY_URL: str = ""  # Optional local CONNECT route for Docker Desktop.
+    CBR_PROXY_URL: str = ""  # Optional fixed local CONNECT route for cbr.ru rate history.
     GIGACHAT_SCOPE: str = "GIGACHAT_API_B2B"
     GIGACHAT_CA_BUNDLE_FILE: str = str(
         Path(__file__).resolve().parents[2] / "certs" / "russian_trusted_root_ca.pem"

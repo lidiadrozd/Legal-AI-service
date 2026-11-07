@@ -1,0 +1,98 @@
+{
+  "scenario": "pretense_rent_deposit",
+  "version": 2,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "agreement": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "property": {
+      "format": "phrase"
+    },
+    "deposit_payment": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "deposit_terms": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "return_facts": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "withholding": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "amount": {
+      "format": "phrase",
+      "preserve_list_numbers": true
+    },
+    "deadline": {
+      "format": "phrase"
+    },
+    "payment_details": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "additional_claims": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "contacts"
+    },
+    "branch_15": {
+      "field": "additional_claims"
+    }
+  },
+  "blocks_sha256": "8b9c2a8409ec4880a366444cb7229b5ea33763a4b3f78ae5e82070d2f01b2818",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

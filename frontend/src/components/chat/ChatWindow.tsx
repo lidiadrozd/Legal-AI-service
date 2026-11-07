@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useChatStore } from '@/store/chatStore';
 import { MessageBubble } from './MessageBubble';
@@ -11,6 +11,13 @@ const Wrap = styled.div`
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding: 24px 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  > * { flex-shrink: 0; }
+`;
+
+const Messages = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -84,12 +91,36 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ onSuggestionClick }: ChatWindowProps) {
-  const { messages, isStreaming, streamingContent } = useChatStore();
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const { messages, isStreaming, streamingContent, activeChat } = useChatStore();
+  const activeChatId = activeChat?.id;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const followRef = useRef(true);
+  const lastUserRef = useRef<number | string | undefined>();
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamingContent]);
+  // Scroll this pane only. Smooth scrolls on every token can lag behind the
+  // stream; observing content and viewport also catches Markdown/layout reflow.
+  useLayoutEffect(() => { followRef.current = true; }, [activeChatId]);
+  useLayoutEffect(() => {
+    const userMessages = messages.filter(message => message.role === 'user');
+    const lastUser = userMessages[userMessages.length - 1]?.id;
+    if (lastUser !== lastUserRef.current) followRef.current = true;
+    lastUserRef.current = lastUser;
+    const pane = scrollRef.current;
+    if (pane && followRef.current) pane.scrollTop = pane.scrollHeight;
+  }, [messages, streamingContent, isStreaming, activeChatId]);
+
+  useLayoutEffect(() => {
+    const pane = scrollRef.current;
+    const content = contentRef.current;
+    if (!pane || !content) return;
+    const observer = new ResizeObserver(() => {
+      if (followRef.current) pane.scrollTop = pane.scrollHeight;
+    });
+    observer.observe(pane);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [messages.length === 0 && !isStreaming]);
 
   if (messages.length === 0 && !isStreaming) {
     return (
@@ -112,12 +143,16 @@ export function ChatWindow({ onSuggestionClick }: ChatWindowProps) {
   }
 
   return (
-    <Wrap>
+    <Wrap ref={scrollRef} onScroll={() => {
+      const pane = scrollRef.current;
+      if (pane) followRef.current = pane.scrollHeight - pane.clientHeight - pane.scrollTop < 48;
+    }}>
+      <Messages ref={contentRef}>
       {messages.map((msg) => (
         <MessageBubble key={msg.id} message={msg} />
       ))}
       {isStreaming && <StreamingMessage content={streamingContent} />}
-      <div ref={bottomRef} />
+      </Messages>
     </Wrap>
   );
 }

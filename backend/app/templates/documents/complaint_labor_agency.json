@@ -1,0 +1,187 @@
+{
+  "scenario": "complaint_labor_agency",
+  "version": 8,
+  "schema_version": 4,
+  "coverage": "structured",
+  "source": "Самостоятельная форма с отдельным нормативным и фактическим слоями",
+  "usage_basis": "Самостоятельная редакция. Исходные образцы используются для проверки состава сведений, а не как факты пользователя.",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-26",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "letter",
+  "source_urls": [
+    "https://www.consultant.ru/document/cons_doc_LAW_34683/274f022222909efcef192f7615b143e34309164f/",
+    "https://www.consultant.ru/document/cons_doc_LAW_34683/e1d3302610bfe8a8ec24f33c3029360eeab27635/"
+  ],
+  "limitations": [
+    "Черновик требует проверки фактов, применимости процедуры, сроков, подсудности и правового обоснования.",
+    "Неизвестные данные обозначаются полями для заполнения; условия и доказательства не предполагаются."
+  ],
+  "blocks": [
+    {
+      "text": "{{recipient}}\nАдрес: {{recipient_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "От: {{sender}}\nАдрес: {{sender_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{contacts}}",
+      "role": "addressee",
+      "when_field": "contacts",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Жалоба о невыплате заработной платы",
+      "role": "title",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Жалоба подаётся в отношении работодателя {{employer}}. Адрес работодателя или места работы: {{employer_address}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{employment}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{dismissal}}",
+      "role": "body",
+      "when_field": "dismissal",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{debt_period}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{evidence}}",
+      "role": "body",
+      "when_field": "evidence",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{previous_contact}}",
+      "role": "body",
+      "when_field": "previous_contact",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{facts}}",
+      "role": "body",
+      "when_field": "facts",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Прошу",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{requests}}",
+      "role": "request",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{payment}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "complaint_labor_agency/v8/template.docx",
+    "schema": "complaint_labor_agency/v8/schema.json",
+    "template_sha256": "f03f2b7a6f7ee407c1a3e26d67f3ed8a8a9f77589bb90a3e4a5cd6847464d398",
+    "schema_sha256": "e5c321d23db5009ee26fc3972f279685d5094dfc67376388fe6c0877ab57aecb"
+  },
+  "composition": "legal_document",
+  "intake_only_fields": [
+    "amount",
+    "violation",
+    "wages"
+  ]
+}

@@ -1,0 +1,181 @@
+{
+  "scenario": "appeal_civil",
+  "composition": "clause_document",
+  "intake_only_fields": [],
+  "field_formats": {
+    "sender": "requisite",
+    "recipient": "requisite",
+    "court": "requisite",
+    "first_court": "requisite",
+    "case_number": "requisite",
+    "party_details": "requisite",
+    "challenged_act": "sentence",
+    "grounds": "sentence",
+    "appeal_term": "sentence",
+    "requests": "sentence",
+    "attachments": "list",
+    "signature": "requisite"
+  },
+  "version": 1,
+  "schema_version": 1,
+  "coverage": "structured",
+  "source": "Открытые формы и нормативные требования; самостоятельная редакция для сервиса",
+  "usage_basis": "Самостоятельно составленный текст; полные авторские формы ГАРАНТа не воспроизводятся",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-24",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "appeal",
+  "source_urls": [
+    "https://base.garant.ru/55724440/"
+  ],
+  "limitations": [
+    "Сверка с открытыми источниками не заменяет юридическую проверку конкретного документа.",
+    "Предназначено для обжалования решения; частные, кассационные и административные жалобы не охватываются.",
+    "При пропуске срока требуется самостоятельное ходатайство с причинами и доказательствами; для ГПК учтено изменение порядка с 01.01.2026."
+  ],
+  "blocks": [
+    {
+      "text": "В {{court}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Через {{first_court}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Заявитель: {{sender}}\nАдрес: {{sender_address}}\nДругая сторона: {{recipient}}\nАдрес: {{recipient_address}}\nИные участники: {{other_participants}}\nДополнительные сведения: {{party_details}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Дело № {{case_number}}\nГоспошлина / льгота: {{fee}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Апелляционная жалоба по гражданскому делу",
+      "role": "title",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Обжалуемый судебный акт: {{challenged_act}}. Дата изготовления решения в окончательной форме: {{act_date}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Основания обжалования",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{grounds}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Соблюдение срока обжалования или сведения о его пропуске: {{appeal_term}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Обоснование выбора суда: {{jurisdiction}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Просьба к суду апелляционной инстанции",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{requests}}",
+      "role": "request",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Процессуальные основания: ГПК РФ, статьи 321, 322, 328, 330. Сведения о направлении копий участникам: {{copy_notice}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "appeal_civil/v1/template.docx",
+    "template_sha256": "e3916525b075643c509cc4a7dcaeffcd37638aedc337ea85d4de6dbb5a5e93cd",
+    "schema": "appeal_civil/v1/schema.json",
+    "schema_sha256": "65080572578b712d97bca9eeb6444a727d709fbf1d7056927cdfd581f5b24935"
+  }
+}

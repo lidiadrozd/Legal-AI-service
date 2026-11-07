@@ -1,0 +1,222 @@
+{
+  "scenario": "motion_restore_term",
+  "composition": "clause_document",
+  "intake_only_fields": [
+    "copy_notice"
+  ],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "court": "requisite",
+    "party_details": "requisite",
+    "case_number": "requisite",
+    "case_subject": "phrase",
+    "missed_action": "phrase",
+    "deadline": "phrase",
+    "reasons": "sentence",
+    "evidence": "phrase",
+    "concurrent_action": "sentence",
+    "requests": "sentence",
+    "contacts": "sentence",
+    "attachments": "list",
+    "date": "auto",
+    "signature": "requisite",
+    "legal_basis": "sentence",
+    "sender_details": "requisite"
+  },
+  "version": 8,
+  "schema_version": 4,
+  "coverage": "structured",
+  "source": "Самостоятельная предметная форма по нормативным источникам и открытым официальным образцам",
+  "usage_basis": "Самостоятельная редакция. Исходные образцы используются для проверки состава сведений, а не как факты пользователя.",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-27",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "claim",
+  "source_urls": [
+    "https://www.consultant.ru/document/cons_doc_LAW_39570/"
+  ],
+  "limitations": [
+    "Черновик требует проверки фактов, применимости процедуры, сроков, подсудности и правового обоснования.",
+    "Неизвестные данные обозначаются полями для заполнения; условия и доказательства не предполагаются."
+  ],
+  "blocks": [
+    {
+      "text": "В {{court}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Заявитель с процессуальным положением: {{sender}}\nАдрес: {{sender_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{sender_details}}",
+      "role": "addressee",
+      "when_field": "sender_details",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{contacts}}",
+      "role": "addressee",
+      "when_field": "contacts",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Другая сторона с процессуальным положением: {{recipient}}\nАдрес: {{recipient_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{party_details}}",
+      "role": "addressee",
+      "when_field": "party_details",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Заявление о восстановлении пропущенного процессуального срока",
+      "role": "title",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Настоящий документ подаётся по делу № {{case_number}}. Предмет рассматриваемого дела: {{case_subject}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Пропущено совершение следующего процессуального действия: {{missed_action}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Обстоятельства исчисления срока: {{deadline}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{reasons}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Причины пропуска подтверждаются следующими доказательствами: {{evidence}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{concurrent_action}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Правовое обоснование",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "На основании изложенного прошу",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{requests}}",
+      "role": "request",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "motion_restore_term/v8/template.docx",
+    "schema": "motion_restore_term/v8/schema.json",
+    "template_sha256": "123605821b8dfaba93be29641b40b4cd47fb0e222beb5c3c5b945018d12213c3",
+    "schema_sha256": "ee87475e84a6b4347bc55f50754d10ee928c686c7f95e82ac09848299270b3c8"
+  }
+}

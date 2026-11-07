@@ -1,0 +1,204 @@
+{
+  "scenario": "motion_postpone",
+  "composition": "clause_document",
+  "intake_only_fields": [
+    "copy_notice"
+  ],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "court": "requisite",
+    "party_details": "requisite",
+    "case_number": "requisite",
+    "case_subject": "phrase",
+    "hearing_date": "phrase",
+    "reasons": "sentence",
+    "evidence": "phrase",
+    "requests": "sentence",
+    "contacts": "sentence",
+    "attachments": "list",
+    "date": "auto",
+    "signature": "requisite",
+    "legal_basis": "sentence",
+    "sender_details": "requisite"
+  },
+  "version": 9,
+  "schema_version": 4,
+  "coverage": "structured",
+  "source": "Самостоятельная предметная форма по нормативным источникам и открытым официальным образцам",
+  "usage_basis": "Самостоятельная редакция. Исходные образцы используются для проверки состава сведений, а не как факты пользователя.",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-27",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "claim",
+  "source_urls": [
+    "https://www.consultant.ru/document/cons_doc_LAW_39570/"
+  ],
+  "limitations": [
+    "Черновик требует проверки фактов, применимости процедуры, сроков, подсудности и правового обоснования.",
+    "Неизвестные данные обозначаются полями для заполнения; условия и доказательства не предполагаются."
+  ],
+  "blocks": [
+    {
+      "text": "В {{court}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Заявитель с процессуальным положением: {{sender}}\nАдрес: {{sender_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{sender_details}}",
+      "role": "addressee",
+      "when_field": "sender_details",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{contacts}}",
+      "role": "addressee",
+      "when_field": "contacts",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Другая сторона с процессуальным положением: {{recipient}}\nАдрес: {{recipient_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{party_details}}",
+      "role": "addressee",
+      "when_field": "party_details",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Ходатайство об отложении заседания",
+      "role": "title",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Настоящий документ подаётся по делу № {{case_number}}. Предмет рассматриваемого дела: {{case_subject}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Судебное заседание назначено на {{hearing_date}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{reasons}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Причины неявки подтверждаются следующими доказательствами: {{evidence}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Правовое обоснование",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "На основании изложенного прошу",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{requests}}",
+      "role": "request",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "motion_postpone/v9/template.docx",
+    "schema": "motion_postpone/v9/schema.json",
+    "template_sha256": "828a4aefd5272015a377b5682d1ad152944ba8bf032876ea8c37628fe1d38459",
+    "schema_sha256": "c858cc93a50ad5dbde92c586064908bb29ec55d3f87d54eb7b3cf04c003bf849"
+  }
+}

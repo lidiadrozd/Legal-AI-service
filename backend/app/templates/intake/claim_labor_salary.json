@@ -1,0 +1,272 @@
+{
+  "scenario": "claim_labor_salary",
+  "title": "Исковое заявление о взыскании заработной платы и иных выплат",
+  "family": "claim",
+  "version": 5,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Истец",
+      "question": "Какое полное ФИО или наименование у стороны «Истец»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Истец»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_details",
+      "label": "Реквизиты заявителя",
+      "question": "Какие дату и место рождения, ИНН, СНИЛС или паспортные данные заявителя указываем? Для организации — ИНН и ОГРН; неизвестное можно дополнить позднее.",
+      "kind": "text",
+      "optional": false
+    },
+    {
+      "key": "recipient",
+      "label": "Ответчик — работодатель",
+      "question": "Какое полное ФИО или наименование у стороны «Ответчик — работодатель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Ответчик — работодатель»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "court",
+      "label": "Наименование суда и адрес",
+      "question": "В какой суд направляем документ? Если суд не определён, оставим название для проверки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "party_details",
+      "label": "Дополнительные сведения об участниках",
+      "question": "Какие дата и место рождения, место работы и идентификатор ответчика вам известны? Данные истца укажите отдельно; неизвестное не угадываем.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "employment",
+      "label": "Трудовые отношения",
+      "question": "Укажите работодателя, должность, дату начала работы и реквизиты трудового договора.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "dismissal",
+      "label": "Прекращение трудовых отношений",
+      "question": "Уволены ли вы? Если да, когда, по какому основанию и каким приказом?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "wages",
+      "label": "Условия оплаты труда",
+      "question": "Каков согласованный размер и порядок выплаты заработной платы? Укажите известные условия.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "debt_period",
+      "label": "Период и состав невыплаты",
+      "question": "За какие месяцы и какие выплаты не перечислены? Зарплату, отпускные и расчёт при увольнении укажите раздельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "amount",
+      "label": "Основная сумма невыплаченных средств",
+      "question": "Какова основная невыплаченная сумма в рублях?",
+      "kind": "money",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "evidence",
+      "label": "Подтверждающие документы",
+      "question": "Какие договор, приказы, расчётные листки, выписки или иные доказательства имеются?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "previous_contact",
+      "label": "Обращения к работодателю",
+      "question": "Обращались ли к работодателю по поводу выплат и каков ответ?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "salary_dispute",
+      "label": "Начисление и спор о выплатах",
+      "question": "Работодатель начислил и признаёт эти суммы или оспаривает право/размер? Был ли отменён судебный приказ? Это нужно для проверки искового или приказного порядка.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "pretrial",
+      "label": "Досудебное обращение",
+      "question": "Обращались ли вы к ответчику до суда? Укажите дату, способ, подтверждение и ответ либо отсутствие обращения.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "calculation",
+      "label": "Расчёт требований",
+      "question": "Из каких отдельных сумм и периодов состоят требования? Основной долг, дополнительные начисления и расходы укажите раздельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование для проверки",
+      "question": "Правовое обоснование будет проверено отдельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "fee",
+      "label": "Государственная пошлина и льготы для проверки",
+      "question": "Размер пошлины или основание освобождения требует отдельной проверки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "requests",
+      "label": "Требования к суду",
+      "question": "Что именно просите у суда? Перечислите каждое требование отдельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "other_participants",
+      "label": "Другие участники",
+      "question": "Есть ли третьи лица или другие участники дела? Укажите роль, имя и адрес либо ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "copy_notice",
+      "label": "Направление копий участникам",
+      "question": "Направлены ли другим участникам копии этого документа и отсутствующих у них приложений? Укажите подтверждение или что отправка ещё предстоит.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Истец»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "claim_price",
+      "label": "Цена иска",
+      "question": "Цена иска определяется из заявленных денежных требований; расчёт выполняется отдельно.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

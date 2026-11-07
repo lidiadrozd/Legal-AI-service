@@ -1,0 +1,87 @@
+{
+  "scenario": "appeal_civil",
+  "version": 1,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "requisite"
+    },
+    "first_court": {
+      "format": "requisite"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "requisite"
+    },
+    "case_number": {
+      "format": "requisite"
+    },
+    "fee": {
+      "format": "phrase"
+    },
+    "challenged_act": {
+      "format": "sentence"
+    },
+    "act_date": {
+      "format": "phrase"
+    },
+    "grounds": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "appeal_term": {
+      "format": "sentence"
+    },
+    "jurisdiction": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "copy_notice": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "2e59a9a69bee6ade01edf3595e231f911b44667304ce6fc731924cdf97012071",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

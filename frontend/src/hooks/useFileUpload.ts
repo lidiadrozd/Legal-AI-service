@@ -37,7 +37,7 @@ function extractServerError(err: unknown): string {
     if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
       return (
         'Сеть: запрос не дошёл до API. Если сайт открыт по HTTPS, адрес API должен быть HTTPS ' +
-        '(иначе браузер блокирует загрузку).'
+        '(иначе браузер блокирует загрузку). Проверьте VITE_API_BASE_URL в Vercel.'
       );
     }
     const status = err.response?.status;

@@ -1,0 +1,184 @@
+{
+  "scenario": "pretense_rent_deposit",
+  "title": "Требование о возврате обеспечительного платежа по договору найма",
+  "family": "pretense",
+  "version": 1,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Наниматель",
+      "question": "Как Ваше полное ФИО?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес нанимателя для корреспонденции",
+      "question": "Какой Ваш текущий почтовый адрес? Он может отличаться от адреса возвращённой квартиры.",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Наймодатель",
+      "question": "Какое полное ФИО наймодателя, которому направляем требование?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес наймодателя",
+      "question": "Какой почтовый адрес наймодателя Вам известен?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "agreement",
+      "label": "Договор найма",
+      "question": "Укажите договор найма жилья: дату, номер и стороны.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "property",
+      "label": "Жилое помещение",
+      "question": "Укажите полный адрес жилья по договору.",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "deposit_payment",
+      "label": "Внесение обеспечительного платежа",
+      "question": "Какая сумма, когда и каким способом внесена? Чем подтверждается платёж?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "deposit_terms",
+      "label": "Условия возврата",
+      "question": "В каких случаях и в какой срок договор предусматривает возврат или удержание обеспечительного платежа?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "return_facts",
+      "label": "Возврат жилья",
+      "question": "Когда прекращён договор, возвращены жильё и ключи? Есть ли акт и замечания?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "withholding",
+      "label": "Удержания наймодателя",
+      "question": "Что наймодатель удерживает и как объясняет? Какие задолженности или повреждения оспариваются?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "amount",
+      "label": "Невозвращённая сумма обеспечительного платежа",
+      "question": "Какую сумму обеспечительного платежа наймодатель ещё не вернул?",
+      "kind": "money",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "additional_claims",
+      "label": "Дополнительные требования",
+      "question": "Заявляете ли проценты, неустойку или расходы помимо возврата платежа? Если нет, ответьте «нет».",
+      "optional": true
+    },
+    {
+      "key": "deadline",
+      "label": "Срок исполнения требования",
+      "question": "До какой даты или в какой срок просите вернуть обеспечительный платёж?"
+    },
+    {
+      "key": "payment_details",
+      "label": "Способ возврата",
+      "question": "Каким способом наймодатель может вернуть деньги? Банковские реквизиты можно сообщить отдельно."
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование для проверки",
+      "question": "Правовое обоснование будет проверено отдельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант",
+      "question": "Кто подпишет требование? Если Вы лично, повторять ФИО не нужно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    }
+  ]
+}

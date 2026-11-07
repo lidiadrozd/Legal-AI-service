@@ -1,0 +1,230 @@
+{
+  "scenario": "contract_sale_nonresidential",
+  "composition": "clause_document",
+  "intake_only_fields": [],
+  "field_formats": {
+    "sender": "requisite",
+    "recipient": "requisite",
+    "seller_details": "requisite",
+    "buyer_details": "requisite",
+    "property_address": "requisite",
+    "cadastral_number": "requisite",
+    "area": "phrase",
+    "property_description": "sentence",
+    "ownership": "sentence",
+    "encumbrances": "sentence",
+    "land_rights": "sentence",
+    "payment_method": "sentence",
+    "payment_date": "phrase",
+    "payment_details": "requisite",
+    "handover": "sentence",
+    "registration": "sentence",
+    "expenses": "sentence",
+    "additional_terms": "sentence",
+    "attachments": "list",
+    "signature": "requisite",
+    "counterparty_signature": "requisite"
+  },
+  "version": 1,
+  "schema_version": 1,
+  "coverage": "structured",
+  "source": "Самостоятельная редакция с проверкой структуры по ГК РФ, статьи 550–556",
+  "usage_basis": "Самостоятельно составленный черновик; коммерческие формы не воспроизводятся",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-24",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "contract",
+  "source_urls": [
+    "https://www.consultant.ru/document/cons_doc_LAW_9027/01aaf720da0073c8d15e1366816cbc58aecfeefb/",
+    "https://rospatent.gov.ru/content/uploadfiles/docs/GK-2_.pdf"
+  ],
+  "limitations": [
+    "Черновик для продажи отдельного нежилого помещения. Не предназначен для продажи доли, предприятия или будущей недвижимости.",
+    "Неизвестные существенные условия оставляются заполнителями. До подписания требуется их согласование и проверка прав на объект, формы сделки и полномочий сторон."
+  ],
+  "blocks": [
+    {
+      "text": "Договор купли-продажи нежилого помещения",
+      "role": "title",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{place}}    {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{sender}}, далее — Продавец, и {{recipient}}, далее — Покупатель, заключили настоящий договор о нижеследующем.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "1. Предмет договора",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Продавец обязуется передать в собственность Покупателя нежилое помещение, а Покупатель обязуется принять помещение и уплатить согласованную цену.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Адрес помещения: {{property_address}}. Кадастровый номер: {{cadastral_number}}. Площадь, кв. м: {{area}}. Описание по сведениям ЕГРН: {{property_description}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Основание права Продавца: {{ownership}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Сведения об обременениях и правах третьих лиц: {{encumbrances}}. Сведения о правах на земельный участок, относящиеся к сделке: {{land_rights}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "2. Цена и порядок расчётов",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Цена помещения составляет {{amount}}. Порядок оплаты: {{payment_method}}. Срок оплаты: {{payment_date}}. Платёжные реквизиты: {{payment_details}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "3. Передача помещения и регистрация перехода права",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Срок и согласованные условия передачи помещения по акту: {{handover}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Переход права собственности подлежит государственной регистрации. Согласованный порядок действий сторон по регистрации: {{registration}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Распределение расходов по сделке: {{expenses}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "4. Дополнительные условия",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{additional_terms}}",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения: {{attachments}}.",
+      "role": "attachments",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "5. Реквизиты и подписи сторон",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Продавец: {{sender}}. Адрес: {{sender_address}}. Реквизиты: {{seller_details}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Покупатель: {{recipient}}. Адрес: {{recipient_address}}. Реквизиты: {{buyer_details}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Продавец: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Покупатель: __________________ / {{counterparty_signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "contract_sale_nonresidential/v1/template.docx",
+    "template_sha256": "e56c4e604daa99bca72a7e75fb10ce841dccd5330cb61ce84c0237f8131d82de",
+    "schema": "contract_sale_nonresidential/v1/schema.json",
+    "schema_sha256": "5eac37d79b6a2cac5c6ac816ffcb31b087b5d285752bb618c2e53f2db43691fc"
+  }
+}

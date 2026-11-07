@@ -1,6 +1,5 @@
 import styled from 'styled-components';
-import { Menu, LogOut, User, Shield, FileText } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Menu, LogOut, User } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/store/uiStore';
@@ -80,8 +79,7 @@ const Dropdown = styled.div<{ $open: boolean }>`
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 8px;
-  width: 300px;
-  max-width: calc(100vw - 24px);
+  min-width: 180px;
   box-shadow: var(--shadow-elevated);
   z-index: 50;
 `;
@@ -98,10 +96,6 @@ const DropdownItem = styled.button`
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   text-align: left;
-  line-height: 1.5;
-  text-decoration: none;
-  & svg { flex-shrink: 0; }
-  &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
   transition: background var(--transition-fast), color var(--transition-fast);
   &:hover { background: var(--color-surface-hover); color: var(--color-text); }
   &.danger:hover { color: var(--color-error); }
@@ -142,27 +136,13 @@ export function Header() {
       <Title>Юридический ИИ-ассистент</Title>
       <NotificationBell />
       <UserMenu ref={menuRef}>
-        <UserBtn
-          aria-label="Меню аккаунта"
-          aria-expanded={open}
-          aria-controls="account-dropdown"
-          onClick={() => setOpen((v) => !v)}
-        >
+        <UserBtn onClick={() => setOpen((v) => !v)}>
           <User size={16} />
           <UserName>{user?.full_name ?? user?.email ?? 'Пользователь'}</UserName>
         </UserBtn>
-        <Dropdown id="account-dropdown" $open={open}>
-          <DropdownItem as="div" style={{ paddingBottom: '4px', opacity: 0.5, fontSize: '11px', overflowWrap: 'anywhere' }}>
+        <Dropdown $open={open}>
+          <DropdownItem style={{ paddingBottom: '4px', cursor: 'default', opacity: 0.5, fontSize: '11px' }}>
             {user?.email}
-          </DropdownItem>
-          <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 0' }} />
-          <DropdownItem as={Link} to="/privacy" target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
-            <Shield size={16} />
-            <span>Политика конфиденциальности и обработка персональных данных</span>
-          </DropdownItem>
-          <DropdownItem as={Link} to="/terms" target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
-            <FileText size={16} />
-            <span>Пользовательское соглашение</span>
           </DropdownItem>
           <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 0' }} />
           <DropdownItem className="danger" onClick={handleLogout}>

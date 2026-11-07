@@ -1,0 +1,226 @@
+{
+  "scenario": "pretense_labor_settlement",
+  "composition": "clause_document",
+  "intake_only_fields": [],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "employment": "sentence",
+    "dismissal": "sentence",
+    "wages": "phrase",
+    "debt_period": "phrase",
+    "amount": "auto",
+    "evidence": "phrase",
+    "previous_contact": "sentence",
+    "requests": "sentence",
+    "payment": "phrase",
+    "contacts": "sentence",
+    "attachments": "list",
+    "date": "auto",
+    "signature": "requisite",
+    "legal_basis": "sentence"
+  },
+  "version": 8,
+  "schema_version": 4,
+  "coverage": "structured",
+  "source": "Самостоятельная предметная форма по нормативным источникам и открытым официальным образцам",
+  "usage_basis": "Самостоятельная редакция. Исходные образцы используются для проверки состава сведений, а не как факты пользователя.",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-27",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "letter",
+  "source_urls": [
+    "https://www.consultant.ru/document/cons_doc_LAW_34683/"
+  ],
+  "limitations": [
+    "Черновик требует проверки фактов, применимости процедуры, сроков, подсудности и правового обоснования.",
+    "Неизвестные данные обозначаются полями для заполнения; условия и доказательства не предполагаются."
+  ],
+  "blocks": [
+    {
+      "text": "{{recipient}}\nАдрес: {{recipient_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Работник: {{sender}}\nАдрес: {{sender_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{contacts}}",
+      "role": "addressee",
+      "when_field": "contacts",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Требование работодателю о выплате расчёта при увольнении",
+      "role": "title",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Трудовые отношения и причитающиеся выплаты",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{employment}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{dismissal}}",
+      "role": "body",
+      "when_field": "dismissal",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Согласованные условия оплаты труда: {{wages}}.",
+      "role": "body",
+      "when_field": "wages",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Период и состав невыплаченных сумм: {{debt_period}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Основная задолженность работодателя перед работником составляет {{amount}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Подтверждения и обращение к работодателю",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Имеющиеся документы и доказательства: {{evidence}}.",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{previous_contact}}",
+      "role": "body",
+      "when_field": "previous_contact",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Правовое обоснование",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{legal_basis}}",
+      "role": "body",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "На основании изложенного прошу",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{requests}}",
+      "role": "request",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Исполнение денежного требования и направление ответа: {{payment}}.",
+      "role": "body",
+      "when_field": "payment",
+      "when_status": "filled",
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_status": null,
+      "when_value": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "pretense_labor_settlement/v8/template.docx",
+    "schema": "pretense_labor_settlement/v8/schema.json",
+    "template_sha256": "551cbe9b5ac43373f6030fb9b23e8d9a9f899cd45c6e68db22592027436a326a",
+    "schema_sha256": "6aba61607518d77350f2264d95a81467bbd320c117382e5bfd8d98d3908063f8"
+  }
+}

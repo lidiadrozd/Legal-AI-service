@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import styled from 'styled-components';
 import { Upload, FileText, Sparkles, X } from 'lucide-react';
@@ -9,10 +9,10 @@ import { DocumentCard } from '@/components/documents/DocumentCard';
 import { DocumentViewer } from '@/components/documents/DocumentViewer';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUIStore } from '@/store/uiStore';
+import { getApiErrorMessage } from '@/utils/apiError';
 import type {
   AiDocumentType,
   Document,
-  DocumentTemplateMeta,
   GenerateDocumentRequest,
 } from '@/types/document.types';
 
@@ -258,7 +258,7 @@ const Button = styled.button<{ $primary?: boolean }>`
   color: ${({ $primary }) => ($primary ? '#fff' : 'var(--color-text)')};
 `;
 
-type GenerateMode = 'builtin' | 'uploaded' | 'ai';
+type GenerateMode = 'uploaded' | 'ai';
 
 const AI_DOC_TYPES: { value: AiDocumentType | ''; label: string }[] = [
   { value: '', label: '— определить автоматически —' },
@@ -279,21 +279,21 @@ function isUploadedDocx(doc: Document): boolean {
 }
 
 export default function DocumentsPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [generateMode, setGenerateMode] = useState<GenerateMode>('builtin');
+  const [generateMode, setGenerateMode] = useState<GenerateMode>('ai');
   const [uploadedTemplateId, setUploadedTemplateId] = useState('');
   const [docxPlaceholderKeys, setDocxPlaceholderKeys] = useState<string[]>([]);
   const [isScanningPlaceholders, setIsScanningPlaceholders] = useState(false);
-  const [templateKey, setTemplateKey] = useState<GenerateDocumentRequest['template_key']>('statement_of_claim_arbitration');
   const [outputFormat, setOutputFormat] = useState<GenerateDocumentRequest['output_format']>('docx');
   const [filename, setFilename] = useState('document-draft');
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isSuggesting, setIsSuggesting] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
+  const [aiQuestions, setAiQuestions] = useState('');
   const [aiDocType, setAiDocType] = useState<AiDocumentType | ''>('');
   const [aiTitle, setAiTitle] = useState('');
   const addToast = useUIStore((s) => s.addToast);
@@ -303,10 +303,6 @@ export default function DocumentsPage() {
     queryKey: ['documents'],
     queryFn: documentsApi.list,
   });
-  const { data: templates } = useQuery({
-    queryKey: ['document-templates'],
-    queryFn: documentsApi.listTemplates,
-  });
   const { data: chats } = useQuery({
     queryKey: ['chats'],
     queryFn: chatApi.getChats,
@@ -314,25 +310,10 @@ export default function DocumentsPage() {
   });
 
   const { upload, progress, isUploading } = useFileUpload();
-  const selectedTemplate = useMemo(
-    () => templates?.find((t) => t.key === templateKey),
-    [templates, templateKey]
-  );
-
-  useEffect(() => {
-    if (!selectedTemplate) return;
-    setFieldValues((prev) => {
-      const next: Record<string, string> = {};
-      for (const field of selectedTemplate.fields) {
-        next[field.key] = prev[field.key] ?? '';
-      }
-      return next;
-    });
-  }, [selectedTemplate]);
-
   useEffect(() => {
     const chat = searchParams.get('chatId');
     const openGen = searchParams.get('openGenerate');
+    const mode = searchParams.get('mode');
     if (!chat && openGen !== '1') return;
 
     if (chat && /^\d+$/.test(chat)) {
@@ -340,6 +321,7 @@ export default function DocumentsPage() {
     }
     if (openGen === '1') {
       setShowGenerateModal(true);
+      setGenerateMode(mode === 'uploaded' ? 'uploaded' : 'ai');
     }
 
     setSearchParams(
@@ -347,6 +329,7 @@ export default function DocumentsPage() {
         const next = new URLSearchParams(prev);
         next.delete('chatId');
         next.delete('openGenerate');
+        next.delete('mode');
         return next;
       },
       { replace: true },
@@ -363,31 +346,6 @@ export default function DocumentsPage() {
       }
     }
     e.target.value = '';
-  };
-
-  const handleSuggestFromContext = async () => {
-    if (generateMode !== 'builtin') return;
-    try {
-      setIsSuggesting(true);
-      const res = await documentsApi.suggestFields({
-        template_key: templateKey,
-        ...(selectedChatId ? { chat_id: Number(selectedChatId) } : {}),
-      });
-      setFieldValues((prev) => {
-        const next: Record<string, string> = { ...prev };
-        for (const [key, value] of Object.entries(res.suggested)) {
-          if (!(next[key] ?? '').trim()) {
-            next[key] = value;
-          }
-        }
-        return next;
-      });
-      addToast({ type: 'success', message: 'Поля подставлены (пустые ячейки заполнены)' });
-    } catch {
-      addToast({ type: 'error', message: 'Не удалось подставить поля' });
-    } finally {
-      setIsSuggesting(false);
-    }
   };
 
   const handleScanDocxPlaceholders = async () => {
@@ -422,13 +380,14 @@ export default function DocumentsPage() {
     try {
       setIsGenerating(true);
       if (generateMode === 'ai') {
+          setAiQuestions('');
         const prompt = aiPrompt.trim();
         if (prompt.length < 10) {
           addToast({ type: 'error', message: 'Опишите запрос подробнее (минимум 10 символов)' });
           setIsGenerating(false);
           return;
         }
-        const generated = await documentsApi.generateAi({
+        const interview = await documentsApi.startInterview({
           prompt,
           filename: filename.trim() || 'ai-document',
           output_format: outputFormat,
@@ -436,13 +395,16 @@ export default function DocumentsPage() {
           ...(aiDocType ? { document_type: aiDocType } : {}),
           ...(selectedChatId ? { chat_id: Number(selectedChatId) } : {}),
         });
-        await documentsApi.download(generated.document_id, generated.filename);
         setShowGenerateModal(false);
         setAiPrompt('');
         setAiDocType('');
         setAiTitle('');
-        addToast({ type: 'success', message: 'Документ сгенерирован и скачан' });
-        queryClient.invalidateQueries({ queryKey: ['documents'] });
+        setSelectedChatId('');
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
+        if (interview.context_omitted) {
+          addToast({ type: 'info', message: 'Прежний чат недоступен. Подготовка начата по вашему описанию.' });
+        }
+        navigate(`/chat/${interview.chat_id}`);
         return;
       }
       if (generateMode === 'uploaded') {
@@ -469,38 +431,10 @@ export default function DocumentsPage() {
         queryClient.invalidateQueries({ queryKey: ['documents'] });
         return;
       }
-      if (selectedTemplate) {
-        for (const field of selectedTemplate.fields) {
-          const value = fieldValues[field.key] ?? '';
-          if (field.pattern) {
-            const re = new RegExp(field.pattern);
-            if (!re.test(value)) {
-              addToast({
-                type: 'error',
-                message: `Поле "${field.label}" заполнено в неверном формате`,
-              });
-              setIsGenerating(false);
-              return;
-            }
-          }
-        }
-      }
-      const chatIdNum = selectedChatId ? Number(selectedChatId) : undefined;
-      const generated = await documentsApi.generate({
-        template_key: templateKey,
-        filename: filename.trim() || 'generated-document',
-        fields: fieldValues,
-        output_format: outputFormat,
-        template_version: selectedTemplate?.version,
-        ...(chatIdNum ? { chat_id: chatIdNum } : {}),
-      });
-      await documentsApi.download(generated.document_id, generated.filename);
-      setShowGenerateModal(false);
-      setFieldValues({});
-      addToast({ type: 'success', message: 'Документ сгенерирован и скачан' });
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
-    } catch {
-      addToast({ type: 'error', message: 'Ошибка генерации документа' });
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Ошибка генерации документа');
+      if (generateMode === 'ai') setAiQuestions(message);
+      addToast({ type: 'error', message });
     } finally {
       setIsGenerating(false);
     }
@@ -516,7 +450,7 @@ export default function DocumentsPage() {
         <Actions>
           <GenerateBtn onClick={() => setShowGenerateModal(true)}>
             <Sparkles size={16} />
-            Заполнить по шаблону
+            Создать документ
           </GenerateBtn>
           <UploadBtn>
             <Upload size={16} />
@@ -559,7 +493,7 @@ export default function DocumentsPage() {
         <ModalOverlay
           onClick={() => {
             setShowGenerateModal(false);
-            setGenerateMode('builtin');
+            setGenerateMode('ai');
             setUploadedTemplateId('');
             setDocxPlaceholderKeys([]);
           }}
@@ -570,7 +504,7 @@ export default function DocumentsPage() {
               <CloseBtn
                 onClick={() => {
                   setShowGenerateModal(false);
-                  setGenerateMode('builtin');
+                  setGenerateMode('ai');
                   setUploadedTemplateId('');
                   setDocxPlaceholderKeys([]);
                 }}
@@ -587,15 +521,14 @@ export default function DocumentsPage() {
                     const v = e.target.value as GenerateMode;
                     setGenerateMode(v);
                     setDocxPlaceholderKeys([]);
-                    if (v === 'builtin') setUploadedTemplateId('');
+                    if (v === 'ai') setUploadedTemplateId('');
                   }}
                 >
                   <option value="ai">Сгенерировать с ИИ (по описанию)</option>
-                  <option value="builtin">Встроенный шаблон</option>
                   <option value="uploaded">Мой Word (.docx) с плейсхолдерами</option>
                 </Select>
               </Label>
-              {(generateMode === 'builtin' || generateMode === 'ai') && (
+              {generateMode === 'ai' && (
                 <Label>
                   Формат
                   <Select
@@ -640,9 +573,15 @@ export default function DocumentsPage() {
                       style={{ minHeight: 120 }}
                     />
                   </Label>
+                    {aiQuestions && (
+                      <Hint role="status" style={{ whiteSpace: 'pre-wrap' }}>
+                        {aiQuestions}{'\n'}Ваше описание сохранено в форме.
+                      </Hint>
+                    )}
                   <Hint>
-                    ИИ составит черновик по законодательству РФ. Укажите стороны, суммы, даты и суть спора.
-                    Недостающие данные будут отмечены как [плейсхолдеры]. Перед подачей проверьте текст у юриста.
+                    После продолжения откроется чат с уточняющими вопросами. Укажите известные сведения;
+                    неизвестные можно оставить для заполнения позже. Документ собирается по шаблону
+                    с текстом и оформлением. Перед использованием требуется проверка юристом.
                   </Hint>
                   <Label>
                     Контекст из чата (опционально)
@@ -657,20 +596,7 @@ export default function DocumentsPage() {
                   </Label>
                 </>
               )}
-              {generateMode === 'builtin' ? (
-                <>
-                  <Label>
-                    Шаблон
-                    <Select value={templateKey} onChange={(e) => setTemplateKey(e.target.value as GenerateDocumentRequest['template_key'])}>
-                      {templates?.map((tpl: DocumentTemplateMeta) => (
-                        <option key={tpl.key} value={tpl.key}>
-                          {tpl.title}
-                        </option>
-                      ))}
-                    </Select>
-                  </Label>
-                </>
-              ) : generateMode === 'uploaded' ? (
+              {generateMode === 'uploaded' ? (
                 <>
                   <Label>
                     Документ-шаблон (.docx)
@@ -706,53 +632,6 @@ export default function DocumentsPage() {
                 Имя файла
                 <Input value={filename} onChange={(e) => setFilename(e.target.value)} placeholder="my-document" />
               </Label>
-              {generateMode === 'builtin' && (
-                <>
-                  <Label>
-                    Чат (опционально)
-                    <Select value={selectedChatId} onChange={(e) => setSelectedChatId(e.target.value)}>
-                      <option value="">— не использовать —</option>
-                      {chats?.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.title}
-                        </option>
-                      ))}
-                    </Select>
-                  </Label>
-                  <GenerateBtn type="button" onClick={handleSuggestFromContext} disabled={isSuggesting}>
-                    <Sparkles size={16} />
-                    {isSuggesting ? 'Подстановка…' : 'Подставить из выбранного чата'}
-                  </GenerateBtn>
-                </>
-              )}
-              {generateMode === 'builtin' &&
-                selectedTemplate?.fields.map((field) => (
-                  <Label key={field.key}>
-                    {field.label}
-                    {field.pattern && <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>Формат: {field.pattern}</span>}
-                    {field.multiline ? (
-                      <TextArea
-                        value={fieldValues[field.key] ?? ''}
-                        onChange={(e) =>
-                          setFieldValues((prev) => ({
-                            ...prev,
-                            [field.key]: e.target.value,
-                          }))
-                        }
-                      />
-                    ) : (
-                      <Input
-                        value={fieldValues[field.key] ?? ''}
-                        onChange={(e) =>
-                          setFieldValues((prev) => ({
-                            ...prev,
-                            [field.key]: e.target.value,
-                          }))
-                        }
-                      />
-                    )}
-                  </Label>
-                ))}
               {generateMode === 'uploaded' &&
                 docxPlaceholderKeys.map((key) => (
                   <Label key={key}>
@@ -773,7 +652,7 @@ export default function DocumentsPage() {
               <Button
                 onClick={() => {
                   setShowGenerateModal(false);
-                  setGenerateMode('builtin');
+                  setGenerateMode('ai');
                   setUploadedTemplateId('');
                   setDocxPlaceholderKeys([]);
                 }}
@@ -784,10 +663,8 @@ export default function DocumentsPage() {
                 {isGenerating
                   ? 'Генерация...'
                   : generateMode === 'ai'
-                    ? 'Сгенерировать с ИИ'
-                    : generateMode === 'uploaded'
-                      ? 'Заполнить и скачать'
-                      : 'Сгенерировать'}
+                    ? 'Продолжить в чате'
+                    : 'Заполнить и скачать'}
               </Button>
             </ModalFooter>
           </Modal>

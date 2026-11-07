@@ -1,0 +1,230 @@
+{
+  "scenario": "contract_loan",
+  "title": "Договор займа",
+  "family": "contract",
+  "version": 3,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Займодавец",
+      "question": "Какое полное ФИО или наименование у стороны «Займодавец»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес Займодавца",
+      "question": "Какой полный адрес стороны «Займодавец» нужно указать?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_details",
+      "label": "Реквизиты Займодавца",
+      "question": "Какие паспортные данные или реквизиты организации стороны «Займодавец» известны? Неизвестные можно дополнить позже.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Заёмщик",
+      "question": "Какое полное ФИО или наименование у стороны «Заёмщик»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес Заёмщика",
+      "question": "Какой полный адрес стороны «Заёмщик» нужно указать?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_details",
+      "label": "Реквизиты Заёмщика",
+      "question": "Какие паспортные данные или реквизиты организации стороны «Заёмщик» известны?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "amount",
+      "label": "Сумма займа",
+      "question": "Какова сумма займа в рублях?",
+      "kind": "money",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "transfer",
+      "label": "Передача займа",
+      "question": "Когда и каким способом передаются деньги и чем подтверждается передача? Уточните, уже состоялась она или только планируется.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "interest_type",
+      "label": "Условие о процентах",
+      "question": "Стороны согласовали процентный или беспроцентный заём?",
+      "kind": "choice",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": [
+        "процентный",
+        "беспроцентный"
+      ]
+    },
+    {
+      "key": "interest",
+      "label": "Размер и уплата процентов",
+      "question": "Какая ставка, база расчёта и порядок уплаты процентов согласованы?",
+      "kind": "text",
+      "optional": false,
+      "when_field": "interest_type",
+      "when_values": [
+        "процентный"
+      ],
+      "choices": []
+    },
+    {
+      "key": "term",
+      "label": "Срок займа",
+      "question": "Какой срок возврата займа согласован? Укажите известную дату либо согласованное правило определения срока.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "repayment",
+      "label": "Возврат займа",
+      "question": "Как возвращается сумма займа: целиком или по графику, каким способом и по каким реквизитам?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "early_repayment",
+      "label": "Досрочный возврат",
+      "question": "Как стороны согласовали досрочный возврат и уведомление об этом?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "liability",
+      "label": "Ответственность",
+      "question": "Какие условия ответственности за нарушение согласованы? Несогласованные неустойки не добавляются.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "termination",
+      "label": "Изменение и прекращение",
+      "question": "Как стороны согласовали изменение договора и расчёты при его прекращении?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "additional_terms",
+      "label": "Дополнительные условия",
+      "question": "Какие дополнительные условия согласованы? Если обеспечение оформляется отдельно, укажите это. Можно ответить «нет».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения к договору",
+      "question": "Какие приложения стороны включают в договор? Например, опись или техническое задание. Можно ответить «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "place",
+      "label": "Место заключения",
+      "question": "В каком населённом пункте заключается договор?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата договора",
+      "question": "Какую дату заключения договора указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант первой стороны",
+      "question": "Кто подпишет документ от имени стороны «Займодавец»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "counterparty_signature",
+      "label": "Подписант второй стороны",
+      "question": "Кто подпишет документ от имени стороны «Заёмщик»? Укажите ФИО и известные полномочия.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

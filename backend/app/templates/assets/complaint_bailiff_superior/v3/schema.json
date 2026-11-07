@@ -1,0 +1,69 @@
+{
+  "scenario": "complaint_bailiff_superior",
+  "version": 3,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "enforcement": {
+      "format": "phrase"
+    },
+    "official": {
+      "format": "phrase"
+    },
+    "challenged": {
+      "format": "phrase"
+    },
+    "learned_date": {
+      "format": "phrase"
+    },
+    "violation": {
+      "format": "phrase"
+    },
+    "late_reasons": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "4fd30c20807641291cf9e087a82cb8e580bae32f7963b6edb4857f90eff99645",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

@@ -1,0 +1,93 @@
+{
+  "scenario": "claim_divorce",
+  "version": 4,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "phrase"
+    },
+    "marriage": {
+      "format": "phrase"
+    },
+    "children": {
+      "format": "phrase"
+    },
+    "breakdown": {
+      "format": "phrase"
+    },
+    "registry_obstacle": {
+      "format": "phrase"
+    },
+    "restrictions": {
+      "format": "phrase"
+    },
+    "disputes": {
+      "format": "phrase"
+    },
+    "pretrial": {
+      "format": "phrase"
+    },
+    "calculation": {
+      "format": "phrase"
+    },
+    "legal_basis": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "copy_notice": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "27b149a6d7133b4668fd451dae31b12a3becbc365a9a2726de77c8b7e628af6e",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

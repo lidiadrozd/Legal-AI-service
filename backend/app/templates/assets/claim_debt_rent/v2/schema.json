@@ -1,0 +1,130 @@
+{
+  "scenario": "claim_debt_rent",
+  "version": 2,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "requisite"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "requisite"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "sentence"
+    },
+    "agreement": {
+      "format": "sentence"
+    },
+    "property": {
+      "format": "sentence"
+    },
+    "due_date": {
+      "format": "sentence"
+    },
+    "facts": {
+      "format": "sentence"
+    },
+    "pretrial": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "jurisdiction": {
+      "format": "sentence"
+    },
+    "procedure": {
+      "format": "sentence"
+    },
+    "legal_basis": {
+      "format": "sentence"
+    },
+    "calculation": {
+      "format": "sentence"
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "payment_details": {
+      "format": "sentence"
+    },
+    "copy_notice": {
+      "format": "sentence"
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "other_participants"
+    },
+    "branch_3": {
+      "field": "party_details"
+    },
+    "branch_5": {
+      "field": "fee"
+    },
+    "branch_12": {
+      "field": "pretrial"
+    },
+    "branch_13": {
+      "field": "pretrial"
+    },
+    "branch_14": {
+      "field": "jurisdiction"
+    },
+    "branch_15": {
+      "field": "procedure"
+    },
+    "branch_18": {
+      "field": "calculation"
+    },
+    "branch_21": {
+      "field": "payment_details"
+    },
+    "branch_22": {
+      "field": "copy_notice"
+    }
+  },
+  "blocks_sha256": "e2e96784112e96d3b4a0b72faf7a2b2f09d92deb49ed3e7642b24e57d6ad22bb",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

@@ -14,21 +14,28 @@ export function useSSE() {
 
   const stream = useCallback(
     async (request: SendMessageRequest) => {
-      if (isStreaming) return;
+      if (useChatStore.getState().isStreaming) return;
 
       abortRef.current = new AbortController();
       startStreaming();
 
       await chatApi.sendStream(
         request,
-        (chunk) => appendStreamChunk(chunk),
-        (msgId) => finishStreaming(msgId),
+        (chunk) => {
+          if (useChatStore.getState().activeChat?.id === request.chat_id) appendStreamChunk(chunk);
+        },
+        (msgId) => {
+          if (useChatStore.getState().activeChat?.id === request.chat_id) finishStreaming(msgId);
+        },
         (err) => {
-          finishStreaming('');
+          if (useChatStore.getState().activeChat?.id === request.chat_id) finishStreaming('');
           addToast({ message: err, type: 'error' });
         },
         abortRef.current.signal
       );
+      // Refresh subjects after server-side classification or clarification.
+      const chats = await chatApi.getChats().catch(() => null);
+      if (chats) useChatStore.getState().setChats(chats);
     },
     [isStreaming, startStreaming, appendStreamChunk, finishStreaming, addToast]
   );

@@ -74,10 +74,29 @@ async def get_chats(
     result = await db.execute(
         select(ChatSession)
         .where(ChatSession.user_id == current_user.id)
+        .order_by(ChatSession.created_at.desc(),ChatSession.id.desc())
         .offset(skip)
         .limit(limit)
     )
     chats = result.scalars().all()
+    from app.services.chat_titles import generic_title, update_automatic_title, suggest_chat_title
+    generic=[chat for chat in chats if generic_title(chat.title)]
+    if generic:
+        ids=[chat.id for chat in generic]
+        messages=(await db.execute(select(Message.chat_id,Message.content).where(
+            Message.chat_id.in_(ids),Message.role=='user').order_by(Message.id))).all()
+        first={}
+        for identity,content in messages:first.setdefault(identity,content)
+        changed=False
+        for chat in generic:
+            if chat.document_workflow:
+                state=dict(chat.document_workflow)
+                update_automatic_title(chat,state,first.get(chat.id,''))
+                chat.document_workflow=state
+                changed=True
+            elif first.get(chat.id):
+                chat.title=suggest_chat_title(text=first[chat.id]);changed=True
+        if changed:await db.commit()
     return [ChatResponse.model_validate(chat) for chat in chats]
 
 @router.get("/{chat_id}/history", response_model=List[MessageSchema])
@@ -100,7 +119,7 @@ async def get_chat_history(
     messages_result = await db.execute(
         select(Message)
         .where(Message.chat_id == chat_id)
-        .order_by(Message.created_at.asc())
+        .order_by(Message.created_at.asc(), Message.id.asc())
     )
     messages = messages_result.scalars().all()
     return [MessageSchema.model_validate(message) for message in messages]
@@ -149,6 +168,8 @@ async def update_chat_title(
         raise HTTPException(status_code=404, detail="Chat not found")
 
     chat_obj.title = title[:200]
+    if chat_obj.document_workflow:
+        chat_obj.document_workflow={**chat_obj.document_workflow,'title_manual':True}
     db.add(chat_obj)
     await db.commit()
     await db.refresh(chat_obj)
@@ -195,11 +216,9 @@ async def send_message_stream(
 
         # Авто-тайтл: если чат ещё не назван, берём краткий смысл из первого сообщения.
         try:
-            if not (chat_obj.title or "").strip() or (chat_obj.title or "").strip().lower() == "новый чат":
-                title = (message_in.content or "").strip().replace("\n", " ")
-                if len(title) > 64:
-                    title = title[:64].rstrip() + "…"
-                chat_obj.title = title or "Новый чат"
+            from app.services.chat_titles import generic_title, suggest_chat_title
+            if not chat_obj.document_workflow and generic_title(chat_obj.title):
+                chat_obj.title = suggest_chat_title(text=message_in.content)
                 db.add(chat_obj)
                 await db.commit()
         except Exception as title_error:
@@ -275,7 +294,7 @@ async def send_message_stream(
             history_result = await db.execute(
                 select(Message)
                 .where(Message.chat_id == chat_id)
-                .order_by(Message.created_at.desc())
+                .order_by(Message.created_at.desc(), Message.id.desc())
                 .limit(history_limit)
             )
             history_messages = list(reversed(history_result.scalars().all()))
@@ -285,11 +304,37 @@ async def send_message_stream(
                 if (m.content or "").strip()
             )
 
-            nlp_result = await _nlp_service.generate_response(
-                user_query=message_in.content,
-                context=context,
-                chat_history=chat_history,
-            )
+            # Lock the interview row while applying a turn. Persistent JSON, rather
+            # than the truncated history, is the source of previously supplied facts.
+            workflow = chat_obj.document_workflow
+            if workflow and workflow.get("phase") != "cancelled":
+                from app.services.document_workflow import file_request_kind, facts_digest_for_interview
+                from app.services.document_conversation import conversational_interview_turn
+                from app.services.nlp_service import NLPGenerateResult
+                locked = (await db.execute(select(ChatSession).where(ChatSession.id == chat_id)
+                                           .with_for_update().execution_options(populate_existing=True))).scalar_one()
+                prior_turns = (await db.execute(select(Message.content).where(
+                    Message.chat_id == chat_id, Message.role == "user"
+                ).order_by(Message.created_at.asc(), Message.id.asc()))).scalars().all()
+                previous_ready = locked.document_workflow.get("phase") == "ready"
+                previous_facts = facts_digest_for_interview(locked.document_workflow)
+                workflow, text, usage = await conversational_interview_turn(
+                    locked.document_workflow, message_in.content, prior_user_turns=list(prior_turns))
+                from app.services.chat_titles import update_automatic_title
+                update_automatic_title(locked,workflow,message_in.content)
+                from app.api.documents import interview_file_reply
+                locked.document_workflow = workflow
+                if (not previous_ready or file_request_kind(message_in.content)
+                        or facts_digest_for_interview(workflow) != previous_facts):
+                    text = await interview_file_reply(locked, current_user.id, db, text)
+                await db.execute(update(ChatSession).where(ChatSession.id == chat_id).values(document_workflow=locked.document_workflow,title=locked.title))
+                nlp_result = NLPGenerateResult(text=text, cached=False, usage=usage)
+            else:
+                nlp_result = await _nlp_service.generate_response(
+                    user_query=message_in.content,
+                    context=context,
+                    chat_history=chat_history,
+                )
             full_response = nlp_result.text
             await record_llm_usage(
                 db,
@@ -299,6 +344,7 @@ async def send_message_stream(
                 model=settings.GIGACHAT_MODEL,
                 cached=nlp_result.cached,
                 usage=nlp_result.usage,
+                commit=False,
             )
 
             # Persist the answer and its cited references before signalling completion.

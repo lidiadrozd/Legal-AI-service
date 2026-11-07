@@ -1,0 +1,112 @@
+{
+  "scenario": "pretense_consumer_late_delivery",
+  "version": 11,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "purchase": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "payment_evidence": {
+      "format": "phrase"
+    },
+    "consumer_status": {
+      "format": "phrase"
+    },
+    "delivery_due": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "delivery_status": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "facts": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "seller_response": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "additional_claims": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "payment": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "contacts"
+    },
+    "branch_12": {
+      "field": "facts"
+    },
+    "branch_13": {
+      "field": "seller_response"
+    },
+    "branch_14": {
+      "field": "seller_response"
+    },
+    "branch_15": {
+      "field": "additional_claims"
+    },
+    "branch_20": {
+      "field": "payment"
+    }
+  },
+  "blocks_sha256": "4b297498bce7b4206c73b0a52b99029470f0a133f0865a676f29c8e4ecfa40f3",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

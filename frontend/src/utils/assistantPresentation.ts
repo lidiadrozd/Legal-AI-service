@@ -5,6 +5,20 @@ const labels: Record<string, string> = {
   арендодатель: 'Арендодатель', арендатор: 'Арендатор',
 };
 
+/** Fix sentence starts while preserving links, code and legal/address abbreviations. */
+export function capitalizeSentences(text: string): string {
+  return text.split(/(```[\s\S]*?```|`[^`\n]+`|https?:\/\/[^\s)]+|\]\([^\n)]+\))/g)
+    .map((part, index) => {
+      if (index % 2) return part;
+      return part.replace(/(^|\n[\t ]*(?:[-*#>]\s+|\d+[.)]\s+)?|[.!?][»”"')]*\s+)([«„"'(*_]*)([а-яёa-z])/g,
+        (match, boundary: string, quotes: string, letter: string, offset: number) => {
+          const prefix = part.slice(0, offset + boundary.length);
+          if (boundary.includes('.') && /(?:^|[^а-яёa-z])(?:e\.g|i\.e|ст|ч|п|подп|абз|г|ул|д|кв|им|руб|тыс|т\.\s*д|т\.\s*п)\.\s*$/iu.test(prefix)) return match;
+          return boundary + quotes + letter.toUpperCase();
+        });
+    }).join('');
+}
+
 /** Display legacy replies without modifying their stored text or legal references. */
 export function presentAssistantMessage(content: string): string {
   let text = content.replace(/(^|\n)\s*Не является юридической консультацией\.\s*/g, '$1').trim();
@@ -31,14 +45,12 @@ export function presentAssistantMessage(content: string): string {
       // Incomplete streaming JSON is left intact until the object is complete.
     }
   }
-  const levels: Record<string, string> = { high: 'высокая', medium: 'средняя', low: 'низкая' };
-  return text.replace(/\bconfidence\s*[:=]\s*(high|medium|low)\b/gi,
-    (_, level: string) => `\n\n**Уверенность:** ${levels[level.toLowerCase()]}`)
+  return capitalizeSentences(text
+    .replace(/(?:\*{1,2})?\bconfidence\s*[:=]\s*(?:high|medium|low)(?:\*{1,2})?/gi, '')
+    .replace(/\*{0,2}(?:Уверенность|Достоверность)\*{0,2}\s*:\*{0,2}\s*(?:высокая|средняя|низкая)\*{0,2}[^\S\n]*\.?/gi, '')
     .replace(/\[РЕКОМЕНДАЦИЯ\]\s*/gi, '\n\n**Рекомендация:** ')
-    .replace(/\*{0,2}(?:Уверенность|Достоверность)\*{0,2}\s*:\*{0,2}\s*(высокая|средняя|низкая)/gi,
-      (_, level: string) => `\n\n**Уверенность:** ${level.toLowerCase()}`)
     .replace(/\*{0,2}Рекомендация\*{0,2}\s*:\*{0,2}\s*/gi, '\n\n**Рекомендация:** ')
     // These markers remain in the backend text for verified source tracking.
     .replace(/[ \t]*(?:\*{1,2})?\[Источник\s+[1-9]\d*\](?:\*{1,2})?/gi, '')
-    .replace(/\n{3,}/g, '\n\n').trim();
+    .replace(/\n{3,}/g, '\n\n').trim());
 }

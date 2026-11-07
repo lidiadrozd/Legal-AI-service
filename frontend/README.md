@@ -1,5 +1,3 @@
-Актуальная инструкция по серверу и публикации: [deploy-notes.md](../docs/deploy-notes.md).
-
 # ИИ-Юрист — Фронтенд приложения
 
 > Веб-интерфейс платформы юридических консультаций на базе ИИ.  
@@ -367,7 +365,7 @@ npm run format        # prettier --write src/
 # URL бэкенда (используется Vite proxy в dev-режиме)
 VITE_API_BASE_URL=http://localhost:8000
 
-# Для production по умолчанию используется /api того же сайта; отдельный API — только при необходимости
+# Для production — абсолютный URL API
 # VITE_API_BASE_URL=https://api.your-domain.ru
 ```
 
@@ -504,7 +502,7 @@ interface UIState {
 
 | Меры защиты | Реализация |
 |---|---|
-| JWT хранение | `localStorage` с «Запомнить меня», иначе `sessionStorage`; при запуске сессия проверяется через `/auth/me`, при выходе токены удаляются |
+| JWT хранение | `localStorage` с очисткой при выходе (не cookie, т.к. нужен Authorization header) |
 | Auto-refresh | Interceptor Axios при 401: `POST /auth/refresh` → повтор запроса |
 | RBAC | `ProtectedRoute` + `AdminRoute` — проверка токена и роли на каждом маршруте |
 | XSS | Никаких `dangerouslySetInnerHTML` без санитизации |
@@ -553,3 +551,4 @@ Recharts-графики:
 - Линейный: использование токенов LLM
 
 ---
+

@@ -1,0 +1,155 @@
+{
+  "scenario": "contract_housing_addendum",
+  "title": "Дополнительное соглашение к договору найма жилого помещения",
+  "family": "contract",
+  "version": 4,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Наймодатель",
+      "question": "Какое полное ФИО или наименование у стороны «Наймодатель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Наймодатель»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Наниматель",
+      "question": "Какое полное ФИО или наименование у стороны «Наниматель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Наниматель»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "agreement",
+      "label": "Изменяемый договор",
+      "question": "Укажите дату, номер и стороны договора найма, к которому составляем соглашение.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "changed_clauses",
+      "label": "Изменяемые пункты",
+      "question": "Какие именно пункты договора стороны изменяют или дополняют?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "new_terms",
+      "label": "Согласованная новая редакция",
+      "question": "Какова согласованная новая редакция изменяемых условий? Суммы, даты и обязанности укажите точно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "effective_date",
+      "label": "Вступление изменений в силу",
+      "question": "С какой даты стороны согласовали действие изменений?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "copies",
+      "label": "Экземпляры соглашения",
+      "question": "Сколько экземпляров стороны оформляют и кому они передаются?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Наймодатель»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "counterparty_signature",
+      "label": "Подписант второй стороны",
+      "question": "Кто подпишет документ от имени стороны «Наниматель»? Укажите ФИО и известные полномочия.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

@@ -1,5 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuthStore } from '@/store/authStore';
+import { Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { AdminRoute } from '@/components/common/AdminRoute';
@@ -45,7 +44,6 @@ function Loading() {
 }
 
 export function AppRouter() {
-  const { isAuthenticated, isConsentGiven } = useAuthStore();
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
@@ -62,9 +60,7 @@ export function AppRouter() {
         </Route>
 
         <Route element={<AuthLayout />}>
-          <Route path="/login" element={isAuthenticated
-            ? <Navigate to={isConsentGiven ? '/chat' : '/consent'} replace />
-            : <LoginPage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />

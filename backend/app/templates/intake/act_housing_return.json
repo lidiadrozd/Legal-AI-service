@@ -1,0 +1,205 @@
+{
+  "scenario": "act_housing_return",
+  "title": "Акт возврата жилого помещения и имущества",
+  "family": "act",
+  "version": 4,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Наймодатель",
+      "question": "Какое полное ФИО или наименование у стороны «Наймодатель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Наймодатель»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Наниматель",
+      "question": "Какое полное ФИО или наименование у стороны «Наниматель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Наниматель»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "agreement",
+      "label": "Договор найма",
+      "question": "К какому договору найма составляется акт? Укажите дату, номер при наличии и стороны.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "property",
+      "label": "Жилое помещение",
+      "question": "Какой полный адрес передаваемого жилья?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "property_description",
+      "label": "Описание жилья",
+      "question": "Каковы площадь, число комнат и известные характеристики жилья?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "handover_date",
+      "label": "Дата фактической передачи",
+      "question": "Когда жильё фактически возвращается?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "condition",
+      "label": "Состояние помещения",
+      "question": "В каком состоянии находятся помещение, оборудование и отделка? Отдельно назовите обнаруженные недостатки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "inventory",
+      "label": "Передаваемое имущество",
+      "question": "Какое имущество передаётся и каково состояние каждой вещи?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "meters",
+      "label": "Показания приборов учёта",
+      "question": "Какие номера счётчиков и показания на дату передачи зафиксированы?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "keys",
+      "label": "Ключи и средства доступа",
+      "question": "Сколько комплектов ключей и других средств доступа передаётся?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "claims",
+      "label": "Замечания сторон",
+      "question": "Есть ли замечания к передаче, состоянию или комплектности? Отсутствие претензий указываем только по вашему подтверждению.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "settlement",
+      "label": "Расчёты и обеспечительный платёж",
+      "question": "Какие расчёты проведены при возврате? Укажите отдельно возврат обеспечительного платежа, удержания и спорные суммы.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Наймодатель»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "counterparty_signature",
+      "label": "Подписант второй стороны",
+      "question": "Кто подпишет документ от имени стороны «Наниматель»? Укажите ФИО и известные полномочия.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

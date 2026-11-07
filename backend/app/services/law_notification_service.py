@@ -81,20 +81,17 @@ def _format_law_change_message(
     )
 
     link = (change.source_url or "").strip()
-
     lines = [
         f"По теме «{topic_label}» обнаружено изменение законодательства.",
-        f" {change_title}",
-        f" Дата: {date_str}" if date_str else None,
-        f" Источник: {link}" if link else None,
+        f"📄 {change_title}",
+        f"📅 Дата: {date_str}" if date_str else None,
+        f"🔗 Источник: {link}" if link else None,
         "",
         "Что изменилось:",
         description,
     ]
+    return "\n".join(line for line in lines if line is not None).strip()
 
-    return "\n".join(
-        line for line in lines if line is not None
-    ).strip()
 
 
 def _norm_label(reference) -> str:

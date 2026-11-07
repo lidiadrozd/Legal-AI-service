@@ -1,0 +1,165 @@
+{
+  "scenario": "complaint_bailiff_superior",
+  "title": "Жалоба в порядке подчинённости на постановление, действия или бездействие судебного пристава",
+  "family": "complaint",
+  "version": 4,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Заявитель и его положение в исполнительном производстве",
+      "question": "Какое полное ФИО или наименование у стороны «Заявитель и его положение в исполнительном производстве»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Заявитель и его положение в исполнительном производстве»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Вышестоящее должностное лицо ФССП",
+      "question": "Какое полное ФИО или наименование у стороны «Вышестоящее должностное лицо ФССП»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Вышестоящее должностное лицо ФССП»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "enforcement",
+      "label": "Исполнительное производство",
+      "question": "Укажите номер производства, взыскателя, должника и подразделение приставов.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "official",
+      "label": "Обжалуемое должностное лицо",
+      "question": "Укажите ФИО, должность и подразделение пристава, чьи действия обжалуются.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "challenged",
+      "label": "Предмет обжалования",
+      "question": "Какое постановление, действие или бездействие обжалуете? Укажите даты и реквизиты.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "learned_date",
+      "label": "Дата получения сведений",
+      "question": "Когда и как узнали об обжалуемом постановлении, действии или бездействии?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "violation",
+      "label": "Нарушение прав",
+      "question": "Какие права нарушены и почему считаете действия или бездействие неправомерными?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "late_reasons",
+      "label": "Причины пропуска срока",
+      "question": "Если срок подачи мог быть пропущен, какие причины и подтверждения имеются? Если нет, так и укажите.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "requests",
+      "label": "Требования заявителя",
+      "question": "Какое решение в пределах полномочий вышестоящего должностного лица просите принять?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Заявитель и его положение в исполнительном производстве»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

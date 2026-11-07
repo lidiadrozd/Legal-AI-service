@@ -1,0 +1,81 @@
+{
+  "scenario": "motion_restore_term",
+  "version": 4,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "phrase"
+    },
+    "case_number": {
+      "format": "phrase"
+    },
+    "case_subject": {
+      "format": "phrase"
+    },
+    "missed_action": {
+      "format": "phrase"
+    },
+    "deadline": {
+      "format": "phrase"
+    },
+    "reasons": {
+      "format": "phrase"
+    },
+    "evidence": {
+      "format": "phrase"
+    },
+    "concurrent_action": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "copy_notice": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "8bc63264532f6055c0241bafbeec7ce9520eefb92eef2a6f9955b98999632bbb",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

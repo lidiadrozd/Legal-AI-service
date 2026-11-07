@@ -1,0 +1,129 @@
+{
+  "scenario": "claim_alimony_penalty",
+  "version": 8,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "requisite"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "sender_details": {
+      "format": "requisite"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "requisite"
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "claim_price": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "sentence"
+    },
+    "support_basis": {
+      "format": "phrase"
+    },
+    "children": {
+      "format": "phrase"
+    },
+    "arrears_decision": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "period_payments": {
+      "format": "phrase"
+    },
+    "fault": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "penalty_calculation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "pretrial": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "calculation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "sender_details"
+    },
+    "branch_3": {
+      "field": "contacts"
+    },
+    "branch_5": {
+      "field": "party_details"
+    },
+    "branch_6": {
+      "field": "other_participants"
+    },
+    "branch_17": {
+      "field": "pretrial"
+    },
+    "branch_18": {
+      "field": "pretrial"
+    },
+    "branch_19": {
+      "field": "calculation"
+    },
+    "branch_20": {
+      "field": "calculation"
+    }
+  },
+  "blocks_sha256": "5e8743145f642a226d3d61a38b2160736652dfd5e32270ccc75941d5f4cae447",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

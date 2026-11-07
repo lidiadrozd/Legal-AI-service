@@ -1,0 +1,252 @@
+{
+  "scenario": "claim_alimony_penalty",
+  "title": "Исковое заявление о взыскании неустойки за просрочку уплаты алиментов",
+  "family": "claim",
+  "version": 5,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Истец — получатель алиментов",
+      "question": "Какое полное ФИО или наименование у стороны «Истец — получатель алиментов»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Истец — получатель алиментов»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_details",
+      "label": "Реквизиты заявителя",
+      "question": "Какие дату и место рождения, ИНН, СНИЛС или паспортные данные заявителя указываем? Для организации — ИНН и ОГРН; неизвестное можно дополнить позднее.",
+      "kind": "text",
+      "optional": false
+    },
+    {
+      "key": "recipient",
+      "label": "Ответчик — плательщик алиментов",
+      "question": "Какое полное ФИО или наименование у стороны «Ответчик — плательщик алиментов»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Ответчик — плательщик алиментов»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "court",
+      "label": "Наименование суда и адрес",
+      "question": "В какой суд направляем документ? Если суд не определён, оставим название для проверки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "party_details",
+      "label": "Дополнительные сведения об участниках",
+      "question": "Какие дата и место рождения, место работы и идентификатор ответчика вам известны? Данные истца укажите отдельно; неизвестное не угадываем.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "support_basis",
+      "label": "Основание алиментных обязательств",
+      "question": "Каким судебным актом или нотариальным соглашением установлены алименты? Укажите реквизиты и условия ответственности по соглашению, если оно есть.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "children",
+      "label": "Получатели содержания",
+      "question": "На содержание каких детей или иных лиц установлены алименты?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "arrears_decision",
+      "label": "Расчёт задолженности приставом",
+      "question": "Есть ли постановление пристава о задолженности? Укажите дату, номер, период и сумму.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "period_payments",
+      "label": "Помесячные обязательства и платежи",
+      "question": "Какие суммы и в какие даты подлежали уплате и фактически уплачены? Для расчёта нужны отдельные обязательства, а не только общая сумма долга.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "fault",
+      "label": "Вина в просрочке",
+      "question": "Какие обстоятельства подтверждают вину плательщика в просрочке и какие объяснения он даёт?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "penalty_calculation",
+      "label": "Отдельный расчёт неустойки",
+      "question": "Как рассчитана неустойка по каждому платежу: сумма, срок, дни просрочки, ставка, частичные платежи и итог? Если расчёта нет, оставим поле для проверки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "pretrial",
+      "label": "Досудебное обращение",
+      "question": "Обращались ли вы к ответчику до суда? Укажите дату, способ, подтверждение и ответ либо отсутствие обращения.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "calculation",
+      "label": "Расчёт требований",
+      "question": "Из каких отдельных сумм и периодов состоят требования? Основной долг, дополнительные начисления и расходы укажите раздельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование для проверки",
+      "question": "Правовое обоснование будет проверено отдельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "fee",
+      "label": "Государственная пошлина и льготы для проверки",
+      "question": "Размер пошлины или основание освобождения требует отдельной проверки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "requests",
+      "label": "Требования к суду",
+      "question": "Что именно просите у суда? Перечислите каждое требование отдельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "other_participants",
+      "label": "Другие участники",
+      "question": "Есть ли третьи лица или другие участники дела? Укажите роль, имя и адрес либо ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "copy_notice",
+      "label": "Направление копий участникам",
+      "question": "Направлены ли другим участникам копии этого документа и отсутствующих у них приложений? Укажите подтверждение или что отправка ещё предстоит.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Истец — получатель алиментов»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "claim_price",
+      "label": "Цена иска",
+      "question": "Цена иска определяется из заявленных денежных требований; расчёт выполняется отдельно.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

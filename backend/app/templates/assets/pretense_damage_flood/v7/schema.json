@@ -1,0 +1,101 @@
+{
+  "scenario": "pretense_damage_flood",
+  "version": 7,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "property": {
+      "format": "phrase"
+    },
+    "property_right": {
+      "format": "phrase"
+    },
+    "event": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "responsibility": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "damage": {
+      "format": "phrase"
+    },
+    "restoration": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "evidence": {
+      "format": "phrase"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "previous_contact": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "payment": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "contacts"
+    },
+    "branch_14": {
+      "field": "previous_contact"
+    },
+    "branch_19": {
+      "field": "payment"
+    }
+  },
+  "blocks_sha256": "19341f1b7cf783b8965fe5c188c5de5351629f7aa4cad85206b30fc327c9a0d9",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

@@ -1,0 +1,96 @@
+{
+  "scenario": "claim_rent_deposit",
+  "version": 4,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "phrase"
+    },
+    "agreement": {
+      "format": "phrase"
+    },
+    "property": {
+      "format": "phrase"
+    },
+    "deposit_payment": {
+      "format": "phrase"
+    },
+    "deposit_terms": {
+      "format": "phrase"
+    },
+    "return_facts": {
+      "format": "phrase"
+    },
+    "withholding": {
+      "format": "phrase"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "pretrial": {
+      "format": "phrase"
+    },
+    "calculation": {
+      "format": "phrase"
+    },
+    "legal_basis": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "copy_notice": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "2cad3bd9c602bceb3f18631a44deb7b48ff2067fc4570a5675913d3bf58692d8",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

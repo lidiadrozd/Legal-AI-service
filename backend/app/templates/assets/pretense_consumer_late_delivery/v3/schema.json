@@ -1,0 +1,81 @@
+{
+  "scenario": "pretense_consumer_late_delivery",
+  "version": 3,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "purchase": {
+      "format": "phrase"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "payment_evidence": {
+      "format": "phrase"
+    },
+    "consumer_status": {
+      "format": "phrase"
+    },
+    "delivery_due": {
+      "format": "phrase"
+    },
+    "delivery_status": {
+      "format": "phrase"
+    },
+    "facts": {
+      "format": "phrase"
+    },
+    "seller_response": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "additional_claims": {
+      "format": "phrase"
+    },
+    "payment": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "b71236d0347078e43e43041f95e1ceab2a72c4a3355d423c5a06c6be005a7d5e",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

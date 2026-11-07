@@ -1,0 +1,71 @@
+{
+  "scenario": "pretense_debt_rent",
+  "version": 1,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "agreement": {
+      "format": "sentence"
+    },
+    "property": {
+      "format": "sentence"
+    },
+    "due_date": {
+      "format": "sentence"
+    },
+    "facts": {
+      "format": "sentence"
+    },
+    "amount": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "response_term": {
+      "format": "sentence"
+    },
+    "payment_details": {
+      "format": "sentence"
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "53f870d8c0192f6dbf1b23bac9fe72eb98ab056de2b207cf642692bba9dd757b",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

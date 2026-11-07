@@ -1,0 +1,15 @@
+const { readFileSync } = require('node:fs');
+const assert = require('node:assert/strict');
+const ts = require('typescript');
+const source = readFileSync(new URL('../src/utils/assistantPresentation.ts', `file://${__filename.replaceAll('\\', '/')}`), 'utf8');
+const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+const compiled = { exports: {} };
+new Function('exports', 'module', output)(compiled.exports, compiled);
+const { capitalizeSentences, presentAssistantMessage } = compiled.exports;
+assert.equal(capitalizeSentences('укажите адрес. затем продолжим? да! хорошо.'), 'Укажите адрес. Затем продолжим? Да! Хорошо.');
+assert.equal(capitalizeSentences('**первый вопрос?**\n- следующий пункт\n1. ещё пункт'), '**Первый вопрос?**\n- Следующий пункт\n1. Ещё пункт');
+assert.equal(capitalizeSentences('согласно ст. 140 ТК РФ. это срок.'), 'Согласно ст. 140 ТК РФ. Это срок.');
+assert.equal(capitalizeSentences('адрес: г. екатеринбург, ул. мира, д. 5. проверьте.'), 'Адрес: г. екатеринбург, ул. мира, д. 5. Проверьте.');
+assert.equal(capitalizeSentences('`field_name` https://example.ru/test.a \nпродолжим.'), '`field_name` https://example.ru/test.a \nПродолжим.');
+assert.equal(presentAssistantMessage('кто продавец?'), 'Кто продавец?');
+console.log('6 assistant presentation checks passed');

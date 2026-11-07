@@ -1,0 +1,165 @@
+{
+  "scenario": "power_of_attorney",
+  "title": "Доверенность на внесудебные действия",
+  "family": "authority",
+  "version": 4,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Доверитель",
+      "question": "Какое полное ФИО или наименование у стороны «Доверитель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Доверитель»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Представитель",
+      "question": "Какое полное ФИО или наименование у стороны «Представитель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Представитель»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "principal_details",
+      "label": "Реквизиты доверителя",
+      "question": "Какие дата рождения и паспортные данные доверителя известны? Для организации укажите регистрационные данные и полномочия подписанта.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "agent_details",
+      "label": "Реквизиты представителя",
+      "question": "Какие дата рождения и паспортные данные представителя известны?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "place",
+      "label": "Место совершения доверенности",
+      "question": "В каком населённом пункте выдаётся доверенность?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "powers",
+      "label": "Конкретные полномочия",
+      "question": "Какие конкретные действия и перед какими лицами или органами поручаете представителю? Специальные полномочия укажите отдельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "validity",
+      "label": "Срок действия",
+      "question": "На какой срок выдаётся доверенность?",
+      "kind": "duration",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "substitution",
+      "label": "Передоверие",
+      "question": "Предусмотрено ли право передоверия и на каких условиях?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "form_check",
+      "label": "Необходимое удостоверение",
+      "question": "Для каких действий предъявят доверенность и известно ли требование нотариального или иного удостоверения? Неизвестное оставим для проверки.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Доверитель»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}

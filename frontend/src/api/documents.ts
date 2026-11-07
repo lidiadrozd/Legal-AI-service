@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { startInterviewWithContextRecovery, type StartInterviewResult } from '@/utils/documentInterview';
 import type {
   Document,
   DocumentPlaceholdersResponse,
@@ -12,6 +13,21 @@ import type {
 } from '@/types/document.types';
 
 export const documentsApi = {
+  startInterview: (payload: GenerateAiDocumentRequest): Promise<StartInterviewResult> =>
+    startInterviewWithContextRecovery(payload, async (request) => {
+      const response = await apiClient.post<StartInterviewResult>('/documents/interviews', request, { timeout: 300_000 });
+      return response.data;
+    }),
+
+  getInterview: async (chatId: string): Promise<{ phase: string; scenario: string | null; document_title?: string; text_package?: unknown; unsupported_subject?: boolean }> => {
+    const response = await apiClient.get(`/documents/interviews/${chatId}`);
+    return response.data;
+  },
+
+  exportInterview: async (chatId: string): Promise<UploadDocumentResponse> => {
+    const response = await apiClient.post<UploadDocumentResponse>(`/documents/interviews/${chatId}/export`);
+    return response.data;
+  },
   upload: async (
     file: File,
     onProgress?: (percent: number) => void

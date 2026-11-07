@@ -1,0 +1,68 @@
+{
+  "scenario": "power_of_attorney",
+  "version": 4,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "principal_details": {
+      "format": "phrase"
+    },
+    "agent_details": {
+      "format": "phrase"
+    },
+    "place": {
+      "format": "phrase"
+    },
+    "powers": {
+      "format": "phrase"
+    },
+    "validity": {
+      "format": "phrase"
+    },
+    "substitution": {
+      "format": "phrase"
+    },
+    "form_check": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "3bcc28cda85f539b47fa4f4a8be593f805b05d8acfd4eab8831195bd072e4c46",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

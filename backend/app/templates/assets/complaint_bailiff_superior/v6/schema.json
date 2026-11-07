@@ -1,0 +1,85 @@
+{
+  "scenario": "complaint_bailiff_superior",
+  "version": 6,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "recipient": {
+      "format": "requisite"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "requisite"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "sentence"
+    },
+    "enforcement": {
+      "format": "phrase"
+    },
+    "official": {
+      "format": "phrase"
+    },
+    "challenged": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "learned_date": {
+      "format": "phrase"
+    },
+    "violation": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "late_reasons": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "legal_basis": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "requests": {
+      "format": "sentence",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "attachments": {
+      "format": "plain",
+      "preserve_list_numbers": true,
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "requisite"
+    }
+  },
+  "conditions": {
+    "branch_2": {
+      "field": "contacts"
+    },
+    "branch_10": {
+      "field": "late_reasons"
+    }
+  },
+  "blocks_sha256": "02b4f60e0fa4bc1e9be5cbffbfb00c397cde73418038e9abd72229c11bdd103a",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

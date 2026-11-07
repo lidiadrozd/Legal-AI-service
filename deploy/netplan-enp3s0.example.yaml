@@ -1,0 +1,10 @@
+# Скопировать на ВМ (после проверки имени интерфейса: ip -br addr):
+#   sudo cp deploy/netplan-enp3s0.example.yaml /etc/netplan/01-legalai.yaml
+#   sudo chmod 600 /etc/netplan/01-legalai.yaml
+#   sudo netplan apply
+network:
+  version: 2
+  ethernets:
+    enp3s0:
+      dhcp4: true
+      optional: false

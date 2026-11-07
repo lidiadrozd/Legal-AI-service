@@ -2,6 +2,7 @@ import styled, { keyframes } from 'styled-components';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { presentAssistantMessage } from '@/utils/assistantPresentation';
+import { DocumentDownloadLink } from './DocumentDownloadLink';
 
 const blink = keyframes`
   0%, 100% { opacity: 1; }
@@ -80,7 +81,7 @@ export function StreamingMessage({ content }: Props) {
         {content ? (
           <>
             <MarkdownContent>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: DocumentDownloadLink }}>
                 {presentAssistantMessage(content)}
               </ReactMarkdown>
             </MarkdownContent>

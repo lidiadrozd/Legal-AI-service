@@ -1,0 +1,169 @@
+{
+  "scenario": "pretense_debt_rent",
+  "composition": "clause_document",
+  "intake_only_fields": [
+    "legal_basis"
+  ],
+  "field_formats": {
+    "sender": "requisite",
+    "sender_address": "auto",
+    "recipient": "requisite",
+    "recipient_address": "auto",
+    "agreement": "sentence",
+    "property": "sentence",
+    "due_date": "sentence",
+    "facts": "sentence",
+    "amount": "auto",
+    "requests": "sentence",
+    "response_term": "sentence",
+    "payment_details": "sentence",
+    "attachments": "list",
+    "date": "auto",
+    "signature": "requisite"
+  },
+  "version": 2,
+  "schema_version": null,
+  "coverage": "structured",
+  "source": "Открытые формы и нормативные требования; самостоятельная редакция для сервиса",
+  "usage_basis": "Самостоятельно составленный текст; полные авторские формы ГАРАНТа не воспроизводятся",
+  "review_status": "source_checked_draft",
+  "checked_at": "2026-10-24",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "layout": "letter",
+  "source_urls": [
+    "https://kpd.garant.ru/zhaloby_pretenzii/pretenziya_o_vzyskanii_zadolzhennosti_po_dogovoru_arendy_mezhdu_fizicheskimi_liczami/"
+  ],
+  "limitations": [
+    "Сверка с открытыми источниками не заменяет юридическую проверку конкретного документа.",
+    "Проценты и неустойка не начисляются автоматически; при их заявлении требуется отдельный проверенный расчёт."
+  ],
+  "blocks": [
+    {
+      "text": "Кому: {{recipient}}\nАдрес: {{recipient_address}}\n\nОт: {{sender}}\nАдрес: {{sender_address}}",
+      "role": "addressee",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Претензия о взыскании задолженности по арендной плате",
+      "role": "title",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Основание обязательства: {{agreement}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Объект и период аренды: {{property}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Согласованный срок исполнения: {{due_date}}. Обстоятельства нарушения: {{facts}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "На дату составления претензии сумма основного долга составляет {{amount}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Правовое основание требования: ГК РФ, статьи 309, 310, 614. Условия конкретного обязательства определяются указанным выше договором и подтверждающими документами.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Требование",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{requests}}",
+      "role": "request",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Срок исполнения требования: {{response_term}}. Реквизиты или согласованный способ оплаты: {{payment_details}}.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Прошу сообщить о результатах рассмотрения по адресу заявителя. При неурегулировании спора вопрос о судебной защите будет решаться с учётом применимого порядка.",
+      "role": "body",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Приложения",
+      "role": "heading",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "{{attachments}}",
+      "role": "attachments",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Дата: {{date}}",
+      "role": "place_date",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    },
+    {
+      "text": "Подпись: __________________ / {{signature}} /",
+      "role": "signature",
+      "when_field": null,
+      "when_value": null,
+      "when_status": null,
+      "when_values": null
+    }
+  ],
+  "docx_asset": {
+    "template": "pretense_debt_rent/v2/template.docx",
+    "template_sha256": "eb80989646fcc2bc3a165cbdec12328a66e77f96f8f01730f77c8277813d1c23",
+    "schema": "pretense_debt_rent/v2/schema.json",
+    "schema_sha256": "680c860929a35773a9eb0168de2f46f2e105b334f4de0cbdd1d6a70e6369cf18"
+  }
+}

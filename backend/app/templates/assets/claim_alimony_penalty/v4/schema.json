@@ -1,0 +1,93 @@
+{
+  "scenario": "claim_alimony_penalty",
+  "version": 4,
+  "engine": "ooxml-content-controls-v1",
+  "fields": {
+    "court": {
+      "format": "phrase"
+    },
+    "sender": {
+      "format": "phrase"
+    },
+    "sender_address": {
+      "format": "phrase"
+    },
+    "contacts": {
+      "format": "phrase"
+    },
+    "recipient": {
+      "format": "phrase"
+    },
+    "recipient_address": {
+      "format": "phrase"
+    },
+    "party_details": {
+      "format": "phrase"
+    },
+    "support_basis": {
+      "format": "phrase"
+    },
+    "children": {
+      "format": "phrase"
+    },
+    "arrears_decision": {
+      "format": "phrase"
+    },
+    "period_payments": {
+      "format": "phrase"
+    },
+    "fault": {
+      "format": "phrase"
+    },
+    "penalty_calculation": {
+      "format": "phrase"
+    },
+    "pretrial": {
+      "format": "phrase"
+    },
+    "calculation": {
+      "format": "phrase"
+    },
+    "legal_basis": {
+      "format": "phrase"
+    },
+    "fee": {
+      "format": "phrase"
+    },
+    "requests": {
+      "format": "sentence",
+      "paragraph_lines": true
+    },
+    "other_participants": {
+      "format": "phrase"
+    },
+    "copy_notice": {
+      "format": "phrase"
+    },
+    "attachments": {
+      "format": "phrase",
+      "paragraph_lines": true
+    },
+    "date": {
+      "format": "phrase"
+    },
+    "signature": {
+      "format": "phrase"
+    }
+  },
+  "conditions": {},
+  "blocks_sha256": "a9fb888bf1696aa0ba7f94da4619ea1a6afc65b03e5631bb4cdabbfa07584451",
+  "layout": {
+    "page": "A4",
+    "font": "Times New Roman",
+    "font_pt": 12,
+    "margins_cm": {
+      "top": 2,
+      "bottom": 2,
+      "left": 3,
+      "right": 1.5
+    }
+  },
+  "review_status": "source_checked_draft",
+  "lawyer_reviewed": false
+}

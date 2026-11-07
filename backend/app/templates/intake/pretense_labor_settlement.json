@@ -1,0 +1,185 @@
+{
+  "scenario": "pretense_labor_settlement",
+  "title": "Требование работодателю о выплате расчёта при увольнении",
+  "family": "pretense",
+  "version": 4,
+  "fields": [
+    {
+      "key": "sender",
+      "label": "Работник",
+      "question": "Какое полное ФИО или наименование у стороны «Работник»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "sender_address",
+      "label": "Адрес заявителя",
+      "question": "Какой полный адрес у стороны «Работник»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient",
+      "label": "Работодатель",
+      "question": "Какое полное ФИО или наименование у стороны «Работодатель»?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "recipient_address",
+      "label": "Адрес адресата",
+      "question": "Какой полный адрес у стороны «Работодатель»?",
+      "kind": "address",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "employment",
+      "label": "Трудовые отношения",
+      "question": "Укажите работодателя, должность, дату начала работы и реквизиты трудового договора.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "dismissal",
+      "label": "Прекращение трудовых отношений",
+      "question": "Уволены ли вы? Если да, когда, по какому основанию и каким приказом?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "wages",
+      "label": "Условия оплаты труда",
+      "question": "Каков согласованный размер и порядок выплаты заработной платы? Укажите известные условия.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "debt_period",
+      "label": "Период и состав невыплаты",
+      "question": "За какие месяцы и какие выплаты не перечислены? Зарплату, отпускные и расчёт при увольнении укажите раздельно.",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "amount",
+      "label": "Основная сумма невыплаченных средств",
+      "question": "Какова основная невыплаченная сумма в рублях?",
+      "kind": "money",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "evidence",
+      "label": "Подтверждающие документы",
+      "question": "Какие договор, приказы, расчётные листки, выписки или иные доказательства имеются?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "previous_contact",
+      "label": "Обращения к работодателю",
+      "question": "Обращались ли к работодателю по поводу выплат и каков ответ?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "requests",
+      "label": "Просьба работника",
+      "question": "Какие именно выплаты и документы требуете от работодателя?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "payment",
+      "label": "Сведения для исполнения и ответа",
+      "question": "Как направить ответ и, если требование обращено к работодателю, перечислить причитающиеся средства?",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "contacts",
+      "label": "Контактные данные",
+      "question": "Какой телефон или электронную почту указать для связи? Почтовый адрес уже сохранён. Можно ответить «не знаю».",
+      "kind": "text",
+      "optional": true,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "attachments",
+      "label": "Приложения",
+      "question": "Какие документы приложите? Если приложений нет, ответьте «нет».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "date",
+      "label": "Дата документа",
+      "question": "Какую дату документа указываем?",
+      "kind": "date",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "signature",
+      "label": "Подписант заявителя",
+      "question": "Кто подпишет документ от имени стороны «Работник»: вы лично или представитель? Можно написать «подпишу сам».",
+      "kind": "text",
+      "optional": false,
+      "when_field": null,
+      "when_values": [],
+      "choices": []
+    },
+    {
+      "key": "legal_basis",
+      "label": "Правовое обоснование",
+      "question": "Правовое обоснование подставляется по нормативным источникам.",
+      "kind": "text",
+      "optional": false
+    }
+  ]
+}
