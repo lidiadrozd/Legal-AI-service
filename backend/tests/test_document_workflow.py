@@ -189,6 +189,45 @@ def test_date_is_normalized_without_guessing_year():
     assert normalize_field(spec, "24 октября")[1]
 
 
+@pytest.mark.parametrize("raw", ["01.01.1899", "2101-01-01", "01/01/1800", "24 октября 2200"])
+def test_date_year_outside_supported_range_requires_clarification(raw):
+    spec = next(f for f in SCENARIOS["pretense_debt_loan"].fields if f.kind == "date")
+    assert "1900–2100" in normalize_field(spec, raw)[1]
+
+
+@pytest.mark.parametrize("raw,expected", [("01.01.1900", "1900-01-01"), ("31 декабря 2100", "2100-12-31")])
+def test_date_year_boundaries_are_inclusive(raw, expected):
+    spec = next(f for f in SCENARIOS["pretense_debt_loan"].fields if f.kind == "date")
+    assert normalize_field(spec, raw) == (expected, None)
+
+
+@pytest.mark.parametrize("kind,raw", [("date", "01.01.1899"), ("date", "01.01.2101"),
+    ("date", "31.02.2026"), ("money", "много"), ("money", "NaN"), ("money", "Infinity")])
+def test_invalid_typed_answer_blocks_ready_and_asks_question(kind, raw):
+    state = state_for()
+    scenario = SCENARIOS[state["scenario"]]
+    spec = next(f for f in scenario.fields if f.kind == kind)
+    state["fields"] = {f.key: {"value": None, "status": "unknown"} for f in scenario.fields}
+    state = apply_updates(state, [FieldUpdate(key=spec.key, status="filled", value=raw, evidence=raw)], raw)
+    reply = interview_message(state)
+    assert state["fields"][spec.key]["status"] == "incomplete"
+    assert state["phase"] == "collecting"
+    assert state["last_questions"] == [spec.key]
+    assert reply == state["fields"][spec.key]["error"]
+    assert "?" in reply or "Укажите" in reply
+
+
+@pytest.mark.parametrize("kind,raw", [("date", "2200-01-01"), ("money", "много")])
+def test_saved_invalid_typed_field_is_reopened(kind, raw):
+    from app.services.document_workflow import sanitize_interview
+    state = state_for()
+    spec = next(f for f in SCENARIOS[state["scenario"]].fields if f.kind == kind)
+    state["fields"][spec.key] = {"status": "filled", "value": raw}
+    repaired = sanitize_interview(state)
+    assert repaired["fields"][spec.key]["status"] == "incomplete"
+    assert repaired["fields"][spec.key]["error"]
+
+
 def test_function_schema_removes_nullable_unions_without_losing_field_enums():
     from app.services.document_workflow import InterviewReply, FieldUpdate, _function_schema
     schema = InterviewReply.model_json_schema()

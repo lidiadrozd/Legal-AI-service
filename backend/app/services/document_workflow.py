@@ -141,17 +141,24 @@ def normalize_field(spec, raw: str) -> tuple[str, str | None]:
         return (money, None) if money else (value, f"Какую сумму в рублях указываем в поле «{spec.label}»? Например: 7000 рублей. Пример не является вашими данными.")
     if spec.kind == "date":
         value = re.sub(r'^(?:с|со|от|до|на)\s+', '', value, flags=re.I).strip()
+        year_question = f"Год даты должен быть в диапазоне 1900–2100. Какую дату указываем в поле «{spec.label}»?"
         months = {"января": 1, "февраля": 2, "марта": 3, "апреля": 4, "мая": 5, "июня": 6,
                   "июля": 7, "августа": 8, "сентября": 9, "октября": 10, "ноября": 11, "декабря": 12}
         words = re.fullmatch(r"(\d{1,2})\s+([а-я]+)\s+(\d{4})(?:\s*г(?:ода|\.)?)?", value.lower())
         if words and words[2] in months:
             try:
-                return datetime(int(words[3]), months[words[2]], int(words[1])).date().isoformat(), None
+                parsed = datetime(int(words[3]), months[words[2]], int(words[1])).date()
+                if not 1900 <= parsed.year <= 2100:
+                    return value, year_question
+                return parsed.isoformat(), None
             except ValueError:
                 pass
         for pattern in ("%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y", "%d.%m.%y"):
             try:
-                return datetime.strptime(value, pattern).date().isoformat(), None
+                parsed = datetime.strptime(value, pattern).date()
+                if not 1900 <= parsed.year <= 2100:
+                    return value, year_question
+                return parsed.isoformat(), None
             except ValueError:
                 pass
         return value, "Укажите полную дату с годом, например: 25.10.2026. Пример не является вашими данными."
@@ -736,7 +743,7 @@ def sanitize_interview(state):
         if stored.get("status") != "filled" or not value or stored.get("origin") == "verified_rule":
             continue
         spec = next((f for f in SCENARIOS[result['scenario']].fields if f.key == key), None) if result.get('scenario') else None
-        if spec and spec.kind == 'choice':
+        if spec and spec.kind in {'choice', 'date', 'money'}:
             normalized, error = normalize_field(spec, value)
             # Sanitising an already accepted answer must be observationally
             # neutral.  Writing an ``error: null`` key on every choice made
