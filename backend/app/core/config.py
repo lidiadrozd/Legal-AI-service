@@ -2,12 +2,26 @@
 Legal AI Service — Полная конфигурация Pydantic v2
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List, Optional
+from typing import List, Optional, Literal
 from functools import lru_cache
 import os
 from pathlib import Path
 
 class Settings(BaseSettings):
+    LLM_PROVIDER: Literal["gigachat", "cloudru"] = "gigachat"
+    CLOUDRU_API_KEY: str = ""
+    CLOUDRU_MODEL: str = "ai-sage/GigaChat3-10B-A1.8B"
+
+    @property
+    def llm_model(self) -> str:
+        return self.CLOUDRU_MODEL if self.LLM_PROVIDER == "cloudru" else self.GIGACHAT_MODEL
+
+    @property
+    def llm_ready(self) -> bool:
+        if self.LLM_PROVIDER == "cloudru":
+            return bool(self.CLOUDRU_API_KEY.strip())
+        return bool(self.GIGACHAT_AUTH_KEY or (self.GIGACHAT_CLIENT_ID and self.GIGACHAT_CLIENT_SECRET))
+
     # ========================================
     # DATABASE & CACHE
     # ========================================

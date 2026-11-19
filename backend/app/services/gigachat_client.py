@@ -58,6 +58,7 @@ class GigaChatAutoToken:
     """Клиент GigaChat с автоматическим обновлением OAuth-токена."""
 
     def __init__(self):
+        self.chat_url = _CHAT_URL
         self.access_token: str | None = None
         self.expires_at: float = 0
         self.lock = asyncio.Lock()
@@ -244,7 +245,7 @@ class GigaChatAutoToken:
             http = self._get_http_client()
             for attempt in range(2):
                 try:
-                    response = await http.post(_CHAT_URL, headers=headers, json=payload)
+                    response = await http.post(self.chat_url, headers=headers, json=payload)
                     break
                 except (httpx.ConnectError, httpx.ConnectTimeout):
                     # A failed connection has not sent a model request. Retry
@@ -336,6 +337,61 @@ class GigaChatAutoToken:
         )
 
 
+class CloudRuClient(GigaChatAutoToken):
+    """Foundation Models bearer authentication with the existing completion interface."""
+
+    def __init__(self):
+        super().__init__()
+        self.chat_url = "https://foundation-models.api.cloud.ru/v1/chat/completions"
+
+    async def get_valid_token(self) -> str:
+        key = settings.CLOUDRU_API_KEY.strip()
+        if not key:
+            raise RuntimeError("Не задан CLOUDRU_API_KEY.")
+        return key
+
+    def _get_http_client(self) -> httpx.AsyncClient:
+        if self._http_client is None or self._http_client.is_closed:
+            self._http_client = httpx.AsyncClient(
+                timeout=httpx.Timeout(120.0, connect=15.0),
+                limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+                verify=True,
+            )
+        return self._http_client
+
+    async def chat_completion(self, messages, model, temperature=0.1, *,
+                              response_format=None, structured_function=None):
+        if response_format is not None and structured_function is not None:
+            raise ValueError("Choose one structured output mechanism")
+        # Model support for tool calling/JSON-schema flags varies. Request JSON
+        # through the prompt, then fail closed if it is not a JSON object.
+        # Domain validators at call sites still validate required fields.
+        structured = response_format is not None or structured_function is not None
+        if structured:
+            schema = (structured_function.get("parameters", {}) if structured_function
+                      else response_format)
+            instruction = (
+                "Верни только JSON-объект, без Markdown и пояснений. "
+                "Соблюдай следующую спецификацию ответа: "
+                + json.dumps(schema, ensure_ascii=False)
+            )
+            messages = [dict(message) for message in messages]
+            if messages and messages[0].get("role") == "system":
+                messages[0]["content"] += "\n" + instruction
+            else:
+                messages.insert(0, {"role": "system", "content": instruction})
+        result = await super().chat_completion(
+            messages, model=settings.CLOUDRU_MODEL, temperature=temperature)
+        if structured:
+            try:
+                parsed = json.loads(result.content)
+            except (ValueError, TypeError):
+                raise RuntimeError("Cloud.ru вернул некорректный JSON.") from None
+            if not isinstance(parsed, dict):
+                raise RuntimeError("Cloud.ru вернул JSON, не являющийся объектом.")
+        return result
+
+
 _gigachat_client: GigaChatAutoToken | None = None
 _client_init_lock = asyncio.Lock()
 
@@ -353,7 +409,8 @@ async def get_gigachat_client() -> GigaChatAutoToken:
 
     async with _client_init_lock:
         if _gigachat_client is None:
-            _gigachat_client = GigaChatAutoToken()
+            _gigachat_client = (CloudRuClient() if settings.LLM_PROVIDER == "cloudru"
+                               else GigaChatAutoToken())
 
         # Получаем токен до возврата клиента, чтобы ошибки подключения
         # обнаруживались при первом обращении.

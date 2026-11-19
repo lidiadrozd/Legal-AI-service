@@ -31,7 +31,8 @@ def build_cache_key(
     history_tail = (chat_history or "")[-settings.CHAT_RESPONSE_CACHE_HISTORY_CHARS :]
     payload = "\n".join(
         [
-            settings.GIGACHAT_MODEL,
+            settings.LLM_PROVIDER,
+            settings.CLOUDRU_MODEL if settings.LLM_PROVIDER == "cloudru" else settings.GIGACHAT_MODEL,
             normalized_query,
             context_blob,
             history_tail,

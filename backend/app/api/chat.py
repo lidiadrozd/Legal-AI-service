@@ -341,7 +341,7 @@ async def send_message_stream(
                 user_id=current_user.id,
                 chat_id=chat_id,
                 message_id=assistant_message.id,
-                model=settings.GIGACHAT_MODEL,
+                model=settings.llm_model,
                 cached=nlp_result.cached,
                 usage=nlp_result.usage,
                 commit=False,
