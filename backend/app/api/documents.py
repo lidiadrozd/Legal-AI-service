@@ -353,19 +353,30 @@ def _sanitize_filename(filename: str) -> str:
     return cleaned or "document.txt"
 
 
-async def _chat_context_text(db: AsyncSession, *, user_id: int, chat_id: int) -> str:
+async def _chat_context_messages(
+    db: AsyncSession, *, user_id: int, chat_id: int, limit: int | None = None,
+) -> list[dict[str, str]]:
     chat_r = await db.execute(
         select(ChatSession).where(ChatSession.id == chat_id, ChatSession.user_id == user_id)
     )
     if chat_r.scalar_one_or_none() is None:
         raise HTTPException(status_code=404, detail="Chat not found")
-    msg_r = await db.execute(
-        select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at.asc(), Message.id.asc())
+    query = (
+        select(Message).where(Message.chat_id == chat_id, Message.role.in_(("user", "assistant")))
+        .order_by(Message.created_at.desc(), Message.id.desc())
     )
-    lines: list[str] = []
-    for msg in msg_r.scalars():
-        lines.append(f"{msg.role}: {msg.content}")
-    return "\n".join(lines)
+    if limit is not None:
+        query = query.limit(limit)
+    msg_r = await db.execute(query)
+    return [
+        {"role": msg.role, "content": msg.content}
+        for msg in reversed(msg_r.scalars().all()) if msg.content.strip()
+    ]
+
+
+async def _chat_context_text(db: AsyncSession, *, user_id: int, chat_id: int) -> str:
+    messages = await _chat_context_messages(db, user_id=user_id, chat_id=chat_id)
+    return "\n".join(f"{msg['role']}: {msg['content']}" for msg in messages)
 
 
 async def _filing_fields_map(db: AsyncSession, *, user_id: int, court_filing_id: int) -> dict[str, str]:
@@ -511,14 +522,16 @@ async def generate_ai_document(
     db: AsyncSession = Depends(get_db),
 ):
     """Сгенерировать документ по текстовому запросу пользователя (GigaChat)."""
-    context_text = ""
+    chat_history = []
     if payload.chat_id is not None:
-        context_text = await _chat_context_text(db, user_id=current_user.id, chat_id=payload.chat_id)
+        chat_history = await _chat_context_messages(
+            db, user_id=current_user.id, chat_id=payload.chat_id, limit=20,
+        )
 
     try:
         doc_title, doc_body = await generate_ai_document_text(
             payload.prompt,
-            context_text=context_text,
+            chat_history=chat_history,
             document_type_hint=payload.document_type,
             title_hint=payload.title,
         )

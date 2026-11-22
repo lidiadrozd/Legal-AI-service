@@ -57,6 +57,7 @@ async def generate_ai_document_text(
     user_prompt: str,
     *,
     context_text: str = "",
+    chat_history: list[dict[str, str]] | None = None,
     document_type_hint: str | None = None,
     title_hint: str | None = None,
 ) -> tuple[str, str]:
@@ -76,8 +77,23 @@ async def generate_ai_document_text(
             + context_text.strip()[-12000:]
         )
 
+    # Keep recent turns in their original roles, within the existing context budget.
+    history = []
+    remaining = 12000
+    for message in reversed((chat_history or [])[-20:]):
+        if message.get("role") not in {"user", "assistant"}:
+            continue
+        content = (message.get("content") or "").strip()
+        if not content:
+            continue
+        history.append({"role": message["role"], "content": content[-remaining:]})
+        remaining -= len(history[-1]["content"])
+        if remaining <= 0:
+            break
+
     messages = [
         {"role": "system", "content": _SYSTEM_PROMPT},
+        *reversed(history),
         {"role": "user", "content": "\n\n".join(user_parts)},
     ]
 
