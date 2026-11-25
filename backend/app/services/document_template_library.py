@@ -10,9 +10,15 @@ import re
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+from app.services.document_dialogue import is_manual_blank
 
 TEMPLATE_ROOT = Path(__file__).resolve().parents[1] / "templates" / "documents"
 PLACEHOLDER = re.compile(r"\{\{([a-z_]+)\}\}")
+
+
+def missing_data_placeholder(label: str) -> str:
+    from app.services.document_fact_provenance import missing_data_placeholder as build
+    return build(label)
 
 
 class TextBlock(BaseModel):
@@ -91,8 +97,7 @@ def format_template_fields(scenario, fields):
             continue
         if stored.get("status") != "filled" or not stored.get("value"):
             if scenario.key=='power_of_attorney' and spec.key in {'principal_details','agent_details'}:
-                person='доверителя' if spec.key=='principal_details' else 'представителя'
-                values[spec.key]='[паспорт '+person+': серия, номер, кем и когда выдан; дата рождения]'
+                values[spec.key] = missing_data_placeholder(spec.label)
             continue
         value = stored["value"]
         if spec.key == "attachments":
@@ -148,6 +153,7 @@ def strip_template_label_echo(value: str, prefix: str) -> str:
 def render_package_blocks(package: dict, scenario, fields: dict, formatted: dict) -> list[dict]:
     labels = {f.key: f.label.lower() for f in scenario.fields}
     intake_only = set(package.get('intake_only_fields', ()))
+    intake_only.update(key for key, item in fields.items() if item.get('origin') == 'already_rendered_fact')
     paragraphs = []
     for block in package["blocks"]:
         # Intake-only answers may steer the conversation, but they are not
@@ -158,7 +164,11 @@ def render_package_blocks(package: dict, scenario, fields: dict, formatted: dict
         key = block.get("when_field")
         if key:
             stored = fields.get(key, {})
-            if stored.get('status') != 'filled': continue
+            # A manually deferred slot is still editable in the document.
+            show_placeholder = (is_manual_blank(stored)
+                                and key in PLACEHOLDER.findall(block['text']))
+            if stored.get('status') != 'filled' and not show_placeholder:
+                continue
             if block.get('when_values') is not None and stored.get('value') not in block['when_values']: continue
             if block.get('when_value') is not None and stored.get('value') != block['when_value']: continue
         text = block["text"]
@@ -171,7 +181,7 @@ def render_package_blocks(package: dict, scenario, fields: dict, formatted: dict
         if block.get("role") == "title":
             text = text.replace("о оплате", "об оплате")  # Also correct pinned older sessions.
         def substitute(match):
-            value = formatted.get(match[1]) or f"[{labels[match[1]]}]"
+            value = formatted.get(match[1]) or missing_data_placeholder(labels[match[1]])
             return strip_template_label_echo(value, text[:match.start()])
         if block.get('role')=='place_date' and '{{place}}' in text and '{{date}}' in text:
             text=re.sub(r'\}\}[ \t]+\{\{','}}\t{{',text)

@@ -10,6 +10,29 @@ from complete_form_cases import make_state
 
 
 @pytest.mark.asyncio
+async def test_question_planner_fills_from_earlier_user_quote_before_asking(monkeypatch):
+    state = make_state('contract_employment')
+    state['fields'].pop('position')
+    evidence = 'По договору работаю переводчиком.'
+    state.update(phase='collecting', last_questions=['position'], user_turns=[evidence])
+
+    async def plan(client, prompt, data, schema, **kwargs):
+        turn = data['user_evidence_turns'].index(evidence)
+        return SimpleNamespace(content=json.dumps({
+            'field': 'position', 'question': 'Какая должность?', 'explanation': '',
+            'known_answers': [{'key': 'position', 'source_turn': turn, 'quote': 'переводчиком',
+                               'evidence': evidence}],
+        }), usage=TokenUsage(1, 1, 2, False))
+
+    monkeypatch.setattr('app.services.document_conversation.get_gigachat_client', AsyncMock(return_value=object()))
+    monkeypatch.setattr('app.services.document_conversation._structured', plan)
+    result, reply, _ = await conversational_interview_turn(state, 'продолжить')
+    assert result['fields']['position']['evidence'] == evidence
+    assert 'position' not in result['last_questions']
+    assert 'Какая должность?' not in reply
+
+
+@pytest.mark.asyncio
 async def test_model_selects_and_words_next_question_without_canned_question_text(monkeypatch):
     state=make_state('contract_employment')
     state.update(phase='collecting',last_questions=['sender'])
@@ -53,6 +76,32 @@ async def test_planner_cannot_choose_filled_or_unknown_field(monkeypatch):
     monkeypatch.setattr('app.services.document_conversation._structured',structured)
     result,_,_=await conversational_interview_turn(state,'продолжить')
     assert result['last_questions']==['sender'] and result['question_origin']=='fallback'
+
+
+@pytest.mark.asyncio
+async def test_planner_rejects_a_second_field_hidden_behind_one_question_mark(monkeypatch):
+    state=make_state('pretense_consumer_defective_goods')
+    for key in ('amount','date'):
+        state['fields'].pop(key)
+    state.update(phase='collecting',last_questions=['amount'])
+    structured=AsyncMock(return_value=SimpleNamespace(
+        content=json.dumps({
+            'field':'amount',
+            'question':'Какова сумма покупки и какая дата документа?',
+            'explanation':'',
+        },ensure_ascii=False),
+        usage=TokenUsage(1,1,2,False),
+    ))
+    monkeypatch.setattr('app.services.document_conversation.get_gigachat_client',AsyncMock(return_value=object()))
+    monkeypatch.setattr('app.services.document_conversation._structured',structured)
+
+    result,answer,_=await conversational_interview_turn(state,'продолжить')
+
+    assert structured.await_count==2
+    assert result['question_origin']=='fallback'
+    assert result['last_questions']==['amount']
+    assert answer.count('?')<=1
+    assert 'дата документа' not in answer.lower()
 
 
 @pytest.mark.asyncio

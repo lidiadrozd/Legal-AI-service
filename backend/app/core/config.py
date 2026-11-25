@@ -2,12 +2,35 @@
 Legal AI Service — Полная конфигурация Pydantic v2
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List, Optional
+from typing import List, Literal, Optional
 from functools import lru_cache
 import os
 from pathlib import Path
 
 class Settings(BaseSettings):
+    # ========================================
+    # LLM PROVIDER
+    # ========================================
+    LLM_PROVIDER: Literal["gigachat", "cloudru"] = "gigachat"
+    CLOUDRU_API_KEY: str = ""
+    CLOUDRU_MODEL: str = "ai-sage/GigaChat3-10B-A1.8B"
+    # Used only when Windows cannot resolve the normal Cloud.ru hostname.
+    # TLS still verifies the real hostname via SNI; normal DNS is always tried first.
+    CLOUDRU_FALLBACK_IP: str = "37.44.197.215"
+
+    @property
+    def llm_model(self) -> str:
+        return self.CLOUDRU_MODEL if self.LLM_PROVIDER == "cloudru" else self.GIGACHAT_MODEL
+
+    @property
+    def llm_ready(self) -> bool:
+        if self.LLM_PROVIDER == "cloudru":
+            return bool(self.CLOUDRU_API_KEY.strip())
+        return bool(
+            self.GIGACHAT_AUTH_KEY.strip()
+            or (self.GIGACHAT_CLIENT_ID.strip() and self.GIGACHAT_CLIENT_SECRET.strip())
+        )
+
     # ========================================
     # DATABASE & CACHE
     # ========================================
@@ -35,6 +58,9 @@ class Settings(BaseSettings):
     GIGACHAT_AUTH_KEY: str = ""  # Optional ready-made Base64 authorization key.
     GIGACHAT_MODEL: str = "GigaChat"
     GIGACHAT_PROXY_URL: str = ""  # Optional local CONNECT route for Docker Desktop.
+    # Last-resort route for LLM connect failures.  Unlike GIGACHAT_PROXY_URL,
+    # this never replaces the normal direct connection.
+    LLM_FALLBACK_PROXY_URL: str = ""
     CBR_PROXY_URL: str = ""  # Optional fixed local CONNECT route for cbr.ru rate history.
     GIGACHAT_SCOPE: str = "GIGACHAT_API_B2B"
     GIGACHAT_CA_BUNDLE_FILE: str = str(
@@ -54,14 +80,24 @@ class Settings(BaseSettings):
     # ========================================
     # RAG & Vector Store
     # ========================================
-    RAG_DOCS_PATH: str = "/app/rag_docs"
-    DOCUMENTS_STORAGE_DIR: str = "/app/storage/documents"
+    # Use Docker paths when explicitly configured, while keeping a working
+    # native-local fallback for development and document testing.
+    RAG_DOCS_PATH: str = os.getenv(
+        "RAG_DOCS_PATH",
+        str(Path(__file__).resolve().parents[2] / "rag_docs"),
+    )
+    DOCUMENTS_STORAGE_DIR: str = os.getenv(
+        "DOCUMENTS_STORAGE_DIR",
+        str(Path(__file__).resolve().parents[2] / "storage" / "documents"),
+    )
     OCR_LANGS: str = os.getenv("OCR_LANGS", "rus+eng")
     OCR_MAX_PDF_PAGES: int = int(os.getenv("OCR_MAX_PDF_PAGES", "15"))
     EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     VECTOR_DB_TYPE: str = "pgvector"
     ENABLE_PGVECTOR: bool = True  # ✅ Обязательно!
-    RAG_ENABLED: bool = True
+    # Ordinary legal answers use live legal sources; the local vector store is
+    # optional and stays disabled unless a deployment explicitly enables it.
+    RAG_ENABLED: bool = False
     RAG_VECTOR_TOP_K: int = 3
     RAG_RERANK_THRESHOLD: float = 0.2
     RAG_MAX_CONTEXT_CHUNKS: int = 2

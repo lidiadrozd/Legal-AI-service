@@ -74,6 +74,63 @@ def test_dense_answer_is_extracted_even_if_it_ends_with_a_question():
 
 
 @pytest.mark.asyncio
+async def test_absence_of_further_payments_is_not_a_conflicting_alternative(monkeypatch):
+    from app.services.document_workflow import _capture_contextual_facts
+    from app.services.llm_cost import TokenUsage
+    source = ('Я, Громов Денис Олегович, 12 августа 2026 года передал Ковалёву Павлу Ильичу '
+              '75 000 рублей наличными. 5 ноября он перевёл мне 10 000 рублей. Больше переводов не было.')
+    quotes = ['5 ноября он перевёл мне 10 000 рублей.', 'Больше переводов не было.']
+
+    async def extract(client, prompt, data, schema, *, name, **kwargs):
+        answers = [{'key': 'payments', 'quote': q, 'evidence': q, 'source_turn': 0, 'action': 'fill'}
+                   for q in quotes] if name == 'contextual_template_facts' else []
+        return SimpleNamespace(content=json.dumps({'answers': answers}), usage=TokenUsage(1, 1, 2, False))
+
+    state = new_state('Иск о взыскании долга по расписке.')
+    state.update(scenario='claim_debt_loan', phase='collecting', last_questions=['sender'])
+    monkeypatch.setattr('app.services.document_workflow.get_gigachat_client', AsyncMock(return_value=object()))
+    monkeypatch.setattr('app.services.document_workflow._structured', extract)
+    result, _ = await _capture_contextual_facts(state, SCENARIOS['claim_debt_loan'], 'sender', source)
+    assert 'payments' not in result.get('narrative_conflicts', {})
+    assert result['fields']['payments']['status'] == 'filled'
+    assert result['fields']['amount']['value'] == '65000.00'
+    assert len(result['loan_facts']['payments']) == 1
+
+
+def test_migrate_saved_loan_payment_only_when_confirmed_and_unambiguous():
+    from app.services.document_loan_facts import collect_loan_facts, reconcile_saved_loan_edit
+    source = 'Передал 75 000 рублей наличными. 5 ноября он перевёл мне 10 000 рублей.'
+    stated = 'Фактически полученные в счёт возврата платежи - 15000'
+    state = new_state('Иск о взыскании долга по расписке.')
+    state.update(scenario='claim_debt_loan', user_turns=[source])
+    collect_loan_facts(state, source)
+    state['fields']['payments'].update(origin='user_correction', value=stated, evidence=stated)
+    assert not reconcile_saved_loan_edit(state)
+    state['user_turns'].append(stated)
+    assert reconcile_saved_loan_edit(state)
+    assert state['fields']['amount']['value'] == '60000.00'
+    assert state['loan_facts']['payments'][0]['date_text'] == '5 ноября'
+    assert not reconcile_saved_loan_edit(state)
+    collect_loan_facts(state, source)
+    assert len(state['loan_facts']['payments']) == 1
+    assert state['fields']['amount']['value'] == '60000.00'
+
+
+def test_change_principal_preserves_transfer_date_and_recomputes_balance():
+    from app.services.document_loan_facts import apply_ready_loan_edit, collect_loan_facts
+    source = 'Передал 75 000 рублей наличными 12 августа 2026 года. 5 ноября он перевёл мне 10 000 рублей.'
+    state = new_state('Иск о взыскании долга по расписке.')
+    state['scenario'] = 'claim_debt_loan'
+    collect_loan_facts(state, source)
+    handled, question = apply_ready_loan_edit(state, 'transfer', '80 000 рублей', message='Выдал 80 000 рублей.')
+    assert handled and not question
+    collect_loan_facts(state, source)
+    assert state['loan_facts']['principal'] == '80000.00'
+    assert state['fields']['amount']['value'] == '70000.00'
+    assert '80 000 рублей наличными 12 августа 2026 года' in state['fields']['transfer']['value']
+
+
+@pytest.mark.asyncio
 async def test_malformed_provider_response_has_nonempty_continuation(offline):
     state, _, _ = await advance_interview(new_state('Претензия о возврате займа'), 'Претензия о возврате займа')
     state['last_questions'] = ['amount']

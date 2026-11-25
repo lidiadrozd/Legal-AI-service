@@ -100,7 +100,8 @@ def _plan_issue_field(plan, scenario):
 
 
 def _plan_question(plan, field):
-    question = plan.get("pending_question")
+    from app.services.document_formula_registry import first_pending_question
+    question = first_pending_question(plan)
     if isinstance(question, str) and question.strip():
         return question.strip()
     unresolved = set(plan.get("unresolved_rule_ids") or ())

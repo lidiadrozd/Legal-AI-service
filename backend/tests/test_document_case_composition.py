@@ -199,7 +199,9 @@ async def test_sequential_intake_reaches_ready_and_skips_facts_already_supplied(
         'monthly_amount':'20000 рублей в месяц','maintenance_calculation':'Общие расходы на ребёнка — 40000 рублей в месяц.',
         'start':'С настоящего времени','copy_notice':'Нет','attachments':'свидетельство о рождении, справка о проживании ребёнка',
         'date':'27.10.2026','signature':'подпишу сам'}
-    offline=AsyncMock(side_effect=AssertionError('Explicit factual replies should remain local'))
+    # Rich answers may also be inspected for facts outside the active field.
+    # Keep the offline behaviour contract, not the old no-extraction policy.
+    offline=AsyncMock(side_effect=RuntimeError('offline'))
     monkeypatch.setattr('app.services.document_workflow.get_gigachat_client',offline)
     seen=[]
     for _ in range(40):
@@ -216,7 +218,6 @@ async def test_sequential_intake_reaches_ready_and_skips_facts_already_supplied(
     else:assert not set(seen)&{'parentage','living','existing_support','payment','requests','pretrial','claim_price','indexation'}
     text,_=artifact(state)
     assert 'Я добавила' not in text and 'Source_text' not in text
-    offline.assert_not_called()
 
 
 @pytest.mark.asyncio

@@ -538,6 +538,31 @@ def collect_calculation_turn(state: dict[str, Any], text: str, current: str | No
         return set()
     specs = {field.key for field in scenario.fields}
     parsed, _ = extract_components(text)
+    if current in {"costs", "litigation_costs"} and re.search(
+            r'\b(?:не\s+(?:заявля|требу|прошу|буду\s+взыскивать)|отказываюсь\s+от|'
+            r'прошу\s+исключить|не\s+хочу\s+взыскивать)', text, re.I):
+        # Excluding a paid expense is a change to the demand. Leave the
+        # complete statement to fact intake rather than adding its number.
+        return set()
+    # A cost can be named in an earlier narrative and the following question
+    # may receive only a confirmation. Reuse the ledger before formula
+    # routing so the same cost slot cannot loop on an empty field.
+    recall_only = re.fullmatch(r'\s*(?:(?:я\s+)?уже\s+(?:ответил[аи]?|отвечал[аи]?|писал[аи]?|сказал[аи]?)|(?:смотри|посмотри)\s+выше)[.!? ]*', text, re.I)
+    if current in {"costs", "litigation_costs"} and current in specs and recall_only:
+        existing = state.get("calculation_ledger", {})
+        if existing.get("status") == "confirmed":
+            selected = [item for item in _stable_items(existing.get("items", [])) if item["kind"] in _ANCILLARY_COST_KINDS]
+            from app.services.document_source_quotes import source_sentences
+            sentences = source_sentences(str(existing.get("evidence") or ""))
+            proofs = {(it["kind"], it["value"]): sentence for sentence in sentences
+                      for it in extract_components(sentence)[0]}
+            sources = [proofs.get((item["kind"], item["value"])) or item.get("evidence") for item in selected]
+            if sources and all(sources):
+                from app.services.document_case_facts import set_field
+                sources = list(dict.fromkeys(sources))
+                set_field(state, current, " ".join(sources), sources[0])
+                state["fields"][current].update(source_field=current, source_quotes=sources)
+                return {current}
     # A literal list of monetary components is a fact, even where the words
     # "расходы" or "неустойка" incidentally resemble a formula request.  Save
     # it first so a court-cost or supplementary-claim answer is not replaced
@@ -589,13 +614,19 @@ def collect_calculation_turn(state: dict[str, Any], text: str, current: str | No
     changed = capture_calculation_turn(state, text, current, put, output_key=output_key)
     if changed and current in {"costs", "litigation_costs"}:
         items = state.get("calculation_ledger", {}).get("items", [])
-        cost_items = [item for item in items if isinstance(item, dict) and item.get("kind") in {
-            "expenses", "valuation", "court_cost", "representative_cost",
-        }]
+        cost_items = [item for item in items if isinstance(item, dict) and item.get("kind") in _ANCILLARY_COST_KINDS]
         if cost_items:
             facts = state.setdefault("calculation_facts", {})
             facts["court_costs"] = {"items": cost_items}
             requested = state.setdefault("formula_requested_rules", [])
             if "court_costs" not in requested:
                 requested.append("court_costs")
+            # A template may have *both* a calculation and an expenses
+            # paragraph. Recording the arithmetic alone leaves the question
+            # about the expense and its receipt open on every subsequent turn.
+            if (current != output_key and state["calculation_ledger"].get("status") == "confirmed"
+                    and all(item["kind"] in _ANCILLARY_COST_KINDS for item in parsed)
+                    and parsed):
+                put(current, text, text)
+                changed.add(current)
     return changed

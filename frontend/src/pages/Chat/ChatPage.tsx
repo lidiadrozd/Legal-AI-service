@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { FileText } from 'lucide-react';
@@ -11,7 +11,7 @@ import { chatApi } from '@/api/chat';
 import { documentsApi } from '@/api/documents';
 import { useUIStore } from '@/store/uiStore';
 import { getApiErrorMessage } from '@/utils/apiError';
-import { isDocumentDraftIntent } from '@/utils/documentInterview';
+import { isDocumentDraftIntent, shouldStartDocumentInterview } from '@/utils/documentInterview';
 
 const Wrapper = styled.div`
   display: flex;
@@ -98,7 +98,26 @@ export default function ChatPage() {
   const [unsupportedForm, setUnsupportedForm] = useState(false);
   const [documentTitle, setDocumentTitle] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const interviewRequest = useRef(0);
+  const routeChatId = useRef(chatId);
+  routeChatId.current = chatId;
+  const startingInterview = useRef(false);
+  const startAttempt = useRef<{ chatId?: string; prompt: string; id: string } | null>(null);
   const addToast = useUIStore((state) => state.addToast);
+
+  const refreshInterview = useCallback(async (id: string) => {
+    const request = ++interviewRequest.current;
+    try {
+      const state = await documentsApi.getInterview(id);
+      if (request !== interviewRequest.current || routeChatId.current !== id) return;
+      setInterviewPhase(state.phase);
+      setHasTextPackage(Boolean(state.text_package));
+      setUnsupportedForm(Boolean(state.unsupported_subject));
+      setDocumentTitle(state.document_title || '');
+    } catch {
+      if (request === interviewRequest.current && routeChatId.current === id) setInterviewPhase(null);
+    }
+  }, []);
 
   useEffect(() => {
     setInterviewPhase(null);
@@ -108,19 +127,9 @@ export default function ChatPage() {
   }, [chatId]);
 
   useEffect(() => {
-    let current = true;
-    if (chatId && !isStreaming) {
-      documentsApi.getInterview(chatId).then((state) => {
-        if (current) {
-          setInterviewPhase(state.phase);
-          setHasTextPackage(Boolean(state.text_package));
-          setUnsupportedForm(Boolean(state.unsupported_subject));
-          setDocumentTitle(state.document_title || '');
-        }
-      }).catch(() => { if (current) setInterviewPhase(null); });
-    }
-    return () => { current = false; };
-  }, [chatId, isStreaming]);
+    if (chatId && !isStreaming) void refreshInterview(chatId);
+    return () => { interviewRequest.current += 1; };
+  }, [chatId, isStreaming, refreshInterview]);
 
   const exportInterview = async () => {
     if (!chatId) return;
@@ -160,6 +169,10 @@ export default function ChatPage() {
 
   const handleSend = useCallback(
     async (content: string, fileId?: string) => {
+      if (startingInterview.current) {
+        addToast({ type: 'info', message: 'Подготовка документа ещё запускается. Дождитесь следующего вопроса.' });
+        return;
+      }
       // The route is authoritative. In particular, /chat is a genuinely new
       // conversation even briefly before the route-reset effect clears a
       // stale active-chat record from the previous page.
@@ -170,46 +183,73 @@ export default function ChatPage() {
       // a named document starts the guided interview; advice questions stay in
       // the ordinary consultation flow.
       let startsNewInterview = !fileId && isDocumentDraftIntent(content);
+      const retryingStart = startAttempt.current?.chatId === chatIdToUse && startAttempt.current?.prompt === content;
       if (startsNewInterview && chatIdToUse) {
         // Do not turn an answer in an active interview into a second document.
-        // A generic or cancelled chat, on the other hand, is precisely where
-        // an explicit new document request should start a clean guided flow.
+        // Completed documents can lead to another document in the same chat.
         try {
           const current = await documentsApi.getInterview(chatIdToUse);
-          startsNewInterview = current.phase === 'cancelled';
+          startsNewInterview = retryingStart || shouldStartDocumentInterview(content, current);
         } catch (error) {
           const status = (error as { response?: { status?: number } })?.response?.status;
-          startsNewInterview = status === 404;
+          if (status !== 404) {
+            addToast({ type: 'error', message: getApiErrorMessage(error, 'Не удалось проверить текущую подготовку документа. Повторите запрос.') });
+            return;
+          }
+          startsNewInterview = true;
         }
       }
 
       if (startsNewInterview) {
+        if (startingInterview.current) return;
+        startingInterview.current = true;
+        if (startAttempt.current?.chatId !== chatIdToUse || startAttempt.current?.prompt !== content) {
+          startAttempt.current = { chatId: chatIdToUse, prompt: content, id: crypto.randomUUID() };
+        }
         try {
           const interview = await documentsApi.startInterview({
             prompt: content,
             filename: 'document-draft',
             output_format: 'docx',
+            start_request_id: startAttempt.current.id,
             ...(chatIdToUse ? { chat_id: Number(chatIdToUse) } : {}),
           });
-          const newChat = {
-            id: String(interview.chat_id),
-            title: 'Подготовка документа',
-            user_id: '',
-            message_count: 2,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-          useChatStore.getState().addChat(newChat);
-          useChatStore.getState().setActiveChat(newChat);
+          startAttempt.current = null;
+          const interviewChatId = String(interview.chat_id);
+          if (routeChatId.current !== chatId) {
+            await loadChats().catch(() => undefined);
+            return;
+          }
+          if (interviewChatId === chatIdToUse) {
+            // Same-route navigation does not rerun effects. Reload persisted
+            // messages and the banner without duplicating or renaming a chat.
+            const refreshed = await Promise.allSettled([
+              openChat(interviewChatId), refreshInterview(interviewChatId),
+            ]);
+            if (refreshed[0].status === 'rejected') {
+              addToast({ type: 'error', message: 'Подготовка начата в этом чате, но сообщения не загрузились. Откройте чат ещё раз.' });
+            }
+          } else {
+            const store = useChatStore.getState();
+            const existing = store.chats.find((chat) => chat.id === interviewChatId);
+            const newChat = existing ?? {
+              id: interviewChatId, title: 'Подготовка документа', user_id: '', message_count: 2,
+              created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+            };
+            if (!existing) store.addChat(newChat);
+            store.setActiveChat(newChat);
+            navigate(`/chat/${interviewChatId}`, { replace: true });
+          }
           // Refreshing the sidebar is non-essential. If it transiently fails
           // after the interview was created, still take the person to the
           // newly created chat instead of displaying a false start failure.
           await loadChats().catch(() => undefined);
-          navigate(`/chat/${interview.chat_id}`, { replace: true });
           return;
         } catch (error) {
           addToast({ type: 'error', message: getApiErrorMessage(error, 'Не удалось начать подготовку документа') });
           return;
+        } finally {
+          startingInterview.current = false;
         }
       }
 
@@ -242,9 +282,11 @@ export default function ChatPage() {
         chat_id: chatIdToUse,
         content,
         attachment_ids: fileId ? [fileId] : undefined,
+      }, async (recoveredChatId) => {
+        await refreshInterview(recoveredChatId);
       });
     },
-    [addToast, chatId, loadChats, navigate, stream],
+    [addToast, chatId, loadChats, navigate, openChat, refreshInterview, stream],
   );
 
   const handleSuggestion = useCallback(

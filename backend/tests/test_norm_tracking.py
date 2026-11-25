@@ -385,9 +385,17 @@ async def test_document_mapping_upgrades_to_article_and_never_broadens_on_timeou
     ("Снимаю квартиру по договору. Какие у меня права?", "Опирайтесь на статью 687 ГК РФ.", "ru:14-fz:1996-01-26"),
     ("Магазин не принимает неисправный чайник. Что делать?", "Статья 18 Закона РФ «О защите прав потребителей».", "ru:2300-1:1992-02-07"),
 ])
-async def test_ordinary_nlp_answer_keeps_citations_without_rag(monkeypatch, query, answer, key):
-    client = SimpleNamespace(chat_completion=AsyncMock(return_value=SimpleNamespace(
-        content=answer, usage=TokenUsage(10, 10, 20, False))))
+async def test_ordinary_nlp_answer_keeps_citations_without_rag(monkeypatch, query, answer, key, mock_basis_review):
+    from app.services.answer_norms import CODE_URLS, extract_answer_norms
+    from app.services.consultant_article_quotes import ArticleQuote
+
+    norm = extract_answer_norms(answer)[0]["legal_source"].norm
+    fixture_text = "Текст статьи для проверки сохранения идентификатора источника."
+    candidate = ArticleQuote(norm, fixture_text, fixture_text, CODE_URLS[key], "fixture")
+    client = SimpleNamespace(chat_completion=AsyncMock(side_effect=[
+        SimpleNamespace(content=answer, usage=TokenUsage(10, 10, 20, False)),
+        mock_basis_review([candidate], answer, [{"id": 1, "sentence": 1}]),
+    ]))
     monkeypatch.setattr(nlp_service, "get_gigachat_client", AsyncMock(return_value=client))
     monkeypatch.setattr(nlp_service.response_cache, "get", AsyncMock(return_value=None))
     monkeypatch.setattr(nlp_service.response_cache, "set", AsyncMock())

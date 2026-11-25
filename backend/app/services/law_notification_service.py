@@ -86,7 +86,7 @@ def _fingerprint(change, reference, context):
                "norm": [reference.document_key, reference.article, reference.part, reference.point,
                         reference.source_revision, reference.source_sha256, reference.source_text,
                         reference.situation_excerpt],
-               "context": context, "model": settings.GIGACHAT_MODEL,
+               "context": context, "model": settings.llm_model,
                "prompts": [LAW_ANALYSIS_PROMPT, USER_MATCH_PROMPT],
                "schemas": [LAW_ANALYSIS_FUNCTION, build_user_match_function([])]}
     return hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
@@ -97,7 +97,7 @@ async def _store_assessment(db, *, change_id, reference_id, result, fingerprint)
                   status=result.status or "error", reason=result.reason,
                   conditions=list(result.conditions), law_analysis=result.law_analysis,
                   failure_stage=result.failure_stage, error_code=result.error_code,
-                  model=settings.GIGACHAT_MODEL, input_fingerprint=fingerprint,
+                  model=settings.llm_model, input_fingerprint=fingerprint,
                   checked_at=datetime.now(timezone.utc))
     if db.bind.dialect.name == "postgresql":
         from sqlalchemy.dialects.postgresql import insert

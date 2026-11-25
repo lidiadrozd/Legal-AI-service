@@ -1,4 +1,7 @@
+from copy import deepcopy
 from decimal import Decimal
+
+import pytest
 
 from app.services.document_formula_registry import (
     CALCULATED,
@@ -9,6 +12,8 @@ from app.services.document_formula_registry import (
     calculation_is_blocking,
     detect_requested_rules,
     first_pending_question,
+    normalize_calculation_plan,
+    primary_pending_rule,
 )
 from app.services.document_form_composition import _confirmed_calculation_text
 
@@ -207,6 +212,280 @@ def test_civil_395_asks_only_for_the_calculation_endpoint_when_the_due_date_is_k
     assert entry["missing"] == ["end_date"]
     assert "фактической оплаты" in entry["question"].lower()
     assert "долг должен был" not in entry["question"].lower()
+
+
+def test_dependent_duty_preserves_the_missing_rate_source_as_the_actionable_reason():
+    state = {
+        "scenario": "claim_debt_loan",
+        "fields": {
+            "amount": filled("150000"),
+            "due_date": filled("2026-09-30"),
+            "calculation": filled("Основной долг — 150000 рублей."),
+        },
+    }
+    plan = build_calculation_plan(
+        state["scenario"], fields=state["fields"],
+        requested=["civil_395", "state_duty"],
+        facts={"civil_395": {
+            "principal": "150000", "start_date": "2026-10-01", "end_date": "2026-11-01",
+        }},
+    )
+
+    duty = next(rule for rule in plan["rules"] if rule["id"] == "state_duty")
+    assert plan["status"] == REVIEW_REQUIRED
+    assert duty["status"] == REVIEW_REQUIRED
+    assert duty["blocked_by"] == ["civil_395"]
+    assert not duty.get("question")
+    assert not duty["missing"]
+    assert not plan["pending_question"]
+    assert primary_pending_rule(plan)["system_action"] == "load_key_rate_history"
+    assert "исторические ключевые ставки" in first_pending_question(plan)
+    assert calculation_is_blocking(plan)
+
+    applied = apply_plan_to_state(state, plan)
+    assert state["fields"]["amount"] == filled("150000")
+    assert state["fields"]["due_date"] == filled("2026-09-30")
+    target = applied["current_field"]
+    assert state["fields"][target]["status"] == "incomplete"
+    assert state["fields"][target]["error"] == first_pending_question(plan)
+    calculation = state["fields"]["calculation"]
+    assert (calculation.get("formula_base_value") or calculation.get("value")) == "Основной долг — 150000 рублей."
+    assert not any(item["kind"] in {"interest", "state_duty"} for item in applied["items"])
+
+
+def test_dependent_duty_asks_only_for_the_missing_calculation_endpoint():
+    plan = build_calculation_plan(
+        "claim_debt_loan", fields={"amount": filled("150000")},
+        requested=["civil_395", "state_duty"],
+        facts={"civil_395": {"principal": "150000", "start_date": "2026-10-01"}},
+    )
+
+    primary = primary_pending_rule(plan)
+    duty = next(rule for rule in plan["rules"] if rule["id"] == "state_duty")
+    assert primary["id"] == "civil_395"
+    assert primary["missing"] == ["end_date"]
+    assert first_pending_question(plan) == primary["question"]
+    assert "фактической оплаты" in first_pending_question(plan).lower()
+    assert duty["status"] == REVIEW_REQUIRED
+    assert duty["blocked_by"] == ["civil_395"]
+    assert plan["status"] == NEEDS_INPUT
+    assert calculation_is_blocking(plan)
+
+
+def test_consumer_duty_dependency_does_not_hide_an_unverified_penalty_policy():
+    plan = build_calculation_plan(
+        "claim_consumer_late_delivery", fields={"amount": filled("40000")},
+        requested=["consumer_delay_penalty", "state_duty"],
+        facts={"consumer_delay_penalty": {"principal": "40000", "days": 30}},
+    )
+
+    assert primary_pending_rule(plan)["system_action"] == "resolve_consumer_penalty_rule"
+    assert "проверенная норма и ставка" in first_pending_question(plan)
+    assert plan["status"] == REVIEW_REQUIRED
+    assert calculation_is_blocking(plan)
+    assert not any(item["kind"] in {"consumer_penalty", "state_duty"} for item in plan["items"])
+
+
+def test_saved_legacy_duty_question_is_repaired_without_rewriting_confirmed_facts():
+    original = {
+        "status": NEEDS_INPUT,
+        "current_field": "calculation",
+        "claim_price_total": "150000.00",
+        "pending_question": "Сначала нужно завершить расчёт всех заявленных денежных требований.",
+        "unresolved_rule_ids": ["civil_395", "state_duty"],
+        "rules": [
+            {"id": "civil_395", "status": REVIEW_REQUIRED, "missing": [],
+             "review_reason": "Не удалось получить исторические ставки из проверенного источника.",
+             "system_action": "retry_key_rate_history"},
+            {"id": "state_duty", "status": NEEDS_INPUT, "missing": ["complete_claim_price"],
+             "question": "Сначала нужно завершить расчёт всех заявленных денежных требований."},
+        ],
+    }
+    saved = deepcopy(original)
+
+    repaired = normalize_calculation_plan(original)
+
+    assert original == saved
+    assert repaired["status"] == REVIEW_REQUIRED
+    assert repaired["current_field"] == "calculation"
+    assert repaired["claim_price_total"] == "150000.00"
+    assert repaired["rules"][1]["blocked_by"] == ["civil_395"]
+    assert not repaired["pending_question"]
+    assert primary_pending_rule(original)["system_action"] == "retry_key_rate_history"
+    assert first_pending_question(original) == original["rules"][0]["review_reason"]
+    assert calculation_is_blocking(repaired)
+    state = {"scenario": "claim_debt_loan", "fields": {"amount": filled("150000")}}
+    applied = apply_plan_to_state(state, original)
+    assert applied["status"] == REVIEW_REQUIRED
+    assert state["fields"]["calculation"]["error"] == first_pending_question(original)
+
+
+def test_verified_sources_resolve_interest_and_dependent_duty_without_reentering_facts():
+    fields = {"amount": filled("150000")}
+    facts = {"civil_395": {
+        "principal": "150000", "start_date": "2026-10-01", "end_date": "2026-11-01",
+    }}
+    pending = build_calculation_plan(
+        "claim_debt_loan", fields=fields, facts=facts, requested=["civil_395", "state_duty"],
+    )
+    plan = build_calculation_plan(
+        "claim_debt_loan", fields=fields, facts=facts, existing_plan=pending,
+        rate_data={
+            "civil_395": {"rate_periods": [
+                {"days": 31, "annual_rate": "10", "day_divisor": 365, "source": "Проверенный источник"},
+            ]},
+            "state_duty": {"tariff": {
+                "source": "Проверенный тестовый тариф",
+                "brackets": [{"up_to": None, "base": "2000", "percent_over": "0"}],
+            }},
+        },
+    )
+
+    assert plan["status"] == CALCULATED
+    assert not calculation_is_blocking(plan)
+    assert primary_pending_rule(plan) is None
+    assert first_pending_question(plan) is None
+    assert plan["claim_price_total"] == "151273.97"
+    assert plan["state_duty_total"] == "2000.00"
+    assert not plan["unresolved_rule_ids"]
+    assert fields == {"amount": filled("150000")}
+
+
+def test_incomplete_saved_dependency_keeps_export_blocked_and_requires_system_recovery():
+    plan = normalize_calculation_plan({
+        "status": NEEDS_INPUT,
+        "rules": [{"id": "state_duty", "status": NEEDS_INPUT,
+                   "missing": ["complete_claim_price"], "question": "Сначала нужно завершить расчёт."}],
+    })
+
+    assert calculation_is_blocking(plan)
+    assert plan["status"] == REVIEW_REQUIRED
+    assert primary_pending_rule(plan)["system_action"] == "rebuild_calculation_plan"
+    assert "восстановить" in first_pending_question(plan)
+    assert not plan["pending_question"]
+    assert normalize_calculation_plan(plan) == plan
+
+
+def test_corrupt_needs_input_without_question_names_the_exact_missing_fact():
+    plan = normalize_calculation_plan({
+        "status": NEEDS_INPUT,
+        "rules": [{
+            "id": "civil_395", "label": "Проценты по статье 395 ГК РФ",
+            "status": NEEDS_INPUT, "missing": ["end_date"], "question": None,
+        }],
+    })
+
+    question = first_pending_question(plan)
+
+    assert question
+    assert "дат" in question.lower()
+    assert "фактической оплаты" in question.lower()
+    assert "дополнительные подтверждённые исходные данные" not in question
+    assert plan["pending_question"] == question
+
+
+def test_corrupt_review_rule_receives_a_concrete_reason_for_its_action():
+    plan = normalize_calculation_plan({
+        "status": REVIEW_REQUIRED,
+        "rules": [{
+            "id": "state_duty", "label": "Государственная пошлина",
+            "status": REVIEW_REQUIRED, "missing": [], "question": None,
+            "review_reason": None, "system_action": "load_state_duty_tariff",
+        }],
+    })
+
+    reason = first_pending_question(plan)
+
+    assert reason
+    assert "пошлин" in reason.lower()
+    assert "тариф" in reason.lower()
+    assert plan["rules"][0]["review_reason"] == reason
+
+
+def test_rebuilding_a_saved_calculation_does_not_treat_its_own_interest_as_a_user_sum():
+    state = {
+        "scenario": "claim_debt_loan",
+        "fields": {
+            "amount": filled("150000"),
+            "calculation": {
+                "status": "filled", "value": "Почтовые расходы — 350 рублей.",
+                "origin": "source_bound_arithmetic",
+                "components": [{"kind": "expenses", "label": "Почтовые расходы", "value": "350"}],
+            },
+        },
+    }
+    for rate, expected_interest in (("10", "1273.97"), ("10", "1273.97"), ("12", "1528.77")):
+        plan = build_calculation_plan(
+            state["scenario"], fields=state["fields"],
+            requested=["civil_395", "state_duty"], existing_plan=state.get("calculation_plan"),
+            facts={
+                "civil_395": {"principal": "150000", "rate_periods": [
+                    {"days": 31, "annual_rate": rate, "day_divisor": 365, "source": "Проверенный источник"},
+                ]},
+                "state_duty": {"tariff": {
+                    "source": "Проверенный тестовый тариф",
+                    "brackets": [{"up_to": None, "base": "2000", "percent_over": "0"}],
+                }},
+            },
+        )
+        apply_plan_to_state(state, plan)
+
+        assert plan["status"] == CALCULATED
+        assert not calculation_is_blocking(plan)
+        assert [item["value"] for item in plan["items"] if item["kind"] == "interest"] == [expected_interest]
+        assert [item["value"] for item in plan["items"] if item["kind"] == "expenses"] == ["350.00"]
+        assert Decimal(plan["recovery_total"]) == Decimal("150350") + Decimal(expected_interest)
+        assert plan["state_duty_total"] == "2000.00"
+
+
+def test_user_stated_interest_in_a_saved_calculation_still_requires_conflict_review():
+    plan = build_calculation_plan(
+        "claim_debt_loan",
+        fields={
+            "amount": filled("150000"),
+            "calculation": {
+                "status": "filled", "origin": "calculation_plan", "value": "Подтверждённая разбивка сумм",
+                "components": [{"id": "component:1:interest", "kind": "interest", "value": "5000",
+                                "evidence": "Хочу взыскать 5000 рублей процентов."}],
+            },
+        },
+        requested=["civil_395"],
+        facts={"civil_395": {"principal": "150000", "rate_periods": [
+            {"days": 31, "annual_rate": "10", "day_divisor": 365, "source": "Проверенный источник"},
+        ]}},
+    )
+
+    assert calculation_is_blocking(plan)
+    assert primary_pending_rule(plan)["id"] == "arithmetic_components"
+    assert "готовая сумма" in first_pending_question(plan)
+    arithmetic = next(rule for rule in plan["rules"] if rule["id"] == "arithmetic_components")
+    assert any(item["value"] == "5000.00" for item in arithmetic["inputs"]["components"])
+
+
+@pytest.mark.parametrize("scenario,rule_id,rate_key,divisor", [
+    ("claim_debt_loan", "civil_395", "annual_rate", 365),
+    ("claim_labor_salary", "labor_delay_236", "key_rate_percent", 150),
+])
+def test_invalid_partial_payments_require_user_facts_even_with_cached_rates(scenario, rule_id, rate_key, divisor):
+    problem = "Сумма частичного платежа превышает остаток долга. Уточните сумму и дату платежа."
+    plan = build_calculation_plan(
+        scenario, fields={"amount": filled("150000")}, requested=[rule_id, "state_duty"],
+        facts={rule_id: {
+            "principal": "150000", "start_date": "2026-10-01", "end_date": "2026-11-01",
+            "input_error": problem, "source_error": "Прежняя ошибка источника",
+            "rate_periods": [{"days": 31, rate_key: "10", "day_divisor": divisor,
+                              "source": "Ранее полученный проверенный источник"}],
+        }},
+    )
+
+    primary = primary_pending_rule(plan)
+    assert primary["id"] == rule_id
+    assert primary["status"] == NEEDS_INPUT
+    assert primary["missing"] == ["partial_payments"]
+    assert not primary.get("system_action")
+    assert first_pending_question(plan) == problem
+    assert calculation_is_blocking(plan)
+    assert not any(item["kind"] in {"interest", "labor_compensation", "state_duty"} for item in plan["items"])
 
 
 def test_reapplying_a_calculated_pretension_plan_keeps_one_imperative_demand():

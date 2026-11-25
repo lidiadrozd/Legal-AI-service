@@ -13,6 +13,24 @@ cd backend
 docker compose up -d --build
 ```
 
+Перед запуском выберите провайдера в `backend/.env`. Для готового Base64-ключа GigaChat достаточно:
+
+```dotenv
+LLM_PROVIDER=gigachat
+GIGACHAT_AUTH_KEY=<готовый ключ>
+GIGACHAT_SCOPE=GIGACHAT_API_B2B
+```
+
+Для ключа Cloud.ru Foundation Models:
+
+```dotenv
+LLM_PROVIDER=cloudru
+CLOUDRU_API_KEY=<секретный ключ>
+CLOUDRU_MODEL=ai-sage/GigaChat3-10B-A1.8B
+```
+
+Ключи нельзя добавлять в Git или отправлять в логи. `GIGACHAT_MODEL` задаётся отдельно: доступ к Pro определяется правами выданного ключа, а не самим названием переменной.
+
 - API: **http://87.242.87.53:8000** (откройте порт **8000** в фаерволе) или `http://localhost:8000` на самой машине.
 - Из корня репозитория: `docker compose up -d --build` (нужен Compose 2.20+).
 

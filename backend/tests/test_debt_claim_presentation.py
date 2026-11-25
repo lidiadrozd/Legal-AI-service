@@ -57,7 +57,7 @@ def test_loan_claim_presentation_deduplicates_opening_story_and_normalizes_absen
     assert 'Письменная претензия была направлена ответчику 10 марта 2026 года.' not in text
     assert text.count('основную задолженность по договору займа в размере 120 000 рублей')==1
     assert 'Взыскать судебные расходы в размере 350 рублей.' in text
-    assert '1. Расписку.' in text and '2. Претензию о взыскании.' in text
+    assert '1. Расписка.' in text and '2. Претензия о взыскании.' in text
     assert 'притензи' not in text.lower()
 
 

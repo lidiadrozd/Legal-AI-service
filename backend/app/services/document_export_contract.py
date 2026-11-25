@@ -5,7 +5,7 @@ party assignment or deciding whether unchecked prose can be published.
 """
 import re
 
-EDITOR_VERSION = 25
+EDITOR_VERSION = 27
 ROLE_FIELDS = {'sender', 'recipient', 'employer', 'signature', 'counterparty_signature',
                'sender_address', 'recipient_address', 'employer_address', 'court', 'party_details',
                'property_address', 'source_address', 'sender_details', 'recipient_details'}
@@ -90,8 +90,15 @@ def clean_requisite(key, source):
     """Extract identifiers without inventing a person, court or jurisdiction."""
     text = source.strip()
     from app.services.document_field_safety import field_value_problem
-    from app.services.document_dialogue import conversational_value
-    if field_value_problem(key,text)=='identity_is_description' or conversational_value(text):return None
+    from app.services.document_dialogue import conversational_value, leaves_blank
+    if field_value_problem(key,text)=='identity_is_description' or conversational_value(text) or leaves_blank(text):return None
+    if key.endswith('_address'):
+        from app.services.document_addresses import postal_phrase
+        from app.services.document_source_quotes import source_sentences
+        sentences = source_sentences(text)
+        addresses = [address for sentence in sentences if (address := postal_phrase(sentence))]
+        if addresses:
+            return addresses[0] if len(sentences) == 1 else None
     if key in {'sender', 'recipient', 'employer'}:
         # Legacy extraction sometimes saved the following labelled address in
         # the person's name. Keep the identity only; the address has its slot.

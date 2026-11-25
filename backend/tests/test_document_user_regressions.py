@@ -139,9 +139,43 @@ async def test_chat_list_repairs_old_generic_titles_but_not_manual_ones(db_sessi
     state=new_state('Ходатайство о приобщении документов по делу о ноутбуке')
     generic=ChatSession(user_id=1,title='Подготовка документа',document_workflow=state)
     manual=ChatSession(user_id=1,title='Мой спор',document_workflow=state)
-    db_session.add_all([generic,manual]);await db_session.commit()
+    legacy=ChatSession(user_id=1,title='Новый чат',document_workflow={
+        **state, 'scenario':'pretense_consumer_defective_service','request':'Претензия за некачественную услугу',
+        'title_manual':True,'automatic_title':'Новый чат'})
+    renamed=ChatSession(user_id=1,title='Новый чат',document_workflow={
+        **state, 'title_manual':True,'automatic_title':None})
+    db_session.add_all([generic,manual,legacy,renamed]);await db_session.commit()
     from app.api.chat import get_chats
     rows=await get_chats(current_user=SimpleNamespace(id=1),db=db_session)
     titles={row.id:row.title for row in rows}
     assert titles[generic.id]=='Приобщение документов · ноутбук'
     assert titles[manual.id]=='Мой спор'
+    assert titles[legacy.id]=='Претензия о качестве услуги'
+    assert not legacy.document_workflow['title_manual']
+    assert titles[renamed.id]=='Новый чат'
+
+
+def test_document_subject_does_not_absorb_personal_details_or_later_phone_edit():
+    request = 'Нужен иск о взыскании оплаты за услуги. Я фотограф Миронов Артём Юрьевич.'
+    state = new_state(request)
+    assert suggest_chat_title(state) == 'Иск о взыскании оплаты за услуги'
+    state.update(scenario='claim_debt_services', user_turns=['Измени мой телефон'])
+    assert suggest_chat_title(state, 'Измени мой телефон') == 'Иск о взыскании оплаты за услуги'
+
+
+def test_brief_personal_purpose_survives_a_previous_bad_editor_suggestion():
+    from app.services.document_form_composition import _compose_consumer_evidence
+    from app.services.document_scenarios import SCENARIOS
+    from app.services.document_template_library import load_text_package
+    state = new_state('Претензия за некачественную услугу')
+    state.update(scenario='pretense_consumer_defective_service',fields={'consumer_status':{'value':'для личных'}})
+    state['text_package'] = load_text_package(SCENARIOS[state['scenario']])
+    fields = {'consumer_status':{'status':'filled','value':'личного использования для отдыха'},
+              'purchase':{'status':'filled','value':'Передала пальто для обычной чистки.'},
+              'service_description':{'status':'filled','value':'обычной чистки'}}
+    _compose_consumer_evidence(state, fields)
+    assert fields['consumer_status']['value'] == 'личных нужд'
+    assert fields['service_description']['status'] == 'not_applicable'
+    fields['service_description'] = {'status':'filled','value':'чистка с пропиткой'}
+    _compose_consumer_evidence(state, fields)
+    assert fields['service_description']['value'] == 'чистка с пропиткой'

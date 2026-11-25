@@ -82,7 +82,7 @@ def test_multiline_values_are_text_not_xml_or_template_commands():
 def test_missing_required_value_remains_a_label_not_example_data():
     fields=fixture_fields();fields['property']={'status':'unknown','value':None};fields['deposit']={'status':'unknown','value':None}
     doc=Document(BytesIO(fill_docx_template(load_text_package(SCENARIOS['contract_housing']),SCENARIOS['contract_housing'],fields)))
-    assert '[адрес передаваемого жилья]' in texts(doc) and '[наличие обеспечительного платежа]' in texts(doc)
+    assert '[ДАННЫЕ ОТСУТСТВУЮТ: адрес передаваемого жилья]' in texts(doc) and '[ДАННЫЕ ОТСУТСТВУЮТ: наличие обеспечительного платежа]' in texts(doc)
     assert 'Уфа' not in texts(doc)
 
 

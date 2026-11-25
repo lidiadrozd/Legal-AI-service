@@ -15,6 +15,11 @@ from app.services.legal_sources import LegalSource, load_legal_source_catalog
 logger = logging.getLogger(__name__)
 
 _TOKEN_RE = re.compile(r"[\wа-яА-ЯёЁ]+", re.UNICODE)
+_TK_KEY = "ru:197-fz:2001-12-30"
+_DEADLINE_QUERY_RE = re.compile(
+    r"\b(?:в\s+какой\s+срок|срок\w*|когда|не\s+позднее|в\s+какой\s+день)\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -152,6 +157,25 @@ def build_rag_bundle(query: str) -> tuple[str, list[dict]]:
         threshold=settings.RAG_RERANK_THRESHOLD,
     )
     selected = ranked[: settings.RAG_MAX_CONTEXT_CHUNKS]
+    # A number supplied by the user is only a hypothesis.  For a question
+    # specifically about the deadline for final employment payments, article
+    # 140 is the deadline rule; article 127 establishes the entitlement to
+    # unused-leave compensation and must not be echoed as a second answer to
+    # the deadline question merely because the user named it.
+    if _DEADLINE_QUERY_RE.search(query or "") and any(
+        chunk.legal_source
+        and chunk.legal_source.norm.document_key == _TK_KEY
+        and chunk.legal_source.norm.article == "140"
+        for chunk in selected
+    ):
+        selected = [
+            chunk for chunk in selected
+            if not (
+                chunk.legal_source
+                and chunk.legal_source.norm.document_key == _TK_KEY
+                and chunk.legal_source.norm.article == "127"
+            )
+        ]
     if not selected:
         return "", []
 
@@ -162,7 +186,16 @@ def build_rag_bundle(query: str) -> tuple[str, list[dict]]:
         metadata = ""
         if chunk.legal_source:
             source = chunk.legal_source
-            metadata = f"\nСтатья: {source.norm.article}; часть: {source.norm.part}; пункт: {source.norm.point}; редакция: {source.revision}; ссылка: {source.source_url}"
+            quote_metadata = ""
+            if source.has_verified_excerpt:
+                quote_metadata = ("\nВерифицированная дословная цитата (используй только её в кавычках): "
+                                  f"«{source.verbatim_excerpt}»")
+            elif source.content_kind == "operator_summary":
+                quote_metadata = "\nТип: авторское изложение; запрещено выдавать его за прямую цитату закона."
+            else:
+                quote_metadata = "\nПрямая цитата по этому фрагменту не верифицирована."
+            metadata = (f"\nСтатья: {source.norm.article}; часть: {source.norm.part}; пункт: {source.norm.point}; "
+                        f"редакция: {source.revision}; ссылка: {source.source_url}{quote_metadata}")
             sources.append({"citation_id": idx, "legal_source": source, "text": chunk.text})
         lines.append(f"[{idx}] {label} {chunk.source}{metadata}\n{chunk.text.strip()}")
     return "\n\n".join(lines), sources

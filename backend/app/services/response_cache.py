@@ -11,7 +11,7 @@ from app.services.rag_context import serialize_chat_context
 
 logger = logging.getLogger(__name__)
 
-_CACHE_PREFIX = "legal_ai:chat_response:citation-v7:"
+_CACHE_PREFIX = "legal_ai:chat_response:citation-v8:"
 _WHITESPACE_RE = re.compile(r"\s+")
 
 
@@ -31,7 +31,8 @@ def build_cache_key(
     history_tail = (chat_history or "")[-settings.CHAT_RESPONSE_CACHE_HISTORY_CHARS :]
     payload = "\n".join(
         [
-            settings.GIGACHAT_MODEL,
+            settings.LLM_PROVIDER,
+            settings.llm_model,
             normalized_query,
             context_blob,
             history_tail,

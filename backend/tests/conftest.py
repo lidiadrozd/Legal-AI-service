@@ -7,6 +7,23 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 import pytest
 
 
+@pytest.fixture
+def mock_basis_review(monkeypatch):
+    """Feed known candidate articles and a structured reviewer decision to NLP tests."""
+    import json
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+    from app.services import consultation_basis
+    from app.services.llm_cost import TokenUsage
+
+    def configure(candidates, answer, passages):
+        monkeypatch.setattr(consultation_basis, "find_basis_candidates", AsyncMock(return_value=candidates))
+        payload = {"answer": answer, "passages": passages, "missing": []}
+        return SimpleNamespace(content=json.dumps(payload, ensure_ascii=False), usage=TokenUsage(3, 4, 7, False))
+
+    return configure
+
+
 @pytest.fixture(autouse=True)
 def offline_conversation_planner(monkeypatch):
     """API tests do not make live provider requests for wording questions."""

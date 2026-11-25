@@ -58,8 +58,23 @@ def _sentence(text):
     return text[:1].upper()+text[1:]+'.' if text else ''
 
 
+def attachment_list_content(text):
+    return re.sub(r'^(?:(?:к\s+(?:иску|претензии|заявлению|жалобе)\s+)?(?:приложу|прилагаю)|(?:у меня )?есть|имеются)\s+',
+                  '', text.strip(), flags=re.I)
+
+
+def attachment_name(item):
+    forms = {'письменного обращения': 'письменное обращение', 'банковской выписки': 'банковская выписка',
+             'трудового договора': 'трудовой договор', 'переписку': 'переписка', 'отчёта оценщика': 'отчёт оценщика',
+             'отчета оценщика': 'отчёт оценщика', 'фотографий': 'фотографии', 'копию': 'копия',
+             'притензию': 'претензия', 'притензия': 'претензия', 'гарантию': 'гарантия', 'расписку': 'расписка',
+             'претензию': 'претензия', 'справку': 'справка', 'квитанцию': 'квитанция', 'выписку': 'выписка'}
+    return next((new + item[len(old):] for old, new in forms.items()
+                 if re.match(re.escape(old) + r'\b', item, re.I)), item)
+
+
 def _document_list(text):
-    text=re.sub(r'^(?:есть|имеются|приложу|прилагаю)\s+','',text.strip(),flags=re.I)
+    text=attachment_list_content(text)
     text=re.sub(r'\bпритензи', 'претензи', text, flags=re.I)
     # A frequent shorthand in the interview is "договор и работах".  It
     # cannot be printed verbatim as an application item, but it also does not
@@ -69,13 +84,13 @@ def _document_list(text):
                 'договор и документы о выполненных работах',text,flags=re.I)
     document_head=(r'банковск|расч[её]тн|приказ|свидетельств|справк|копи|расписк|претензи|'
                    r'исков\w* заявлен|уведомлен|квитанц|опи[сьс]|почтов\w* отправлен|'
-                   r'плат[её]жн\w* поручен|договор|акт|чек|переписк|гаранти')
+                   r'плат[её]жн\w* поручен|договор|акт|чек|переписк|гаранти|видео|фото')
     # Allow ordinary user wording such as "расписку и претензию" as two
     # applications.  The look-ahead has to accept inflected document words;
     # a strict word boundary immediately after the stem made "претензию"
     # remain glued to the preceding item.
     parts=re.split(r'\n|;|,(?!\s*\d)|\s+и\s+(?=(?:'+document_head+r'))',text,flags=re.I)
-    return '\n'.join(f'{n}. '+_sentence(re.sub(r'^\d+[.)]\s*','',part)) for n,part in enumerate(filter(None,(p.strip() for p in parts)),1))
+    return '\n'.join(f'{n}. '+_sentence(attachment_name(re.sub(r'^\d+[.)]\s*','',part))) for n,part in enumerate(filter(None,(p.strip() for p in parts)),1))
 
 
 def _compose(state):
@@ -234,7 +249,8 @@ def _compose(state):
             if details:emit(key,'\n'.join(details))
             elif source:review(key)
         # The court may request unknown respondent identifiers; no false ID.
-        if fields.get('party_details',{}).get('status')=='unknown':
+        from app.services.document_dialogue import is_manual_blank
+        if fields.get('party_details',{}).get('status')=='unknown' and not is_manual_blank(fields['party_details']):
             emit('party_details','Дата и место рождения, место работы и идентификатор ответчика мне неизвестны. Прошу суд запросить необходимые сведения в предусмотренном законом порядке.')
     # Persist notes on the derived view, not in the user's immutable answers.
     return fields,notes

@@ -2,6 +2,23 @@
 import re
 
 
+def clarify_consumer_wording(key, text):
+    """Polish literal or cached wording only where the speaker and object are explicit."""
+    if key == 'seller_response':
+        offer = re.fullmatch(
+            r'([^.!?]+\bпредложил(?:а|и)?\s+[^.!?]+)\.\s*Я\s+(отказался|отказалась)[.!]?',
+            text.strip(), re.I,
+        )
+        if offer:
+            return f'{offer[1]}, однако я {offer[2].lower()} от этого предложения.'
+    if key == 'requests':
+        # «Хочу вернуть товар» describes the consumer's action. Change the
+        # speaker's verb only when the object returned is explicitly money.
+        return re.sub(r'^Хочу\s+вернуть\s+(?=(?:только\s+)?(?:\d[\d \u00a0.,]*\s*(?:руб|₽)|деньги\b|оплату\b|уплаченную сумму\b))',
+                      'Прошу вернуть ', text, flags=re.I)
+    return text
+
+
 def normalize_room_counts(text):
     """Nominative counts in a property list; never alter «из трёх комнат»."""
     def replace(match):

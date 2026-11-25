@@ -3,6 +3,57 @@ import re
 from datetime import datetime, timedelta, timezone
 
 NAME=r'[А-ЯЁ][а-яё-]+(?:\s+[А-ЯЁ][а-яё-]+){2}'
+RELATIVE_DAYS = {'сегодня': 0, 'завтра': 1, 'вчера': -1,
+                 'сегодняшним числом': 0, 'завтрашним числом': 1, 'вчерашним числом': -1}
+RELATIVE_DAY_PATTERN = '|'.join(RELATIVE_DAYS)
+
+
+def stated_document_date(scenario, text):
+    """Return a date explicitly assigned to the document being drafted."""
+    from app.services.document_case_facts import DATE
+    kinds = {'pretense': 'претензии', 'claim': 'иска', 'complaint': 'жалобы',
+             'appeal': 'жалобы', 'contract': 'договора', 'motion': 'ходатайства',
+             'act': 'акта', 'power': 'доверенности', 'labor': 'заявления'}
+    noun = kinds.get(scenario.split('_', 1)[0])
+    names = 'документа' + ('|' + noun if noun else '')
+    label = (r'дат[ау]\s+(?:(?:составления|подписания|оформления)'
+             r'(?:\s+(?:' + names + r'))?|' + names + r')')
+    object_nouns = {'pretense': 'претензию', 'claim': 'иск', 'complaint': 'жалобу', 'appeal': 'жалобу',
+                    'contract': 'договор', 'motion': 'ходатайство', 'act': 'акт', 'power': 'доверенность',
+                    'labor': 'заявление'}
+    obj = object_nouns.get(scenario.split('_', 1)[0])
+    document = r'(?:документ' + ('|' + obj if obj else '') + ')'
+    imperative = r'(?:' + document + r'\s+датируй(?:те)?|датируй(?:те)?\s+' + document + ')'
+    matches = re.finditer(r'(?<!не )\b(?:' + label + '|' + imperative + r')\s*(?:[—–:-]|на)?\s*(?P<day>'
+                          + DATE + r'|\d{4}-\d{2}-\d{2}|' + RELATIVE_DAY_PATTERN + r')\b', text, re.I)
+    return next(reversed(list(matches)), None)
+
+
+def document_date_answer(state, text, current, *, source_question=None):
+    """A bare date answers the drafting-date question only in its own turn."""
+    from app.services.document_case_facts import DATE
+    from app.services.document_scenarios import SCENARIOS
+    labelled = stated_document_date(state['scenario'], text)
+    if labelled:
+        return labelled['day']
+    if current != 'date':
+        return None
+    previous = source_question if source_question is not None else state.get('_replayed_question') or next(
+        (row.get('content', '') for row in reversed(state.get('conversation', ()))
+         if row.get('role') == 'assistant'), '')
+    # Older interviews could display a purchase question while the cursor
+    # pointed to date. Its unqualified answer belongs to the purchase.
+    if previous:
+        spec = next((f for f in SCENARIOS[state['scenario']].fields if f.key == 'date'), None)
+        date_error = state.get('fields', {}).get('date', {}).get('error')
+        if previous != date_error and (not spec or spec.question.casefold() not in previous.casefold()) and not re.search(
+                r'(?:дат\w*|числ\w*)\s+(?:составлен|подписан|оформлен|документ)|дат\w*\s+указать\s+в\s+(?:претензи|иск)', previous, re.I):
+            return None
+    # Keep an explicitly answered day/month for a targeted year clarification.
+    partial = r'\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)'
+    match = re.fullmatch(r'\s*(?:от\s+)?(' + DATE + '|' + partial + r'|\d{4}-\d{2}-\d{2}|' + RELATIVE_DAY_PATTERN + r')(?:\s*г\.?)?[.! ]*',
+                         text, re.I)
+    return match[1] if match else None
 
 
 def nominative_name(value):
@@ -14,7 +65,7 @@ def nominative_name(value):
     parts=value.strip(' .').split()
     first_names={'Ивану':'Иван','Петру':'Петр','Пётру':'Пётр','Андрею':'Андрей','Сергею':'Сергей',
                  'Алексею':'Алексей','Дмитрию':'Дмитрий','Михаилу':'Михаил','Николаю':'Николай','Павлу':'Павел'}
-    if len(parts)==3 and parts[1] in first_names and re.search(r'(?:овичу|евичу)$',parts[2]) and re.search(r'(?:ову|еву|ину)$',parts[0]):
+    if len(parts)==3 and parts[1] in first_names and re.search(r'(?:овичу|евичу|ичу)$',parts[2]) and re.search(r'(?:ову|[её]ву|ину)$',parts[0]):
         return ' '.join([parts[0][:-1],first_names[parts[1]],parts[2][:-1]])
     return value
 
@@ -22,6 +73,10 @@ def nominative_name(value):
 def document_today(state):
     # Dates supplied by the client take precedence over the local service day.
     return state.get('turn_date') or datetime.now(timezone(timedelta(hours=5))).date().isoformat()
+
+
+def resolve_relative_date(day, base):
+    return (datetime.fromisoformat(base).date() + timedelta(days=RELATIVE_DAYS[day.casefold()])).isoformat()
 
 
 def safe_payment_value(value):
@@ -43,6 +98,11 @@ def collect_explicit_facts(state,text,current=None):
         if key!=current and state['fields'].get(key,{}).get('status')=='filled':return
         if set_field(state,key,value,evidence):consumed.add(key)
     author=re.search(r'\b(?:[Яя]\s*[—–,:-]?\s+|[Мм]еня зовут\s+)('+NAME+r')',text)
+    if not author and 'consumer' in state.get('scenario', ''):
+        # A consumer often identifies their role before their name.  Bind it
+        # only in a consumer form, where "покупатель" unambiguously means the
+        # author rather than another person mentioned in the narrative.
+        author=re.search(r'\b[Яя]\s*[—–,:-]\s*покупател[ья]\s*,\s*('+NAME+r')',text)
     if author and author[1] not in (state['fields'].get('sender',{}).get('value') or ''):put('sender',author[1],author[0])
     if state['scenario'].startswith('motion_'):
         from app.services.document_source_quotes import source_sentences
@@ -60,16 +120,35 @@ def collect_explicit_facts(state,text,current=None):
         for sentence in source_sentences(text):
             court=re.match(r'Дело рассматривает\s+(.+\bсуд\b.*)',sentence,re.I)
             if court:put('court',court[1].rstrip(' .'),sentence)
-    if current in specs and specs[current].kind=='date' and text.strip(' .!?').casefold()=='сегодня':
-        put(current,document_today(state),text)
+    relative_word = text.strip(' .!?').casefold()
+    if relative_word in RELATIVE_DAYS:
+        # Normally the active cursor is the date field. If an older saved
+        # interview left it on another field, bind the answer through the
+        # immediately preceding date question instead of discarding it as an
+        # acknowledgement.
+        target = current if current in specs and specs[current].kind == 'date' else None
+        if target is None and 'date' in specs and state['fields'].get('date',{}).get('status') != 'filled':
+            previous_question = next(
+                (item.get('content','') for item in reversed(state.get('conversation',[]))
+                 if item.get('role') == 'assistant'),
+                '',
+            )
+            if re.search(r'дат\w*\s+(?:составлен|подписан|документ)', previous_question, re.I):
+                target = 'date'
+        if target == 'date' and not document_date_answer(state, text, target):
+            target = None
+        if target:
+            put(target,relative_word,text)
     contact=re.search(r'\bКонтакт(?:ы)?\s*:\s*([^\s;,]+@[^\s;,]+)',text,re.I)
     if contact:put('contacts',contact[1].rstrip('.'),contact[0])
     # A detailed opening message often gives the document date together with
     # the case facts. Capture the explicitly labelled date immediately; do not
     # confuse it with dates of the contract, payments, or events.
     if 'date' in specs and state['fields'].get('date',{}).get('status') != 'filled':
-        labelled=re.search(r'(?:дата\s+(?:претензии|жалобы|документа|составления)|дата)\s*[—:-]\s*('+DATE+r')',text,re.I)
-        if labelled:put('date',labelled[1],labelled[0])
+        labelled = stated_document_date(state['scenario'], text)
+        if labelled:
+            value = labelled['day']
+            put('date', value, labelled[0])
     agreement=re.search(r'договор(?:у|а)?\s+(?:оказания\s+услуг|подряда|найма|займа)\s*№\s*[\w/-]+(?:\s+от\s+'+DATE+r')?',text,re.I)
     if agreement:put('agreement',re.sub(r'^договор[ау]\b','Договор',agreement[0],flags=re.I),agreement[0])
     response=re.search(r'Срок\s+(?:исполнения\s+требования|ответа)\s*[—–:-]?\s*(до\s+'+DATE+r')',text,re.I)

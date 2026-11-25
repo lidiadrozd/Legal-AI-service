@@ -92,10 +92,15 @@ def suggest_fields_for_template(
     """
     Возвращает (suggested_fields, sources) где sources[field_key] кратко описывает происхождение значения.
     """
+    from app.services.document_explicit_facts import RELATIVE_DAYS, resolve_relative_date, stated_document_date
+    from app.services.document_scenarios import field
+    from app.services.document_workflow import normalize_field
+
     filing_fields = filing_fields or {}
     extracted = extract_from_text(context_text)
     suggested: dict[str, str] = {}
     sources: dict[str, str] = {}
+    day_spec = field('date', 'Дата документа', kind='date')
 
     if template_key == "statement_of_claim_arbitration":
         if filing_fields.get("court_name"):
@@ -113,12 +118,6 @@ def suggest_fields_for_template(
         if extracted.get("plaintiff_name"):
             suggested["plaintiff_name"] = extracted["plaintiff_name"]
             sources["plaintiff_name"] = "chat_text"
-        if extracted.get("date_iso"):
-            suggested["date"] = extracted["date_iso"]
-            sources["date"] = "chat_text"
-        else:
-            suggested["date"] = date.today().isoformat()
-            sources["date"] = "default_today"
 
     elif template_key == "motion_to_postpone_hearing":
         if filing_fields.get("court_name"):
@@ -134,11 +133,14 @@ def suggest_fields_for_template(
         elif extracted.get("case_number"):
             suggested["case_number"] = extracted["case_number"]
             sources["case_number"] = "chat_text"
-        if extracted.get("date_iso"):
-            suggested.setdefault("date", extracted["date_iso"])
-            sources.setdefault("date", "chat_text")
-            suggested.setdefault("hearing_date", extracted["date_iso"])
-            sources.setdefault("hearing_date", "chat_text")
+        from app.services.document_case_facts import DATE
+        hearing = re.search(r'\b(?:дат[ау]\s+(?:судебного\s+)?заседания|заседание(?:\s+назначено)?|слушание(?:\s+назначено)?)'
+                            r'\s*(?:[—–:-]|на)?\s*(' + DATE + r'|\d{4}-\d{2}-\d{2})\b', context_text, re.I)
+        if hearing:
+            value, error = normalize_field(day_spec, hearing[1])
+            if not error:
+                suggested['hearing_date'] = value
+                sources['hearing_date'] = 'chat_text'
 
     elif template_key == "appeal_complaint":
         if filing_fields.get("court_name"):
@@ -160,20 +162,19 @@ def suggest_fields_for_template(
         if extracted.get("appellant_name"):
             suggested["appellant_name"] = extracted["appellant_name"]
             sources["appellant_name"] = "chat_text"
-        if extracted.get("date_iso"):
-            suggested.setdefault("date", extracted["date_iso"])
-            sources.setdefault("date", "chat_text")
-        else:
-            suggested.setdefault("date", date.today().isoformat())
-            sources.setdefault("date", "default_today")
 
-    if "date" not in suggested:
-        if extracted.get("date_iso"):
-            suggested["date"] = extracted["date_iso"]
-            sources["date"] = "chat_text"
-        else:
-            suggested["date"] = date.today().isoformat()
-            sources["date"] = "default_today"
+    scenario = 'claim' if template_key == 'statement_of_claim_arbitration' else template_key
+    labelled = stated_document_date(scenario, context_text)
+    suggested['date'] = date.today().isoformat()
+    sources['date'] = 'default_today'
+    if labelled:
+        raw = labelled['day']
+        if raw.casefold() in RELATIVE_DAYS:
+            raw = resolve_relative_date(raw, suggested['date'])
+        value, error = normalize_field(day_spec, raw)
+        if not error:
+            suggested['date'] = value
+            sources['date'] = 'chat_text'
 
     return suggested, sources
 

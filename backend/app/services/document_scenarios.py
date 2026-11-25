@@ -316,7 +316,8 @@ def render_scenario(scenario: Scenario, fields: dict, text_package: dict | None 
             text = date.fromisoformat(text).strftime("%d.%m.%Y")
         if text:
             formatted[item.key] = text
-        lines.extend((f"{item.label}: {text or '[' + item.label.lower() + ']'}", ""))
+        from app.services.document_fact_provenance import missing_data_placeholder
+        lines.extend((f"{item.label}: {text or missing_data_placeholder(item.label)}", ""))
     if text_package:
         from app.services.document_template_library import render_text_package, format_template_fields
         return render_text_package(text_package, scenario, fields, format_template_fields(scenario, fields))

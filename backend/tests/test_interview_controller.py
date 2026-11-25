@@ -69,6 +69,21 @@ async def test_help_and_acknowledgement_return_to_same_field_with_all_context(mo
 
 
 @pytest.mark.asyncio
+async def test_help_turn_cannot_create_or_mutate_a_different_missing_field(monkeypatch):
+    state = state_at('pretense_consumer_defective_goods', 'goods_category')
+    state['fields']['purchase'] = {'status': 'filled', 'value': 'Рыба за 500 рублей'}
+    before = deepcopy(state['fields'])
+    monkeypatch.setattr('app.services.document_workflow.get_gigachat_client',
+                        AsyncMock(side_effect=RuntimeError('offline')))
+
+    updated, reply, _ = await advance_interview(state, 'Что означает категория товара?')
+
+    assert updated['fields'] == before
+    assert updated['last_questions'] == ['goods_category']
+    assert reply.count('?') <= 1
+
+
+@pytest.mark.asyncio
 async def test_unrequested_court_advice_is_rejected_and_intake_continues(monkeypatch):
     client = SimpleNamespace(chat_completion=AsyncMock(return_value=SimpleNamespace(
         content='Для подачи иска государственная госпошлина по статье 333.36 не взимается. Подготовьте исковое заявление в суд.',

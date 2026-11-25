@@ -15,7 +15,10 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
 from lxml import etree
-from app.services.document_template_library import TEMPLATE_ROOT, format_template_fields, strip_template_label_echo
+from app.services.document_dialogue import is_manual_blank
+from app.services.document_template_library import (
+    TEMPLATE_ROOT, format_template_fields, missing_data_placeholder, strip_template_label_echo,
+)
 
 ASSET_ROOT = TEMPLATE_ROOT.parent / 'assets'
 W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
@@ -59,7 +62,7 @@ def _requisite(value):
 
 
 def _value(key, values, schema, specs):
-    value = values.get(key) or '[' + specs[key].label.lower() + ']'
+    value = values.get(key) or missing_data_placeholder(specs[key].label)
     form = schema['fields'][key].get('format', 'plain')
     value = value.strip()
     if re.fullmatch(r'\[[^\]]+\]',value):return value
@@ -174,11 +177,17 @@ def _write_paragraphs(control, value, rule):
     parent.remove(paragraph)
 
 
-def _condition(name, fields, schema):
+def _condition(name, fields, schema, control):
     rule = schema['conditions'][name]
     stored = fields.get(rule['field'], {})
     if rule.get('unknown'): return stored.get('status') != 'filled'
-    if stored.get('status') != 'filled': return False
+    if stored.get('status') != 'filled':
+        # Only a slot conditional on its own presence is a manual blank.
+        # Value-dependent branches would assert unconfirmed facts.
+        return (is_manual_blank(stored)
+                and rule.get('value') is None and rule.get('values') is None
+                and any(_tag(slot) == 'field:' + rule['field']
+                        for slot in control.xpath('.//w:sdt', namespaces=NS)))
     if rule.get('values') is not None: return stored.get('value') in rule['values']
     return rule.get('value') is None or stored.get('value') == rule['value']
 
@@ -237,7 +246,7 @@ def _stable_docx_archive(payload):
     return output.getvalue()
 
 
-def fill_docx_template(package, scenario, fields):
+def fill_docx_template(package, scenario, fields, *, prefix=()):
     original, schema = load_docx_asset(package, scenario)
     values = format_template_fields(scenario, fields)
     specs = {f.key:f for f in scenario.fields}
@@ -247,6 +256,15 @@ def fill_docx_template(package, scenario, fields):
             data = source.read(item.filename)
             if item.filename.startswith('word/') and item.filename.endswith('.xml'):
                 root = etree.fromstring(data)
+                if prefix and item.filename == 'word/document.xml':
+                    body = root.find('w:body', NS)
+                    for index, block in enumerate(prefix):
+                        paragraph = etree.Element(qn('w:p'))
+                        run = etree.SubElement(paragraph, qn('w:r'))
+                        if block.get('role') == 'heading':
+                            etree.SubElement(etree.SubElement(run, qn('w:rPr')), qn('w:b'))
+                        etree.SubElement(run, qn('w:t')).text = block['text']
+                        body.insert(index, paragraph)
                 # Whole OOXML blocks are removed for conditional branches;
                 # adjacent styles, numbering, tables and section properties stay.
                 for control in list(root.xpath('//w:sdt', namespaces=NS)):
@@ -254,14 +272,15 @@ def fill_docx_template(package, scenario, fields):
                     if tag.startswith('if:'):
                         name = tag[3:]
                         if name not in schema['conditions']: raise ValueError('Unknown DOCX condition')
-                        if not _condition(name, fields, schema):
+                        if not _condition(name, fields, schema, control):
                             control.getparent().remove(control)
                 for control in root.xpath('//w:sdt', namespaces=NS):
                     tag = _tag(control)
                     if tag.startswith('field:'):
                         key = tag[6:]
                         if key not in schema['fields']: raise ValueError('Unknown DOCX content control')
-                        if key in package.get('intake_only_fields',()):
+                        if (key in package.get('intake_only_fields',())
+                                or fields.get(key, {}).get('origin') == 'already_rendered_fact'):
                             # A legacy DOCX can still contain a control for
                             # questionnaire-only metadata.  Remove its whole
                             # paragraph when possible so neither a label nor a

@@ -86,17 +86,18 @@ def _numbers(text):
         result.add("date:" + normalized)
         return " "
     text = re.sub(r"\b(\d{1,2})[./](\d{1,2})[./](\d{4}|\d{2})\b", numeric_date, text)
+    thousands_spaces = str.maketrans('', '', ' \u00a0\u202f\u2009')
     def money(match):
-        number=Decimal(match[1].replace(' ','').replace('\u00a0','').replace(',','.'))
+        number=Decimal(match[1].translate(thousands_spaces).replace(',','.'))
         unit=(match[2] or '').lower()
         if unit:number*=1000000 if unit.startswith('млн') else 1000
         result.add(format(number.normalize(),'f'))
         return ' '
     # Compare the amount, not the typography: 35 тыс. руб. == 35 000 рублей.
     # Dates have already been isolated; identifiers and unrelated counts stay exact.
-    text=re.sub(r'(?<![\w./])(\d+(?:[ \u00a0]\d{3})*(?:[.,]\d{1,2})?)\s*(тысяч(?:а|и)?|тыс\.?|млн\.?)?\s*(?:руб(?:лей|ля|ль|\.)?(?![а-яё])|₽)',money,text,flags=re.I)
-    for match in re.findall(r"\d+(?:[ ]\d{3})*(?:[.,]\d+)*", text):
-        number = match.replace(" ", "").replace(",", ".")
+    text=re.sub(r'(?<![\w./])(\d+(?:[ \u00a0\u202f\u2009]\d{3})*(?:[.,]\d{1,2})?)\s*(тысяч(?:а|и)?|тыс\.?|млн\.?)?\s*(?:руб(?:лей|ля|ль|\.)?(?![а-яё])|₽)',money,text,flags=re.I)
+    for match in re.findall(r"\d+(?:[ \u00a0\u202f\u2009]\d{3})*(?:[.,]\d+)*", text):
+        number = match.translate(thousands_spaces).replace(",", ".")
         try: number = format(Decimal(number).normalize(), "f")
         except InvalidOperation: pass
         result.add(number)
@@ -113,7 +114,7 @@ def _protect_numbers(source):
     months = r'(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)'
     interval = r'\bс\s+\d{1,2}\s+(?:' + months + r'\s+)?по\s+\d{1,2}\s+' + months + r'(?:\s+\d{4}(?:\s+года)?)?'
     day = r'\b\d{1,2}\s+' + months + r'(?:\s+\d{4}(?:\s+года)?)?'
-    pattern = interval + '|' + day + r'|суммы\s+месячной\s+платы|(?:ООО|ПАО|АО|ИП)\s*[«"][^»"\n]+[»"]|\b[А-ЯЁA-Z]{2,}\b|\d+(?:[ .,/:\-]\d+)*'
+    pattern = interval + '|' + day + r'|суммы\s+месячной\s+платы|(?:ООО|ПАО|АО|ИП)\s*[«"][^»"\n]+[»"]|\b[А-ЯЁA-Z]{2,}\b|\d+(?:[ \u00a0\u202f\u2009.,/:\-]\d+)*'
     return re.sub(pattern, replace, source), values
 
 
@@ -176,6 +177,11 @@ def canonical_editorial(key, source, scenario):
     never completion of missing facts or inferred causes/consequences.
     """
     text = source.strip().rstrip(".")
+    if key == 'requests' and 'consumer' in scenario:
+        from app.services.document_editorial_grammar import clarify_consumer_wording
+        formal = clarify_consumer_wording(key, text)
+        if formal != text:
+            return formal + '.'
     if key=='additional_claims' and re.fullmatch(r'Других требований нет',text,re.I):return 'Другие требования не заявляются.'
     if key in {'payment','payment_details'} and re.fullmatch(r'Банковским переводом(?: на сч[её]т)?[,;]?\s*реквизиты (?:сообщу|будут сообщены) отдельно',text,re.I):return 'Банковским переводом; реквизиты будут сообщены отдельно.'
     if key=='deposit_terms':
@@ -219,6 +225,8 @@ def canonical_editorial(key, source, scenario):
     if key=='copy_notice' and re.fullmatch(r'Копию\s+(?:апелляционной\s+)?жалобы\s+(?:истцу|ответчику|участникам(?:\s+дела)?)\s+(?:ещ[её]\s+)?не\s+(?:направлял[аи]?|отправлял[аи]?|направил[аи]?|отправил[аи]?)',text,re.I):
         return text[:1].upper()+text[1:]+'.'
     if key=='agreement' and re.fullmatch(r'(?:письменный\s+)?договор\s+займа\s*№\s*[\w/-]+(?:\. За[её]м беспроцентный)?',text,re.I):return 'Основание обязательства — '+text[:1].lower()+text[1:]+'.'
+    if key == 'consumer_status' and re.fullmatch(r'(?:для\s+)?(личных|семейных|домашних)', text, re.I):
+        return text.casefold().removeprefix('для ') + ' нужд'
     if key=='consumer_status' and re.fullmatch(r'(?:для\s+)?хранени[ея]\s+продуктов',text,re.I):return 'хранения продуктов'
     if key=='consumer_status' and re.fullmatch(r'(?:для\s+)?личн\w*\s+(?:семейн\w*\s+)?(?:пользовани\w*|использовани\w*|нужд\w*)',text,re.I):return re.sub(r'^для\s+','',text,flags=re.I)
     if key in {'payment','payment_details'} and re.fullmatch(r'(?:перевод\s+)?на карту',text,re.I):return 'банковским переводом на карту; реквизиты будут сообщены отдельно'
@@ -279,7 +287,8 @@ def canonical_editorial(key, source, scenario):
     if key == "attachments" and not re.search(r"[?!]|\b(?:если|возможно|наверное|не знаю|нет)\b", text, re.I):
         # Enumerating supplied evidence must not turn originals into copies or
         # invent a medical/expert report. Only remove conversational list glue.
-        listing = re.sub(r"^\s*(?:у меня )?есть\s+", "", text, flags=re.I)
+        from app.services.document_case_composition import attachment_list_content, attachment_name
+        listing = attachment_list_content(text)
         listing = re.sub(r"\s+(?:только\s+)?ну и\s+|\s+а также\s+", ", ", listing, flags=re.I)
         # Split only before a recognisable document name.  This keeps names in
         # a single contract intact while handling ordinary evidence lists such
@@ -290,15 +299,7 @@ def canonical_editorial(key, source, scenario):
                  r'гаранти\w*|квитанц\w*|опи[сьс]\w*|почтов\w* отправлен\w*|плат[её]жн\w* поручен\w*')
         items = re.split(r"\s*[,;\n]\s*|\s+и\s+(?=(?:" + heads + r')\b)', listing, flags=re.I)
         if formal_text(listing) and all(item and len(item) < 180 for item in items):
-            forms = {'письменного обращения': 'письменное обращение', 'банковской выписки': 'банковская выписка',
-                     'трудового договора': 'трудовой договор', 'переписку':'переписка', 'отчёта оценщика': 'отчёт оценщика',
-                      'отчета оценщика': 'отчёт оценщика', 'фотографий': 'фотографии', 'копию': 'копия',
-                      'притензию': 'претензия', 'притензия': 'претензия',
-                      'гарантию':'гарантия', 'расписку':'расписка', 'претензию':'претензия',
-                      'справку':'справка', 'квитанцию':'квитанция', 'выписку':'выписка',
-                      'гарантийный талон':'гарантийный талон'}
-            items = [next((new + item[len(old):] for old, new in forms.items()
-                           if re.match(re.escape(old) + r'\b', item, re.I)), item) for item in items]
+            items = [attachment_name(item) for item in items]
             return "\n".join(item[:1].upper() + item[1:].rstrip(".") + "." for item in items)
     if key == "copy_notice" and re.fullmatch(r"(?:нет(?: ещ[её])?|ещ[её] нет|не отправлял[аи]?|не направлял[аи]?|предстоит|отправка (?:ещ[её] )?предстоит|пока не (?:отправлены|направлены))", text, re.I):
         return "Копии документа и приложений другим участникам пока не направлены."
@@ -461,7 +462,7 @@ async def prepare_document_draft(state, client):
                         'section':specs[key].label, 'roles':roles,
                         **author_context, 'source_text':editorial_source,
                         'revision_rules':'Сохрани каждую исходную сумму, дату, порог и условие. Не оставляй их отдельным списком. Не заменяй неопределённый размер удержания на размер ущерба или придуманную формулу. Сохраняй степень конкретности исходного ответа. Верни только официальную редакцию этого фрагмента.'},ensure_ascii=False)}]
-                completion = await client.chat_completion(messages, model=settings.GIGACHAT_MODEL, temperature=0.1)
+                completion = await client.chat_completion(messages, model=settings.llm_model, temperature=0.1)
                 usages.append(completion.usage)
                 model_text = completion.content.strip().strip('"«»')
                 text = model_text

@@ -5,6 +5,7 @@ One utterance may answer several questions; its quoted evidence is retained.
 """
 from copy import deepcopy
 import re
+from app.services.document_money_tokens import MONEY_PATTERN as MONEY, find_money_quotes
 
 CASES={'complaint_labor_agency','claim_alimony_fixed','claim_debt_loan'}
 # These are answers about the *absence* of a fact, not document text.  Keep
@@ -17,7 +18,6 @@ NEGATIVE=re.compile(
 )
 MONTH=r'(?:январ[ья]|феврал[ья]|март[а]?|апрел[ья]|ма[йя]|июн[ья]|июл[ья]|август[а]?|сентябр[ья]|октябр[ья]|ноябр[ья]|декабр[ья])'
 DATE=r'(?:\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{1,2}\s+'+MONTH+r'\s+\d{4}(?:\s*года)?)'
-MONEY=r'\d+(?:[ \u00a0]\d{3})*(?:[.,]\d{1,2})?\s*(?:тыс\.?|тысяч(?:а|и)?|млн\.?)?\s*(?:руб(?:лей|ля|ль|\.)?|₽)'
 
 
 def absence_reply(text: str) -> bool:
@@ -56,10 +56,16 @@ def set_field(state,key,value,evidence,status='filled'):
     from app.services.document_workflow import normalize_field
     specs={f.key:f for f in SCENARIOS[state['scenario']].fields}
     if key not in specs:return False
+    from app.services.document_explicit_facts import RELATIVE_DAYS, document_today, resolve_relative_date
+    relative = status == 'filled' and specs[key].kind == 'date' and str(value).strip().casefold() in RELATIVE_DAYS
+    if relative:
+        value = resolve_relative_date(value.strip(), document_today(state))
     if status=='filled':value,error=normalize_field(specs[key],value)
     else:value,error=None,None
     state.setdefault('fields',{})[key]={'status':'incomplete' if error else status,'value':value,
         'original':evidence,'evidence':evidence,'error':error,'origin':'source_bound_extraction'}
+    if relative and not error:
+        state['fields'][key]['resolved_turn_date'] = value
     state['revision']=state.get('revision',0)+1
     return True
 
@@ -77,6 +83,15 @@ def collect_case_turn(state,text,key):
         if set_field(state,k,value,quote or value,status):
             consumed.add(k)
             state['fields'][k]['source_field']=key
+    if key in {'sender_details', 'party_details', 'recipient_details'}:
+        lines = re.split(r'[;\n]+', t)
+        if len(lines) > 1 and all(re.fullmatch(
+                r'\s*(?:дата рождения\s*:\s*\d{1,2}[./]\d{1,2}[./]\d{4}|'
+                r'(?:место рождения|место работы)\s*:\s*[^.!?;]+|ИНН\s*:?\s*\d{10,12})\s*',
+                line, re.I) for line in lines):
+            put(key, '\n'.join(line.strip() for line in lines), t)
+            state['fields'][key]['source_quotes'] = [line.strip() for line in lines]
+            return consumed
     if key=='signature' and re.fullmatch(r'(?:я|сам|сама|лично|подпишу (?:сам|сама|лично)|я лично|мо[йёя])[.! ]*',t,re.I):
         sender=state.get('fields',{}).get('sender',{})
         if sender.get('status')=='filled':put(key,sender['value'],t)
@@ -119,7 +134,7 @@ def collect_case_turn(state,text,key):
                 fill_if_missing('transfer',t,t)
             if re.search(r'\b(?:вернут|возврат|срок)\w*.{0,80}\b(?:до|не позднее)\s+'+DATE,t,re.I):
                 fill_if_missing('due_date',t,t)
-            amounts=re.findall(MONEY,t,re.I)
+            amounts=find_money_quotes(t)
             if len(amounts)==1:
                 fill_if_missing('amount',amounts[0],amounts[0])
             if re.search(r'\b(?:деньги|долг).{0,50}\bне вернул|\bне возвращ(?:ены|ен|ала|ал)',t,re.I):
@@ -179,7 +194,7 @@ def collect_case_turn(state,text,key):
         debt_context=re.search(r'не (?:выплат|перечисл)|невыплачен|долг|задолжен|начислен',t,re.I)
         if key in {'amount','debt_period','wages','violation'} or debt_context:
             periods=re.search(r'за\s+('+MONTH+r'(?:\s+\d{4}(?:\s+года)?)?)',t,re.I)
-            money=re.findall(MONEY,t,re.I)
+            money=find_money_quotes(t)
             if periods:
                 remember(state,'debt_period',periods[1],periods[0],field=key);put('debt_period',periods[1],periods[0])
             if len(money)==1:put('amount',money[0])
@@ -239,7 +254,7 @@ def collect_case_turn(state,text,key):
                 remember(state,'child_budget',normalize_money(fact(state,'ambiguous_support_amount')),t,field=key)
                 put(key,None,t,'unknown')
             elif re.search(r'(?:уходит|расход|трач|содержан).{0,50}\d',t,re.I) and not re.search(r'(?:отец|ответчик).{0,20}(?:платит|да[её]т|перечисляет|тратит)',t,re.I):
-                money=re.findall(MONEY,t,re.I)
+                money=find_money_quotes(t)
                 if not money:money=re.findall(r'\d+\s*тыс\.?',t,re.I)
                 if len(money)==1:remember(state,'ambiguous_support_amount',money[0],t,field=key)
                 put(key,t,t);state['fields'][key].update(status='incomplete',error='Уточните, эта сумма — ваши общие расходы на ребёнка или помощь, которую перечисляет отец?')
@@ -259,7 +274,7 @@ def collect_case_turn(state,text,key):
                 else:
                     put(key,t,t);state['fields'][key].update(status='incomplete',error='Половину какой суммы вы имеете в виду: общих расходов на ребёнка или другого показателя? Укажите общую сумму расходов.')
             else:
-                money=re.findall(MONEY,t,re.I)
+                money=find_money_quotes(t)
                 if len(money)==1 and re.search(r'расход|бюджет|трач',t,re.I):
                     from app.services.document_workflow import normalize_money
                     remember(state,'child_budget',normalize_money(money[0]),t,field=key)

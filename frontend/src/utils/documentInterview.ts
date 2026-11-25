@@ -5,6 +5,48 @@ export interface StartInterviewResult {
   context_omitted?: boolean;
 }
 
+const documentKinds = [
+  ['appeal', 'апелляционн[а-яё]*\\s+жалоб[а-яё]*'],
+  ['claim', 'исков[а-яё]*\\s+заявлен[а-яё]*|иск(?:а|у|ом|е|и|ов)?'],
+  ['pretense', 'претензи[а-яё]*'],
+  ['contract', '(?:трудов[а-яё]*\\s+)?договор[а-яё]*'],
+  ['motion', 'ходатайств[а-яё]*'],
+  ['power_of_attorney', 'доверенност[а-яё]*'],
+  ['complaint', 'жалоб[а-яё]*'],
+  ['statement', 'заявлен[а-яё]*'],
+  ['receipt', 'расписк[а-яё]*'],
+  ['agreement', 'соглашени[а-яё]*'],
+  ['act', 'акт(?:а|у|ом|е|ы|ов)?'],
+] as const;
+const documentPattern = documentKinds.map(([, pattern]) => `(?:${pattern})`).join('|');
+const word = (pattern: string) => new RegExp(`(?:^|[^\\p{L}\\p{N}_])(?:${pattern})(?=$|[^\\p{L}\\p{N}_])`, 'u');
+const documentWord = word(documentPattern);
+const prepareVerb = '(?:подготовить|составить|оформить|написать|сделать|создать|сформировать)';
+const draftAction = word(`составь(?:те)?|подготовь(?:те)?|оформи(?:те)?|напиши(?:те)?|сделай(?:те)?|создай(?:те)?|сформируй(?:те)?|нужен|нужна|нужны|(?:нужно|хочу|хотел(?:а)?\\s+бы)\\s+(?:${prepareVerb}|(?:новый\\s+|новую\\s+|новое\\s+)?(?:${documentPattern}))|(?:помоги(?:те)?|можешь|можете|прошу)\\s+(?:мне\\s+)?${prepareVerb}`);
+const consultation = word('что\\s+(?:такое|нужно|необходимо)|как\\s+(?:мне\\s+)?(?:оспорить|расторгнуть|изменить|проверить|понять|заключить|обжаловать|составить|подготовить|написать)|(?:можно|нужно|нужен|нужна)\\s+ли|(?:какие|какой|какая|какого)\\s+[а-яё]+|(?:помоги(?:те)?|хочу|прошу)\\s+(?:мне\\s+)?(?:понять|разобраться|проверить|оценить)|объясни(?:те)?|расскажи(?:те)?');
+const negatedDraft = word('не\\s+(?:(?:надо|нужно|хочу|буду)\\s+(?:составлять|готовить|создавать|писать)|(?:составляй|готовь|создавай|пиши|составь|подготовь)|нужен|нужна|нужно|нужны)');
+
+function draftingClauses(text: string): string[] {
+  return text.toLocaleLowerCase('ru-RU').split(/[.!?;\n]+|,?\s+(?:а|но)\s+/u)
+    .map((clause) => clause.trim()).filter(Boolean);
+}
+
+function requestedDocumentKind(text: string): string | undefined {
+  for (const clause of draftingClauses(text)) {
+    if (!documentWord.test(clause) || consultation.test(clause) || negatedDraft.test(clause)) continue;
+    const bare = new RegExp(`^(?:${documentPattern})$`, 'u').test(clause);
+    if (!bare && !draftAction.test(clause)) continue;
+    // Prefer the first named document following the action, not the kind of
+    // an agreement mentioned later as factual background to an intended claim.
+    const target = bare ? clause : clause.slice(clause.search(draftAction));
+    const named = documentKinds.map(([kind, pattern]) => ({ kind, index: target.search(word(pattern)) }))
+      .filter(({ index }) => index >= 0).sort((a, b) => a.index - b.index);
+    if (named.length && word('расч[её]т|проверку|анализ|обзор|список|перевод|выводы|совет|помощь|пример|ответ|возражени[а-яё]*|отзыв').test(target.slice(0, named[0].index))) continue;
+    if (named.length) return named[0].kind;
+  }
+  return undefined;
+}
+
 /**
  * Keep ordinary legal consultations in the regular chat, but let a new chat
  * begin the guided document flow when the person explicitly asks to prepare
@@ -12,41 +54,33 @@ export interface StartInterviewResult {
  * supported form; this only removes the need to discover a separate modal.
  */
 export function isDocumentDraftIntent(text: string): boolean {
-  const value = text.trim().toLocaleLowerCase('ru-RU');
-  if (!value) return false;
-
-  const documentName = /(?:исков\w*\s+заявлен\w*|претензи\w*|трудов\w*\s+договор\w*|договор\w*|ходатайств\w*|доверенност\w*|апелляционн\w*\s+жалоб\w*|жалоб\w*|заявлен\w*|расписк\w*|соглашени\w*|акт\w*)/u;
-  if (!documentName.test(value)) return false;
-
-  // Do not intercept an advice request merely because it mentions a document:
-  // “как оспорить договор?” and “помоги проверить договор” must remain a
-  // consultation.  A short bare document name is deliberately treated as a
-  // drafting request: this is how people commonly answer “какой документ
-  // нужен?” (for example, simply “трудовой договор”).
-  const consultation = /(?:\b(?:что|какой|какая|какие)\b|\bкак\s+(?:оспорить|расторгнуть|изменить|проверить|понять|заключить|обжаловать)\b|\b(?:можно|нуж\w*)\s+ли\b|\bпомог(?:и|ите)\s+(?:понять|разобраться|проверить|оценить)\b|\bобъясн\w*\b|\bрасскаж\w*\b)/u;
-  if (consultation.test(value)) return false;
-
-  const draftingAction = /(?:\bнуж\w*\b|\b(?:подготов|состав|оформ|напис|сдела)\w*\b|\bпомог(?:и|ите)\s+(?:мне\s+)?(?:подготов|состав|оформ|напис|сдела)\w*)/u;
-  return draftingAction.test(value) || value.length <= 90;
+  return requestedDocumentKind(text) !== undefined;
 }
 
-/** Retry only when the server rejected the optional source chat before creation.
- * Timeouts and generic 404s must not create a second interview.
+/** A completed document stays editable; only another kind or an expressly
+ * new document begins another workflow. An explicitly separate case goes to
+ * the start endpoint even during intake so the server can reject a conflict.
  */
+export function shouldStartDocumentInterview(text: string, current: { phase: string; scenario: string | null }): boolean {
+  if (!isDocumentDraftIntent(text)) return false;
+  if (current.phase === 'cancelled') return true;
+  const kind = requestedDocumentKind(text);
+  const value = text.toLocaleLowerCase('ru-RU');
+  const newCase = /(?:^|[.!?;\n])\s*(?:(?:теперь|это|у меня)\s+){0,2}(?:другой\s+случай|другое\s+дело|новая\s+ситуация)(?=\s*(?:[:.!;,\n]|$))/u;
+  const otherCaseCommand = /(?:^|[.!?;\n])\s*(?:пожалуйста[, ]+)?(?:составь(?:те)?|подготовь(?:те)?|оформи(?:те)?|напиши(?:те)?|сделай(?:те)?|создай(?:те)?)\s+(?:нов(?:ый|ую|ое)\s+)?(?:иск|исковое\s+заявление|претензию|документ)\s+по\s+другому\s+делу(?=$|[^\p{L}\p{N}_])/u;
+  if (newCase.test(value) || otherCaseCommand.test(value)) return true;
+  if (current.phase !== 'ready') return false;
+  if (word(`(?:нов(?:ый|ую|ое)|ещ[её]\\s+од(?:ин|ну|но)|друг(?:ой|ую|ое))\\s+(?:${documentPattern}|документ)`).test(value)) return true;
+  const scenarioKind = current.scenario === 'power_of_attorney' ? 'power_of_attorney'
+    : current.scenario?.split('_')[0];
+  const aliases: Record<string, string> = { labor: 'statement', order: 'statement' };
+  return Boolean(kind && scenarioKind && kind !== (aliases[scenarioKind] || scenarioKind));
+}
+
+/** A supplied chat is required context. Never silently retry in an empty chat. */
 export async function startInterviewWithContextRecovery(
   payload: GenerateAiDocumentRequest,
   send: (payload: GenerateAiDocumentRequest) => Promise<StartInterviewResult>,
 ): Promise<StartInterviewResult> {
-  try {
-    return await send(payload);
-  } catch (error) {
-    const response = (error as { response?: { status?: number; data?: { detail?: unknown; error?: unknown } } })?.response;
-    const detail = response?.data?.detail ?? response?.data?.error;
-    const code = detail && typeof detail === 'object' && 'code' in detail ? detail.code : null;
-    if (payload.chat_id == null || response?.status !== 404 || code !== 'chat_context_unavailable') throw error;
-    const retryPayload = { ...payload };
-    delete retryPayload.chat_id;
-    const result = await send(retryPayload);
-    return { ...result, context_omitted: true };
-  }
+  return send(payload);
 }

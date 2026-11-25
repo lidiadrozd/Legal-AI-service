@@ -3,6 +3,7 @@ from functools import lru_cache
 import json
 import re
 from pathlib import Path
+from app.services.document_routing import describes_property_flood
 
 
 # The common product names belong in routing evidence, not in a separate
@@ -76,33 +77,43 @@ def infer_catalog_scenario(kind,text):
             if re.search(r'тв[её]рд|фиксирован',t):return 'claim_alimony_fixed'
             if re.search(r'дол[яию]|долях|процент.{0,15}доход',t):return 'claim_alimony_share'
         return None
+    if kind in {'claim', 'pretense'} and describes_property_flood(t):
+        return kind + '_damage_flood'
     if kind=='claim':
         if re.search(r'расторжен.{0,15}брак|развод',t):return 'claim_divorce'
         if re.search(r'восстанов.{0,20}работ|незаконн.{0,15}увольнен',t):return 'claim_labor_reinstatement'
         if re.search(r'зарплат|заработн\w* плат|расч[её]т.{0,20}увольнен',t):return 'claim_labor_salary'
-        # Consumer claims split by their factual basis before the broad
-        # consumer form: delayed delivery concerns prepayment and the agreed
-        # transfer date, whereas defective goods concern a product defect.
+        # A mere fact of delivery is not a late-delivery dispute.  Defect
+        # language must win (e.g. “доставили 16 ноября, но не включается”),
+        # while the late-delivery form is reserved for an overdue/missing
+        # transfer or an expressly violated agreed date.
         if (re.search(_CONSUMER_GOODS,t)
-                and re.search(r'достав|передач|привез|получ|срок.{0,20}(?:наруш|просроч)|просроч.{0,20}(?:достав|передач)',t)
+                and re.search(r'недостат|некачествен|брак|дефект|слом\w*|не работает|не\s+заряжа|не\s+включа|самостоятельно\s+выключа|перестал\w*\s+(?:работ|заряжа|включа)',t)):
+            return 'claim_consumer_defective_goods'
+        if (re.search(_CONSUMER_GOODS,t)
+                and re.search(r'(?:не\s+(?:достав|передал|привез|получ)|просроч|наруш\w*\s+(?:срок|достав)|срок.{0,20}(?:наруш|просроч))',t)
                 and re.search(r'предоплат|оплат|оплачен|заказ|достав|передач',t)):
             return 'claim_consumer_late_delivery'
-        if (re.search(_CONSUMER_GOODS,t)
-                and re.search(r'недостат|некачествен|брак|дефект|слом\w*|не работает',t)):
-            return 'claim_consumer_defective_goods'
         # The usual request wording is "взыскать ущерб".  At this stage a
         # user need not already know the adjective "имущественный" or the
         # exact accident; the dedicated intake collects those facts.
-        if re.search(r'поврежд|разбил|сломал|имущественн\w* ущерб|(?:взыскан|возмещен)\w*.{0,35}ущерб|ущерб.{0,35}(?:взыскан|возмещен)',t) and not re.search(r'залив|затоп|потребител|товар',t):return 'claim_damage_property'
+        if re.search(r'поврежд|разбил|сломал|имущественн\w* ущерб|(?:взыскан|возмещен)\w*.{0,35}ущерб|ущерб.{0,35}(?:взыскан|возмещен)',t) and not re.search(r'потребител|товар',t):return 'claim_damage_property'
     if kind=='pretense':
         if re.search(r'работодател|зарплат|увольнен|заработн\w* плат',t):return 'pretense_labor_settlement'
+        if re.search(r'\b(?:в|к)\s+химчистк\w*\b', t) and re.search(r'\b(?:сдал[аи]?|передал[аи]?|услуг\w*|заказ\w*)\b', t):
+            return 'pretense_consumer_defective_service'
         if re.search(r'недостат|некачествен|плох|нарушен',t) and re.search(r'услуг|ремонт|\bработ(?:ы|у|ам|ах)\b',t):
             return 'pretense_consumer_defective_service'
+        # Bind the new wording to the product itself. A repair of a faulty
+        # appliance or a service malfunction is not a sale-of-goods claim.
+        if (re.search(r'\bнеисправн\w*\s+' + _CONSUMER_GOODS,t)
+                and not re.search(r'\b(?:ремонт|услуг)\w*\b',t)):
+            return 'pretense_consumer_defective_goods'
         if re.search(_CONSUMER_GOODS,t) and re.search(r'недостат|некачествен|брак|дефект|плох|слом\w*|не работает|перестал\w*\s+\w+',t):
             return 'pretense_consumer_defective_goods'
         if re.search(r'достав|не (?:привез|достав|передал).{0,20}товар',t):return 'pretense_consumer_late_delivery'
         if re.search(r'недостат|некачествен|плох|нарушен',t) and re.search(r'услуг|ремонт|работ',t):return 'pretense_consumer_defective_service'
-        if re.search(r'поврежд|разбил|сломал|имущественн\w* ущерб|(?:возмещен|взыскан)\w*.{0,35}ущерб|ущерб.{0,35}(?:возмещен|взыскан)',t) and not re.search(r'залив|затоп|потребител|товар',t):return 'pretense_damage_property'
+        if re.search(r'поврежд|разбил|сломал|имущественн\w* ущерб|(?:возмещен|взыскан)\w*.{0,35}ущерб|ущерб.{0,35}(?:возмещен|взыскан)',t) and not re.search(r'потребител|товар',t):return 'pretense_damage_property'
     return None
 
 

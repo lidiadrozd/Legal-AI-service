@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from pathlib import Path
 from uuid import uuid4
 
@@ -72,42 +73,78 @@ async def start_document_interview(
     from app.services.document_workflow import new_state
     from app.services.document_conversation import conversational_interview_turn
     from app.services.llm_cost import record_llm_usage
+    from app.services.document_chat_context import build_chat_context, requests_new_case
+    chat = None
+    previous = []
+    prior_workflow = {}
+    start_request_id = str(payload.start_request_id) if payload.start_request_id else None
+    new_case = payload.new_case or requests_new_case(payload.prompt)
     context = ""
     if payload.chat_id is not None:
-        try:
-            await _chat_context_text(db, user_id=current_user.id, chat_id=payload.chat_id)
-        except HTTPException as exc:
-            if exc.status_code != 404:raise
+        chat = (await db.execute(select(ChatSession).where(
+            ChatSession.id == payload.chat_id, ChatSession.user_id == current_user.id,
+        ).with_for_update().execution_options(populate_existing=True))).scalar_one_or_none()
+        if chat is None:
             raise HTTPException(404, detail={
                 'code':'chat_context_unavailable',
-                'message':'Выбранный чат недоступен. Подготовку можно начать заново по вашему описанию.',
-            }) from exc
-        # Assistant suggestions/examples are not facts supplied by the user.
+                'message':'Выбранный чат недоступен. Выберите доступную переписку или явно начните новую подготовку.',
+            })
+        prior_workflow = chat.document_workflow or {}
+        started = [prior_workflow, *prior_workflow.get('previous_document_workflows', [])]
+        if start_request_id and any(item.get('start_request_id') == start_request_id for item in started):
+            return {'chat_id': chat.id, 'resumed': True}
+        if prior_workflow and prior_workflow.get('phase') not in {'ready', 'cancelled'}:
+            if new_case:
+                raise HTTPException(409, detail={
+                    'code': 'document_interview_active',
+                    'message': 'В этой переписке уже идёт подготовка документа. Завершите или отмените её перед новым делом.',
+                })
+            return {'chat_id': chat.id, 'resumed': True}
         previous = (await db.execute(select(Message).where(Message.chat_id == payload.chat_id,
-                    Message.role == "user").order_by(Message.id.asc()))).scalars().all()
-        context = "\n".join(m.content for m in previous)
-    state = new_state(payload.prompt, context=context[-30000:], title=payload.title,
+                    Message.role.in_(['user', 'assistant'])).order_by(Message.id.asc()))).scalars().all()
+    boundary = int(prior_workflow.get('context_start_message_id') or 0)
+    if new_case:
+        boundary = max((m.id for m in previous), default=0) + 1
+    scoped_messages = [m for m in previous if m.id >= boundary]
+    context, source_messages = build_chat_context(scoped_messages)
+    state = new_state(payload.prompt, context=context, title=payload.title,
                       document_type=payload.document_type, filename=payload.filename, output_format=payload.output_format)
+    state.update(workflow_id=str(uuid4()), start_request_id=start_request_id,
+                 context_start_message_id=boundary, source_messages=source_messages)
+    if prior_workflow:
+        archive = deepcopy(prior_workflow.get('previous_document_workflows', []))
+        snapshot = deepcopy(prior_workflow)
+        snapshot.pop('previous_document_workflows', None)
+        archive.append(snapshot)
+        state['previous_document_workflows'] = archive
     try:
         state, answer, usage = await conversational_interview_turn(state, payload.prompt)
     except (RuntimeError, ValueError) as exc:
         logger.warning("Document interview failed: %s", type(exc).__name__)
         raise HTTPException(502, "Не удалось начать уточнение документа. Повторите запрос.") from exc
-    from app.services.chat_titles import suggest_chat_title
-    title=payload.title or suggest_chat_title(state,payload.prompt)
-    state['title_manual']=bool(payload.title)
-    state['automatic_title']=title
-    chat = ChatSession(user_id=current_user.id, title=title, document_workflow=state)
-    db.add(chat)
+    from app.services.chat_titles import generic_title, suggest_chat_title, update_automatic_title
+    if chat is None:
+        title = payload.title or suggest_chat_title(state, payload.prompt)
+        state['title_manual'] = bool(payload.title)
+        state['automatic_title'] = title
+        chat = ChatSession(user_id=current_user.id, title=title, document_workflow=state)
+        db.add(chat)
+    else:
+        state['title_manual'] = prior_workflow.get('title_manual', not generic_title(chat.title))
+        state['automatic_title'] = prior_workflow.get('automatic_title')
+        update_automatic_title(chat, state, payload.prompt)
+        chat.document_workflow = state
     await db.flush()
     answer = await interview_file_reply(chat, current_user.id, db, answer)
-    db.add(Message(chat_id=chat.id, role="user", content=payload.prompt))
+    start_message = Message(chat_id=chat.id, role="user", content=payload.prompt)
+    db.add(start_message)
     await db.flush()
+    chat.document_workflow = {**chat.document_workflow, 'workflow_start_message_id': start_message.id}
     reply = Message(chat_id=chat.id, role="assistant", content=answer)
     db.add(reply)
     await db.flush()
     await record_llm_usage(db, user_id=current_user.id, chat_id=chat.id, message_id=reply.id,
-                           model=settings.GIGACHAT_MODEL, cached=False, usage=usage, commit=False)
+                           model=settings.llm_model, cached=False, usage=usage, commit=False)
     await db.commit()
     return {"chat_id": chat.id}
 
@@ -130,40 +167,74 @@ async def get_document_interview(chat_id: int, current_user: User = Depends(get_
 
 
 @router.post("/interviews/{chat_id}/export", response_model=UploadDocumentResponse, status_code=201)
-async def export_document_interview(chat_id: int, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def export_document_interview(chat_id: int, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db), incomplete_calculation: bool = False):
     chat = await _owned_interview(db, chat_id, current_user.id)
-    result = await prepare_interview_file(chat, current_user.id, db)
+    result = await prepare_interview_file(chat, current_user.id, db, incomplete_calculation=incomplete_calculation)
     await db.commit()
     return result
 
 
-async def prepare_interview_file(chat, user_id, db):
+async def prepare_interview_file(chat, user_id, db, *, incomplete_calculation=False):
     """Create the actual artifact before a chat reply promises a download."""
+    from app.services.document_formula_recovery import formula_review_message, incomplete_calculation_notes
+    notes = incomplete_calculation_notes(chat.document_workflow) if incomplete_calculation else []
+    if incomplete_calculation and not notes:
+        raise HTTPException(409, "В этом документе нет незавершённых расчётов.")
+    if notes:
+        # Export a snapshot. Completing an optional working copy must never
+        # mark unresolved facts as answered in the ongoing interview.
+        from types import SimpleNamespace
+        chat = SimpleNamespace(id=chat.id, document_workflow=deepcopy(chat.document_workflow))
+    review = formula_review_message(chat.document_workflow)
+    if review and not notes:
+        raise HTTPException(409, review)
     from app.services.document_scenarios import SCENARIOS, render_scenario
+    from app.services.document_dialogue import is_manual_blank
     from app.services.document_workflow import pending_fields, sanitize_interview
     from app.services.document_drafting import prepare_document_draft, presentation_fields, narrative_keys, facts_digest, DraftPreparationError, draft_is_current
     from app.services.document_export_contract import EDITOR_VERSION, export_package, validate_export_blocks
+    from app.services.document_fact_provenance import (
+        PROVENANCE_VERSION, audit_sensitive_fields, sanitize_sensitive_state,
+    )
     chat_id = chat.id
     state = sanitize_interview(chat.document_workflow)
+    state, provenance_issues = sanitize_sensitive_state(state)
     if state.get('scenario'):
         state['text_package'] = export_package(state.get('text_package'), SCENARIOS[state['scenario']])
-    if state.get("phase") != "ready" or not state.get("scenario") or pending_fields(state):
+    if not state.get("scenario") or (not notes and (state.get("phase") != "ready" or pending_fields(state))):
         chat.document_workflow=state
         raise HTTPException(409, "Сначала завершите заполнение или отметьте неизвестные поля в чате")
     from app.services.document_quality import quality_issues
     issues = quality_issues(state)
+    if notes:
+        issues = [item for item in issues if item['code'] not in {'pending_calculation_plan', 'unresolved_formula_field'}]
     if issues:
         raise HTTPException(409, issues[0]["question"])
     import hashlib
     import json
-    file_digest = hashlib.sha256(json.dumps({
-        'export_contract': EDITOR_VERSION,
-        'case_facts':state.get('case_facts'),
-        "facts": facts_digest(state["fields"]), "package": state.get("text_package"),
-        "format": state.get("output_format", "docx"), "filename": state.get("filename"),
-    }, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+
+    def export_digest(current):
+        # Draft/editor output and deterministic composition are part of the
+        # rendered artifact.  Including them prevents an old cached file from
+        # bypassing the provenance gate after a late editorial update.
+        return hashlib.sha256(json.dumps({
+            'export_contract': EDITOR_VERSION,
+            'fact_provenance': PROVENANCE_VERSION,
+            'unfinished_calculations': notes,
+            'case_facts': current.get('case_facts'),
+            "facts": facts_digest(current["fields"]),
+            "manual_blanks": sorted(key for key, item in current["fields"].items() if is_manual_blank(item)),
+            "draft_fields": current.get("draft_fields", {}),
+            "draft_digest": current.get("draft_digest"),
+            "composition_version": current.get("composition_version"),
+            "package": current.get("text_package"),
+            "format": current.get("output_format", "docx"),
+            "filename": current.get("filename"),
+        }, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+
+    file_digest = export_digest(state)
     saved = state.get("generated_document", {})
-    if saved.get("digest") == file_digest and not state.get('form_review_fields'):
+    if not notes and saved.get("digest") == file_digest and not state.get('form_review_fields'):
         document = (await db.execute(select(Document).where(
             Document.id == saved.get("document_id"), Document.user_id == user_id
         ))).scalar_one_or_none()
@@ -198,7 +269,7 @@ async def prepare_interview_file(chat, user_id, db):
                 chat.document_workflow = state
                 raise HTTPException(502, "Факты сохранены, но официальную редакцию пока не удалось проверить. Повторите подготовку файла.") from exc
         await record_llm_usage(db, user_id=user_id, chat_id=chat.id, message_id=None,
-                               model=settings.GIGACHAT_MODEL, cached=False, usage=usage, commit=False)
+                               model=settings.llm_model, cached=False, usage=usage, commit=False)
     chat.document_workflow = state
     state['readiness']=readiness_report(state,state.get('text_package'))
     document_fields = presentation_fields(state)
@@ -213,14 +284,40 @@ async def prepare_interview_file(chat, user_id, db):
             state['readiness']['legal_review'].append({'field':key,'label':next((f.label for f in scenario.fields if f.key==key),key)})
             state['readiness']['status']='incomplete_draft'
         chat.document_workflow=state
+    # Presentation and case composition are intentionally audited again: this
+    # is the last boundary before any text, DOCX or PDF renderer can see facts.
+    document_fields, render_provenance_issues = audit_sensitive_fields(state, document_fields)
+    provenance_issues.extend(render_provenance_issues)
+    # A deliberate blank is an editable space, even when the composer has
+    # standard wording for a genuinely unknown fact (such as birth details).
+    for key, item in state['fields'].items():
+        if is_manual_blank(item):
+            document_fields[key] = {**item, 'status': 'unknown', 'value': None}
+    if notes:
+        from app.services.document_formula_recovery import hide_unfinished_totals
+        document_fields = hide_unfinished_totals(state, document_fields)
+        state['readiness']['status'] = 'incomplete_draft'
+        state['readiness']['unfinished_calculations'] = notes
+    state['fact_provenance_version'] = PROVENANCE_VERSION
+    if provenance_issues:
+        state['fact_provenance_issues'] = provenance_issues
+    else:
+        state.pop('fact_provenance_issues', None)
+    chat.document_workflow = state
+    file_digest = export_digest(state)
     package = state.get("text_package")
     if package:
         from app.services.document_template_library import render_package_blocks, format_template_fields
         final_blocks = render_package_blocks(package, scenario, document_fields, format_template_fields(scenario, document_fields))
         validate_export_blocks(final_blocks)
+    note_blocks = ([{'role': 'heading', 'text': 'Рабочий черновик. Денежный расчёт не завершён.'},
+                    *({'role': 'body', 'text': line} for line in notes)] if notes else [])
+    text = render_scenario(scenario, document_fields, package)
+    if note_blocks:
+        text = '\n'.join(block['text'] for block in note_blocks) + '\n\n' + text
     rendered = RenderedTemplate(key=scenario.key, title=scenario.title,
         description="Черновик по шаблону из открытых источников" if package else "Черновая структура: юридический текст ещё не проверен",
-        rendered_text=render_scenario(scenario, document_fields, package))
+        rendered_text=text)
     output_format = state.get("output_format", "docx")
     if not (package and output_format in {'docx','pdf'}):
         content = (build_pdf_bytes(rendered) if output_format == "pdf" else
@@ -237,13 +334,15 @@ async def prepare_interview_file(chat, user_id, db):
                 if not any(item['field']==key for item in state['readiness']['legal_review']):
                     state['readiness']['legal_review'].append({'field':key,'label':labels[key]})
                 state['readiness']['status']='incomplete_draft'
-            content = fill_docx_template(package, scenario, document_fields)
+            content = (fill_docx_template(package, scenario, document_fields, prefix=note_blocks)
+                       if notes else fill_docx_template(package, scenario, document_fields))
             if output_format == 'pdf':
                 import asyncio
                 content = await asyncio.to_thread(docx_to_pdf, content)
         else:
+            blocks = note_blocks + blocks
             content = build_legal_docx(scenario.title, blocks, review_note=note) if output_format == "docx" else build_legal_pdf(scenario.title, blocks, review_note=note)
-    filename = Path(_sanitize_filename(state.get("filename", "document-draft"))).stem + "." + output_format
+    filename = Path(_sanitize_filename(state.get("filename", "document-draft"))).stem + ("-review" if notes else "") + "." + output_format
     doc_id = str(uuid4())
     target = _storage_root() / f"{doc_id}_{filename}"
     target.write_bytes(content)
@@ -251,13 +350,16 @@ async def prepare_interview_file(chat, user_id, db):
         file_path=str(target), file_size=len(content),
         mime_type=("application/pdf" if output_format == "pdf" else "text/plain; charset=utf-8" if output_format == "txt"
                    else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
-        generation_meta={"source": "structured_interview", "chat_id": chat_id, "scenario": scenario.key,
+        generation_meta={"source": "structured_interview", "chat_id": chat_id,
+                         "workflow_id": state.get("workflow_id"), "scenario": scenario.key,
                          "template_version": package["version"] if package else scenario.version,
-                         "review_status": package.get("review_status", "source_checked_draft") if package else scenario.review_status,
+                         "review_status": "incomplete_calculation" if notes else (package.get("review_status", "source_checked_draft") if package else scenario.review_status),
                          "template_source": package,
                          "docx_asset": package.get('docx_asset') if package else None,
                          "revision": state["revision"], "fields": state["fields"],
                          "readiness": state['readiness'],
+                         "fact_provenance_version": PROVENANCE_VERSION,
+                         "fact_provenance_issues": provenance_issues,
                          "draft_fields": state.get("draft_fields", {}), "draft_digest": state.get("draft_digest")})
     db.add(document)
     state["generated_document"] = {"document_id": doc_id, "filename": filename, "digest": file_digest}
@@ -267,6 +369,25 @@ async def prepare_interview_file(chat, user_id, db):
 
 
 async def interview_file_reply(chat, user_id, db, fallback):
+    from app.services.document_formula_recovery import pause_for_formula_review
+    from copy import deepcopy
+    state = deepcopy(chat.document_workflow)
+    if state.pop('requested_calculation_draft', False):
+        chat.document_workflow = state
+        try:
+            document = await prepare_interview_file(chat, user_id, db, incomplete_calculation=True)
+        except HTTPException as exc:
+            return str(exc.detail)
+        except (RuntimeError, ValueError, OSError):
+            logger.exception("Unfinished calculation draft export failed for chat %s", chat.id)
+            return 'Файл пока не удалось создать. Сведения сохранены. Чтобы повторить, напишите «подготовь черновик с незавершённым расчётом».'
+        name = document.filename.replace('[', '').replace(']', '')
+        return ('Рабочий черновик подготовлен. В файле отмечены незавершённые расчёты. '
+                f'Опрос можно продолжить.\n\n[Скачать {name}](/documents/{document.document_id}/download)')
+    review = pause_for_formula_review(state)
+    if review and chat.document_workflow.get("phase") == "ready":
+        chat.document_workflow = state
+        return review
     if chat.document_workflow.get("phase") != "ready":
         return fallback
     from app.services.document_quality import quality_issues
@@ -353,7 +474,7 @@ def _sanitize_filename(filename: str) -> str:
     return cleaned or "document.txt"
 
 
-async def _chat_context_text(db: AsyncSession, *, user_id: int, chat_id: int) -> str:
+async def _chat_context_text(db: AsyncSession, *, user_id: int, chat_id: int, user_only: bool = False) -> str:
     chat_r = await db.execute(
         select(ChatSession).where(ChatSession.id == chat_id, ChatSession.user_id == user_id)
     )
@@ -364,7 +485,8 @@ async def _chat_context_text(db: AsyncSession, *, user_id: int, chat_id: int) ->
     )
     lines: list[str] = []
     for msg in msg_r.scalars():
-        lines.append(f"{msg.role}: {msg.content}")
+        if not user_only or msg.role == 'user':
+            lines.append(f"{msg.role}: {msg.content}")
     return "\n".join(lines)
 
 
@@ -429,7 +551,7 @@ async def generate_document(
     context_text = ""
     filing_fields: dict[str, str] | None = None
     if payload.chat_id is not None:
-        context_text = await _chat_context_text(db, user_id=current_user.id, chat_id=payload.chat_id)
+        context_text = await _chat_context_text(db, user_id=current_user.id, chat_id=payload.chat_id, user_only=True)
     if payload.court_filing_id is not None:
         filing_fields = await _filing_fields_map(
             db, user_id=current_user.id, court_filing_id=payload.court_filing_id
@@ -670,7 +792,7 @@ async def suggest_document_fields(
     context_text = ""
     filing_fields: dict[str, str] | None = None
     if payload.chat_id is not None:
-        context_text = await _chat_context_text(db, user_id=current_user.id, chat_id=payload.chat_id)
+        context_text = await _chat_context_text(db, user_id=current_user.id, chat_id=payload.chat_id, user_only=True)
     if payload.court_filing_id is not None:
         filing_fields = await _filing_fields_map(
             db, user_id=current_user.id, court_filing_id=payload.court_filing_id

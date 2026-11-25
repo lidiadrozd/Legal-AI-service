@@ -133,10 +133,18 @@ export const chatApi = {
     const decoder = new TextDecoder();
     let messageId = '';
     let completed = false;
+    let failed = false;
+    let aborted = false;
+    let sawDone = false;
     const complete = () => {
       if (completed) return;
       completed = true;
       onDone(messageId);
+    };
+    const fail = (message: string) => {
+      if (failed || completed) return;
+      failed = true;
+      onError(message);
     };
     let buffer = '';
 
@@ -158,6 +166,7 @@ export const chatApi = {
 
           const payload = dataLines.join('\n');
           if (payload === '[DONE]') {
+            sawDone = true;
             complete();
             return;
           }
@@ -184,7 +193,10 @@ export const chatApi = {
           .find((entry) => entry.startsWith('data:'));
         if (line) {
           const payload = line.slice(5).trimStart();
-          if (payload && payload !== '[DONE]') {
+          if (payload === '[DONE]') {
+            sawDone = true;
+            complete();
+          } else if (payload) {
             try {
               const parsed = JSON.parse(payload);
               if (typeof parsed.content === 'string') onChunk(parsed.content);
@@ -194,12 +206,16 @@ export const chatApi = {
           }
         }
       }
+      if (!sawDone) fail('Соединение прервалось до завершения ответа');
     } catch (err) {
-      if ((err as Error).name === 'AbortError') return;
-      onError('Ошибка при получении ответа');
+      if ((err as Error).name === 'AbortError') {
+        aborted = true;
+        return;
+      }
+      fail('Ошибка при получении ответа');
     } finally {
       reader.releaseLock();
-      complete();
+      if (!failed && !aborted && sawDone) complete();
     }
   },
 };

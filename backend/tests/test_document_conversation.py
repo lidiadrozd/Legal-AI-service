@@ -24,6 +24,8 @@ def state_for(key):
     ("sender_address", "истец?", "подаёт иск"),
     ("party_details", "какие например?", "ИНН"),
     ("seller_response", "поясни вопрос", "продавцу"),
+    ("payment_evidence", "а какие реквизиты чека указать?", "Номер чека можно добавить"),
+    ("payment_evidence", "а что надо то? номер чека или как?", "повторять их не нужно"),
     ("copy_notice", "какого документа?", "этого иска"),
     ("calculation", "66000 стоимость телефона + моральный ущерб, сам посчитай", "определяет суд"),
     ("legal_basis", "не знаю, ты должен лучше в этом разбираться", "моя задача"),
@@ -82,6 +84,13 @@ async def test_incomplete_address_keeps_street_and_accepts_city(monkeypatch):
 def test_two_digit_year_is_normalized():
     spec = next(f for f in SCENARIOS["claim_consumer"].fields if f.key == "date")
     assert normalize_field(spec, "24.10.26") == ("2026-10-24", None)
+
+
+def test_impossible_year_is_rejected():
+    spec = next(f for f in SCENARIOS["claim_consumer"].fields if f.key == "date")
+    value, error = normalize_field(spec, "5 ноября 5045 года")
+    assert value == "5 ноября 5045 года"
+    assert error and "невозможным" in error
 
 
 def test_legacy_control_replies_cannot_be_exported_as_facts():

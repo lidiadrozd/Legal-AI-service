@@ -20,6 +20,8 @@ def authority(key):
     ("Екатеринбург, блюхера 45, 35", "г. Екатеринбург, ул. Блюхера, д. 45, кв. 35"),
     ("Екатеринбург, Мира 44, 39", "г. Екатеринбург, ул. Мира, д. 44, кв. 39"),
     ("г. Екатеринбург, ул. Мира, д. 44, кв. 39", "г. Екатеринбург, ул. Мира, д. 44, кв. 39"),
+    ("квартиры № 17 в Екатеринбурге по адресу: ул. Лесная, д. 12", "г. Екатеринбург, ул. Лесная, д. 12, кв. 17"),
+    ("екатеринбург, лесная 12 17", "г. Екатеринбург, ул. Лесная, д. 12, кв. 17"),
 ])
 def test_reported_complete_addresses(raw, expected):
     spec = next(f for f in SCENARIOS["power_of_attorney"].fields if f.key == "sender_address")
@@ -27,6 +29,84 @@ def test_reported_complete_addresses(raw, expected):
     assert value == expected and error is None
     assert has_locality(value)
     assert normalize_address(value) == value
+
+
+def test_address_quote_preserves_street_name_and_locality():
+    from app.services.document_addresses import components, address_error
+    raw = 'квартиры 14 в доме 18 по улице Садовой в Екатеринбурге'
+    value = normalize_address(raw)
+    assert components(value) == {'locality': 'Екатеринбург', 'street': 'Садовой', 'house': '18', 'flat': '14'}
+    assert normalize_address(value) == value and address_error(value) is None
+    assert 'ул. Ице' not in normalize_address('по улице Ахматовой')
+
+
+def test_short_address_quote_only_expands_in_its_own_component_group():
+    from app.services.document_addresses import complete_address_quote
+    quote = 'ул. Лесная, д. 12'
+    phrase = 'квартиры № 17 в Екатеринбурге по адресу: ' + quote
+    narrative = f'Я собственница {phrase}. Меня залил сосед из квартиры № 21.'
+    assert complete_address_quote(quote, narrative) == phrase
+    assert complete_address_quote(quote, narrative + ' Ответчик проживает по адресу: ' + quote) == quote
+
+
+@pytest.mark.asyncio
+async def test_extractor_keeps_flat_and_city_and_asks_about_correspondence(monkeypatch):
+    from app.services.document_workflow import _capture_contextual_facts, interview_message
+    from app.services.document_fact_provenance import audit_sensitive_fields
+    msg = 'Меня зовут Марина Крылова. Я собственница квартиры № 17 в Екатеринбурге по адресу: ул. Лесная, д. 12.'
+    value = 'г. Екатеринбург, ул. Лесная, д. 12, кв. 17'
+    state = new_state('Иск о возмещении ущерба от залива квартиры')
+    state.update(scenario='claim_damage_flood', phase='collecting', last_questions=['sender'],
+                 user_turns=[msg], official_rate_lookup=False)
+    short = 'ул. Лесная, д. 12'
+    response = {'answers': [{'key': 'sender_address', 'quote': short, 'evidence': short}]}
+    monkeypatch.setattr('app.services.document_workflow.get_gigachat_client', AsyncMock(return_value=object()))
+    monkeypatch.setattr('app.services.document_workflow._structured', AsyncMock(return_value=SimpleNamespace(
+        content=json.dumps(response, ensure_ascii=False), usage=TokenUsage(1, 1, 2, False))))
+    state, _ = await _capture_contextual_facts(state, SCENARIOS[state['scenario']], 'sender', msg, force=True)
+    interview_message(state)
+    assert state['fields']['sender_address']['address_candidate']['value'] == value
+    exported, _ = audit_sensitive_fields(state)
+    assert exported['property_address']['value'] == value
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('reply', ['это мой указанный адрес', 'мой'])
+async def test_property_address_reply_can_reuse_own_address(reply):
+    state = new_state('Иск о возмещении ущерба от залива квартиры')
+    raw = 'г. Екатеринбург, ул. Лесная, д. 12, кв. 17'
+    state.update(scenario='claim_damage_flood', phase='collecting', last_questions=['property_address'],
+                 official_rate_lookup=False, user_turns=[raw])
+    state['fields']['sender_address'] = {'status': 'filled', 'value': raw, 'evidence': raw}
+    state, _, _ = await advance_interview(state, reply)
+    saved = state['fields']['property_address']
+    assert saved['value'] == raw and saved['confirmation'] == reply
+    assert 'property_address' not in state['last_questions']
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('reply', ['без понятия', 'допишу позже'])
+async def test_unknown_address_reply_advances(reply):
+    state = authority('recipient_address')
+    state, _, _ = await advance_interview(state, reply)
+    assert state['fields']['recipient_address']['status'] == 'unknown'
+    assert 'recipient_address' not in state['last_questions']
+
+
+@pytest.mark.asyncio
+async def test_city_only_followup_completes_and_exports_previous_address(monkeypatch):
+    from app.services.document_fact_provenance import audit_sensitive_fields
+    state = authority('sender_address')
+    state['official_rate_lookup'] = False
+    state['fields']['sender'] = {'status': 'filled', 'value': 'Иванов Иван Иванович'}
+    monkeypatch.setattr('app.services.document_workflow.get_gigachat_client', AsyncMock(side_effect=RuntimeError('offline')))
+    state, _, _ = await advance_interview(state, 'Садовая 18, 14')
+    state, _, _ = await advance_interview(state, 'В Екатеринбурге написано же')
+    field = state['fields']['sender_address']
+    assert field['value'] == 'г. Екатеринбург, ул. Садовая, д. 18, кв. 14'
+    assert field['source_quotes'] == ['Садовая 18, 14', 'В Екатеринбурге написано же']
+    exported, _ = audit_sensitive_fields(state)
+    assert exported['sender_address']['value'] == field['value']
 
 
 @pytest.mark.asyncio

@@ -110,4 +110,5 @@ export interface GenerateAiDocumentRequest {
   title?: string;
   document_type?: AiDocumentType;
   chat_id?: number;
+  start_request_id?: string;
 }

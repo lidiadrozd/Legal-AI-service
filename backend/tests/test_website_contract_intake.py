@@ -38,7 +38,7 @@ def test_all_website_terms_are_read_from_one_turn(scenario):
     assert 'портфолио' in f['additional_terms']['value']
     assert not {'60 000','20 000','12 ноября'} & set(f['scope']['value'].split('. '))
 
-@pytest.mark.parametrize('phrase',['писала выше','смотри выше','я указал выше','это написано выше'])
+@pytest.mark.parametrize('phrase',['писала выше','смотри выше','я указал выше','это написано выше','дату и сумму писал ранее'])
 def test_reminders_are_control_input(phrase):assert is_recall_request(phrase)
 
 @pytest.mark.parametrize('phrase',['внесу сам','внесу сама','впишу вручную','заполню позже'])

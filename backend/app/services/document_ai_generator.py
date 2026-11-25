@@ -84,7 +84,7 @@ async def generate_ai_document_text(
     client = await get_gigachat_client()
     raw = await client.chat_completion(
         messages,
-        model=settings.GIGACHAT_MODEL,
+        model=settings.llm_model,
         temperature=0.15,
     )
 
@@ -100,7 +100,7 @@ async def generate_ai_document_text(
         messages + [
             {"role": "assistant", "content": raw.content},
             {"role": "user", "content": DOCUMENT_FORMAT_RETRY},
-        ], model=settings.GIGACHAT_MODEL, temperature=0.0,
+        ], model=settings.llm_model, temperature=0.0,
         structured_function=DOCUMENT_DRAFT_FUNCTION,
     )
     return _parse_model_output(repaired.content, fallback_title=fallback or "Юридический документ")

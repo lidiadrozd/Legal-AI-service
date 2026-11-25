@@ -4,6 +4,7 @@ import pytest
 
 from app.core.config import settings
 from app.services import rag_context
+from app.services.consultant_article_quotes import ArticleQuote
 
 
 def test_known_deadline_contradictions_are_detected():
@@ -35,12 +36,12 @@ def test_labor_payment_question_receives_entitlement_and_deadline_sources(monkey
     text, sources = rag_context.build_rag_bundle(query)
     articles = {item["legal_source"].norm.article for item in sources
                 if item["legal_source"].norm.document_key == "ru:197-fz:2001-12-30"}
-    assert {"127", "140"} <= articles
+    assert articles == {"140"}
     assert "не позднее следующего дня" in text
 
 
 @pytest.mark.asyncio
-async def test_missing_basis_retried_and_used_source_stays_visible(monkeypatch):
+async def test_missing_basis_reviewed_and_used_source_stays_visible(monkeypatch, mock_basis_review):
     from types import SimpleNamespace
     from unittest.mock import AsyncMock
     from app.services import nlp_service
@@ -51,9 +52,12 @@ async def test_missing_basis_retried_and_used_source_stays_visible(monkeypatch):
         NormIdentity("ru:197-fz:2001-12-30", article),
         "https://www.consultant.ru/document/cons_doc_LAW_34683/", "2026-05-25", "a" * 64),
         "text": "Текст нормы"} for index, article in enumerate(("140", "127"), 1)]
+    candidates = [ArticleQuote(item["legal_source"].norm, "Выплата производится в день увольнения.",
+                               "", item["legal_source"].source_url, "fixture") for item in sources]
+    reviewed = mock_basis_review(candidates, "Расчёт в день увольнения.", [{"id": 1, "sentence": 1}])
     client = SimpleNamespace(chat_completion=AsyncMock(side_effect=[
         SimpleNamespace(content="Расчёт в день увольнения.", usage=TokenUsage(1, 2, 3, False)),
-        SimpleNamespace(content="Расчёт в день увольнения. [Источник 1]", usage=TokenUsage(3, 4, 7, False)),
+        reviewed,
     ]))
     monkeypatch.setattr(nlp_service, "get_gigachat_client", AsyncMock(return_value=client))
     monkeypatch.setattr(nlp_service.response_cache, "get", AsyncMock(return_value=None))
@@ -67,16 +71,24 @@ async def test_missing_basis_retried_and_used_source_stays_visible(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_existing_explicit_basis_does_not_trigger_retry(monkeypatch):
+async def test_existing_explicit_basis_needs_one_grounded_review(monkeypatch, mock_basis_review):
     from types import SimpleNamespace
     from unittest.mock import AsyncMock
     from app.services import nlp_service
     from app.services.llm_cost import TokenUsage
-    client = SimpleNamespace(chat_completion=AsyncMock(return_value=SimpleNamespace(
-        content="Срок устанавливает ТК РФ, статья 140.", usage=TokenUsage(1, 2, 3, False))))
+    from app.services.legal_sources import NormIdentity
+    from app.services.answer_norms import TK_KEY, CODE_URLS
+    content = "Срок устанавливает ТК РФ, статья 140."
+    candidate = ArticleQuote(NormIdentity(TK_KEY, "140"), "Выплата производится в день увольнения.",
+                             "", CODE_URLS[TK_KEY], "fixture")
+    client = SimpleNamespace(chat_completion=AsyncMock(side_effect=[
+        SimpleNamespace(content=content, usage=TokenUsage(1, 2, 3, False)),
+        mock_basis_review([candidate], content, [{"id": 1, "sentence": 1}]),
+    ]))
     monkeypatch.setattr(nlp_service, "get_gigachat_client", AsyncMock(return_value=client))
     monkeypatch.setattr(nlp_service.response_cache, "get", AsyncMock(return_value=None))
     monkeypatch.setattr(nlp_service.response_cache, "set", AsyncMock())
     result = await nlp_service.NLPService().generate_response("Когда выплатят компенсацию?")
-    assert client.chat_completion.call_count == 1
+    assert client.chat_completion.call_count == 2
+    assert client.chat_completion.call_args.kwargs["structured_function"]["name"] == "review_consultation_basis"
     assert "статья 140" in result.text

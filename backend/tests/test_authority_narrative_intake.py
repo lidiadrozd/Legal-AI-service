@@ -19,7 +19,7 @@ def state():
     return value
 
 
-def assert_facts(result):
+def assert_facts(result, pending=('contacts', 'attachments')):
     f=result['fields']
     assert f['sender']['value']=='Мария Олеговна Соколова'
     assert f['recipient']['value']=='Ирина Олеговна Соколова'
@@ -35,7 +35,7 @@ def assert_facts(result):
     p=f['powers']['value']
     for phrase in ['ООО «Вектор»','справку о периоде моей работы','заверенную копию приказа об увольнении','2025 год','подать и подписать заявление','расписаться за получение','Получать деньги','заключать соглашения','другие документы','не должна','ул. Деловая, д. 10']:assert phrase in p
     for phrase in ['Учебная','Садовая','Место составления','Паспортные','вручную','Подписываю','сроком']:assert phrase not in p
-    assert {f.key for f in pending_fields(result)}=={'contacts','attachments'}
+    assert {f.key for f in pending_fields(result)} == set(pending)
 
 
 @pytest.mark.asyncio
@@ -58,10 +58,14 @@ async def test_full_narrative_and_followups_keep_every_known_fact(monkeypatch,mo
     monkeypatch.setattr('app.services.document_conversation.get_gigachat_client',AsyncMock(side_effect=RuntimeError('offline')))
     result,reply,_=await conversational_interview_turn(state(),NARRATIVE)
     assert_facts(result)
-    for message in ['написано выше','уже писала','продолжить']:
+    for message in ['написано выше','уже писала']:
         result,reply,_=await conversational_interview_turn(result,message)
         assert_facts(result)
-        assert result['last_questions'][0] in {'contacts','attachments'},reply
+        assert result['last_questions'] == ['contacts'], reply
+    result,reply,_=await conversational_interview_turn(result,'продолжить')
+    assert_facts(result, pending=('attachments',))
+    assert result['last_questions'] == ['attachments'], reply
+    assert result['fields']['contacts']['origin'] == 'manual_question_limit'
 
 
 @pytest.mark.asyncio
@@ -79,8 +83,8 @@ def test_idempotent_collection_and_manual_passport_placeholders():
     old=deepcopy(result);collect_authority_facts(result,NARRATIVE)
     assert old==result
     formatted=format_template_fields(SCENARIOS['power_of_attorney'],result['fields'])
-    assert 'паспорт доверителя: серия, номер' in formatted['principal_details']
-    assert 'паспорт представителя: серия, номер' in formatted['agent_details']
+    assert formatted['principal_details'] == '[ДАННЫЕ ОТСУТСТВУЮТ: реквизиты доверителя]'
+    assert formatted['agent_details'] == '[ДАННЫЕ ОТСУТСТВУЮТ: реквизиты представителя]'
     assert is_recall_request('написано выше')
     assert nominative_agent('Анне Петровне Ивановой')=='Анна Петровна Иванова'
     assert nominative_agent('Марии Сергеевне Вольской')=='Мария Сергеевна Вольская'

@@ -164,7 +164,8 @@ def resolve_official_rate_data(
 
     Return entries can be merged into formula facts.  Each unavailable source
     is represented as ``source_error`` so the registry can give a meaningful
-    system message while keeping the document blocked from export.
+    system message while keeping the document blocked from export. Invalid
+    payment facts use ``input_error``: retrying the source cannot fix them.
     """
     result: dict[str, dict[str, Any]] = {}
     for rule_id in set(requested_rule_ids):
@@ -180,7 +181,7 @@ def resolve_official_rate_data(
             continue
         payments, problem = _payment_events(data, start, end, principal)
         if problem:
-            result[rule_id] = {"source_error": problem}
+            result[rule_id] = {"input_error": problem}
             continue
         try:
             periods = _history_segments(start, end, principal, payments, labor=rule_id == "labor_delay_236")

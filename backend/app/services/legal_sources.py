@@ -37,6 +37,26 @@ class LegalSource:
     source_url: str
     revision: str
     sha256: str
+    # Only an operator-maintained statute_text entry may expose a direct quote.
+    # Unknown/assistant sources and operator summaries remain useful for routing
+    # and tracking, but are never presented as verbatim law text.
+    content_kind: str = "unknown"
+    verbatim_excerpt: str = ""
+
+    @property
+    def has_verified_excerpt(self) -> bool:
+        return self.content_kind == "statute_text" and bool(self.verbatim_excerpt)
+
+
+def _sentence_count(text: str) -> int:
+    """Count curated sentence endings without trying to parse arbitrary prose."""
+    # A numbered statutory paragraph such as ``14. Правило...`` is one
+    # sentence, not two merely because its item number ends with a dot.
+    candidate = re.sub(r"^\d+(?:\.\d+)*\.\s+", "", text.strip())
+    count = len(re.findall(r"[.!?](?=\s|$)", candidate))
+    # A statutory lead-in ending with a colon is intentionally usable as the
+    # short excerpt when the enumerated list itself would exceed two sentences.
+    return count or (1 if candidate.endswith(":") else 0)
 
 
 def load_legal_source_catalog(root: Path) -> dict[str, LegalSource]:
@@ -64,9 +84,11 @@ def load_legal_source_catalog(root: Path) -> dict[str, LegalSource]:
             if path.suffix.lower() not in {".txt", ".md"}:
                 continue
             source = path.relative_to(root.resolve()).as_posix()
-            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            raw = path.read_bytes()
+            digest = hashlib.sha256(raw).hexdigest()
             if entry.get("sha256") != digest:
                 continue
+            document_text = raw.decode("utf-8")
             norm = NormIdentity.from_dict(entry)
             url = entry.get("source_url")
             revision = entry.get("revision")
@@ -74,12 +96,31 @@ def load_legal_source_catalog(root: Path) -> dict[str, LegalSource]:
                     or urlparse(url).scheme != "https" or not urlparse(url).netloc
                     or not isinstance(revision, str) or not revision.strip() or len(revision) > 100):
                 continue
+            content_kind = entry.get("content_kind", "unknown")
+            excerpt = entry.get("verbatim_excerpt", "")
+            if content_kind not in {"statute_text", "operator_summary", "unknown"}:
+                continue
+            if not isinstance(excerpt, str) or len(excerpt) > 2000:
+                continue
+            excerpt = excerpt.strip()
+            if content_kind == "statute_text":
+                # A manifest label is not enough: the approved quote must be a
+                # literal 1-2 sentence substring of the hash-bound document.
+                if (not excerpt or excerpt not in document_text
+                        or _sentence_count(excerpt) not in {1, 2}):
+                    continue
+            elif excerpt:
+                # In particular, an operator summary must never masquerade as
+                # a quote merely because it has a quote-looking manifest field.
+                continue
             if source in result or source in ambiguous:
                 result.pop(source, None)
                 ambiguous.add(source)
                 continue
-            result[source] = LegalSource(norm, url, revision.strip(), digest)
-        except (KeyError, ValueError, OSError):
+            result[source] = LegalSource(
+                norm, url, revision.strip(), digest, content_kind, excerpt,
+            )
+        except (KeyError, ValueError, OSError, UnicodeError):
             continue
     return result
 

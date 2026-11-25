@@ -27,7 +27,7 @@ def test_money_is_exact_or_requires_clarification(raw, expected):
 
 
 def test_catalog_has_distinct_scenarios_and_honest_provenance():
-    assert len(SCENARIOS) == 54  # Expanded maintained forms plus 11 legacy structures.
+    assert len(SCENARIOS) == 55  # Maintained forms plus legacy structures.
     assert len({s.family for s in SCENARIOS.values()}) >= 10
     for item in SCENARIOS.values():
         assert item.review_status == "draft_structure"
@@ -60,7 +60,7 @@ def test_unknown_fields_render_as_labeled_placeholders():
     state = state_for()
     state = apply_updates(state, [FieldUpdate(key="sender_address", status="unknown", evidence="Адрес не знаю")], "Адрес не знаю")
     assert state["fields"]["sender_address"]["status"] == "unknown"
-    assert "[адрес заявителя]" in render_scenario(SCENARIOS[state["scenario"]], state["fields"])
+    assert "[ДАННЫЕ ОТСУТСТВУЮТ: адрес заявителя]" in render_scenario(SCENARIOS[state["scenario"]], state["fields"])
 
 
 def test_corrected_amount_replaces_previous_value_and_formats():
@@ -175,7 +175,7 @@ async def test_export_contains_placeholders_and_provenance(client, db_session, t
     from io import BytesIO
     from docx import Document
     text = "\n".join(p.text for p in Document(BytesIO(downloaded.content)).paragraphs)
-    assert "[основная сумма задолженности]" in text
+    assert "[ДАННЫЕ ОТСУТСТВУЮТ: основная сумма задолженности]" in text
     # Provenance belongs to metadata; the authored DOCX keeps its own layout.
     from app.services.document_template_library import load_text_package
     package=load_text_package(SCENARIOS[state['scenario']])
@@ -245,7 +245,7 @@ def test_template_packages_reject_unknown_fields_and_pin_review_metadata(tmp_pat
     loaded = library.load_text_package(scenario)
     assert loaded["version"] == 2
     text = render_scenario(scenario, {"amount": {"value": "7000.00", "status": "filled"}}, loaded)
-    assert "7 000 рублей" in text and "[адрес заявителя]" in text
+    assert "7 000 рублей" in text and "[ДАННЫЕ ОТСУТСТВУЮТ: адрес заявителя]" in text
     package["blocks"][0]["text"] = "{{invented_field}}"
     path.write_text(json.dumps(package), encoding="utf-8")
     with pytest.raises(ValueError, match="Unknown template placeholder"):

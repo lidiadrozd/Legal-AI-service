@@ -27,18 +27,39 @@ def asks_for_help(message):
         r"|\bсам\w*\s+(?:посмотри|скажи|определи)\b|\bпосмотри.{0,30}\bзакон\b", text))
 
 
+_ENTRY_VERB = (r'(?:внесу|внес[её]м|внести|впишу|впишем|вписать|напишу|допишу|допишем|'
+               r'заполню|заполним|заполнить|дополню|дополним|дополнить|'
+               r'добавлю|добавим|добавить|укажу|укажем|указать)')
+_ENTRY_WHEN = r'(?:сам(?:а|и|остоятельно)?|вручную|позже|позднее|потом)'
+_MANUAL_ENTRY = re.compile(
+    r'\s*(?:остав(?:ь|ьте)\s+для\s+ручного\s+заполнения|'
+    r'(?:не\s+указывай(?:те)?[, ]+)?(?:я\s+)?(?:(?:паспортные\s+данные|реквизиты|эти\s+данные)\s+)?'
+    rf'(?:{_ENTRY_VERB}\s+{_ENTRY_WHEN}|{_ENTRY_WHEN}\s+{_ENTRY_VERB})(?:\s+{_ENTRY_WHEN})?)[.!\s]*', re.I)
+
+
+def requests_manual_entry(message):
+    """A whole reply postpones entry. A factual sentence can mention later events."""
+    return bool(_MANUAL_ENTRY.fullmatch(message or ''))
+
+
+def is_manual_blank(stored):
+    return stored.get('status') == 'unknown' and (
+        stored.get('origin') == 'manual_question_limit'
+        or requests_manual_entry(stored.get('evidence')) or requests_manual_entry(stored.get('original')))
+
+
 def leaves_blank(message):
     if asks_for_help(message):
         return False
-    if re.fullmatch(r'\s*остав[ьт]\w*\s+для\s+ручного\s+заполнения[.! ]*', message, re.I):return True
-    verb=r'(?:внесу|внес[её]м|впишу|впишем|заполню|заполним|дополню|укажу|укажем)'
-    manner=r'(?:сам(?:а|и|остоятельно)?|вручную|позже|потом)'
-    manual=verb+r'\s+'+manner+r'(?:\s+'+manner+r')?|'+manner+r'\s+'+verb+r'(?:\s+'+manner+r')?'
-    if re.fullmatch(r'\s*(?:(?:паспортные\s+данные|реквизиты|эти\s+данные)\s+)?(?:'+manual+r')[.! ]*',message,re.I):return True
+    if requests_manual_entry(message):return True
+    if re.fullmatch(r'\s*(?:я\s+)?(?:без понятия|не имею понятия|не в курсе)[.! ]*', message, re.I):return True
     # A hesitant introduction must not erase the facts after it: "не знаю.
     # Работал ..." is an answer containing facts, not a request to leave blank.
     parts = re.split(r"[.!;]\s+|\bно\b|\bоднако\b", message, flags=re.I)
-    pattern = r"\bне знаю\b|\bне помню\b|\bне\s*извест\w*|не определил\w*|не\s*определ[её]н\w*|не выбрал\w*|ничего не выбирал\w*|впишу позже|остав\w* (?:пуст|пропуск)|сомневаюсь"
+    # Keep the user's uncertainty phrase distinct from the valid contractual
+    # term "на неопределённый срок".  The old `не\s*определ...` branch also
+    # matched that adjective and made the export gate reject a correct block.
+    pattern = r"\bне знаю\b|\bне помню\b|\bне\s*извест\w*|не определил\w*|не\s+определ(?:ен|ён)\b|неопредел(?:ен|ён)\b|не выбрал\w*|ничего не выбирал\w*|впишу позже|остав\w* (?:пуст|пропуск)|сомневаюсь"
     meaningful = [p.strip() for p in parts if p.strip()]
     return bool(meaningful and all(re.search(pattern, p, re.I) for p in meaningful))
 
@@ -55,9 +76,10 @@ def is_progress_message(message):
 
 
 def is_recall_request(message):
+    if re.search(r'\bуже\s+(?:ответил[аи]?|указал[аи]?|написал[аи]?)\b', message, re.I):return True
     if re.search(r'\b(?:(?:смотри|посмотри|прочитай)|(?:писал|указал|сообщал|отвечал)[аи]?)\s+(?:(?:это|всё|все)\s+)?выше\b',message,re.I):return True
     if re.search(r'\b(?:написано|указано|сообщено|есть)\s+выше\b',message,re.I):return True
-    return bool(re.search(r"уже\s+(?:отвечал|писал|говорил|сообщал|сказал|спрашивал)|(?:я же|я ведь).{0,20}(?:писал|сказал|говорил)|посмотри\s+выше|(?:посмотри|прочитай|смотри).{0,15}предыдущ\w*\s+сообщени|в\s+предыдущем\s+сообщении.{0,30}(?:есть|написан|указан)|забыл.{0,15}контекст|ты забыл|ты забыла", message, re.I))
+    return bool(re.search(r"уже\s+(?:отвечал|писал|говорил|сообщал|сказал|спрашивал)|(?:я же|я ведь).{0,20}(?:писал|сказал|говорил)|посмотри\s+выше|(?:посмотри|прочитай|смотри).{0,15}предыдущ\w*\s+сообщени|в\s+предыдущем\s+сообщении.{0,30}(?:есть|написан|указан)|(?:писал|указал|сообщал|говорил|отвечал)[аи]?\s+ранее\s*[.!?]*$|забыл.{0,15}контекст|ты забыл|ты забыла", message, re.I))
 
 
 def document_kind(state):
@@ -142,12 +164,16 @@ def infer_scenario(state, message):
     if kind not in {"claim", "pretense"}: return None
     if re.search(r"защит\w* прав потреб|некачествен\w* товар|телефон.{0,35}(?:взорвал|слома)|товар.{0,30}недостат|ист[её]кш\w* срок\w* годност|просроченн\w* (?:товар|продукт)", text):
         return "claim_consumer" if kind == "claim" else "pretense_consumer_defective_goods"
-    if "залив" in text or "затоп" in text:
-        return ("claim" if kind == "claim" else "pretense") + "_damage_flood"
+    if kind == 'claim' and re.search(r'\b(?:ремонт|подряд|работ\w*)\b', text) and re.search(r'\b(?:аванс|недостат\w*|некачествен\w*|вернуть|взыскать)\b', text):
+        return 'claim_consumer'
     basis = next((suffix for pattern, suffix in (
         (r"расписк|займ|за[её]м|дал\w* в долг|одолж", "loan"),
-        (r"аренд", "rent"), (r"оказан\w* услуг|договор\w* услуг", "services"),
+        (r"аренд", "rent"), (r"\bоказан\w* услуг|договор\w* услуг", "services"),
         (r"поставк|поставлен\w* товар", "supply")) if re.search(pattern, text)), None)
+    if basis == 'services':
+        from app.services.document_routing import requests_service_refund
+        if requests_service_refund(text):
+            return None
     return f"{kind}_debt_{basis}" if basis else None
 
 
@@ -217,6 +243,7 @@ def field_guidance(state, key, scenario):
         "court": "Суд пока можно не указывать: сначала нужно определить вид спора, требования и территориальную подсудность. Название суда не следует угадывать. Если выбор ещё не сделан, оставим поле для уточнения. В каком населённом пункте вы живёте?",
         "procedure": "Для выбора порядка важно, связана ли ситуация с личными нуждами человека или с бизнесом. Покупка телефона для себя — пример личных нужд. Какова цель в вашей ситуации?",
         "purchase": "Опишите покупку обычными словами: что купили, у кого, когда и за какую цену. Для документа я затем изложу это официальным языком. Что известно о покупке?",
+        "payment_evidence": "Для претензии достаточно указать, чем подтверждается оплата: например, что кассовый или электронный чек сохранился. Номер чека можно добавить, если он известен, но придумывать или специально искать его для продолжения опроса не нужно. Если дата и сумма покупки уже сообщены, повторять их не нужно. Подтвердите только: чек сохранился?",
         "seller_response": "Я спрашиваю, обращались ли вы к продавцу после обнаружения проблемы: приходили в магазин, звонили, писали сообщение или заявление. Это нужно, чтобы описать попытки урегулирования и ответ продавца. Обращались ли вы к нему?",
         "pretrial": "Претензия — письменное требование к другой стороне до суда. Здесь нужно указать, направляли ли её, и что произошло после этого. Если пока только готовите иск, так и запишем, без выдуманного обращения. Направляли претензию?",
         "copy_notice": "Имеются в виду копии этого иска и приложений для остальных участников дела, а не другой документ. Здесь фиксируют факт отправки и подтверждение. Если иск только готовится, можно указать, что копии ещё не направлялись. Уже отправляли копии?",
@@ -255,9 +282,12 @@ def normalize_address(raw):
     if (len(comma_parts) in {3,4} and all(re.fullmatch(r'[А-Яа-яЁё -]+',p) for p in comma_parts[:2])
             and all(re.fullmatch(r'\d+[А-Яа-яЁё/-]*',p) for p in comma_parts[2:])):
         value = comma_parts[0]+', '+comma_parts[1]+' '+comma_parts[2]+(', '+comma_parts[3] if len(comma_parts)==4 else '')
-    from app.services.document_addresses import RELATIVE
+    from app.services.document_addresses import RELATIVE, postal_phrase
     if RELATIVE.search(value):
         return value
+    formatted = postal_phrase(value)
+    if formatted:
+        return formatted
     # Accept ordinary chat shorthand without punctuation, preserving both
     # numeric components. Do not confuse a street/house with a locality.
     compact = re.fullmatch(r'(?P<city>[А-Яа-яЁё-]+)\s+(?P<street>[А-Яа-яЁё-]+)\s+(?P<house>\d+[А-Яа-яЁё/-]*)(?:\s+(?P<flat>\d+[А-Яа-яЁё/-]*))?', value)
@@ -272,7 +302,7 @@ def normalize_address(raw):
     short = re.fullmatch(
         r"(?:(?:г\.?\s*)?(?P<city>[А-Яа-яЁё-]+(?:\s+[А-Яа-яЁё-]+)*),\s*)?"
         r"(?:ул\.?\s*)?(?P<street>[А-Яа-яЁё-]+(?:\s+[А-Яа-яЁё-]+)*)\s+"
-        r"(?P<house>\d+[А-Яа-яЁёA-Za-z/-]*)(?:,\s*(?:кв\.?\s*)?(?P<flat>\d+[А-Яа-яЁё/-]*))?", value, re.I)
+        r"(?P<house>\d+[А-Яа-яЁёA-Za-z/-]*)(?:(?:,\s*|\s+)(?:кв\.?\s*)?(?P<flat>\d+[А-Яа-яЁё/-]*))?", value, re.I)
     if short:
         parts = (["г. " + short["city"]] if short["city"] else [])
         parts.extend(["ул. " + short["street"], "д. " + short["house"]])
@@ -280,7 +310,7 @@ def normalize_address(raw):
         value = ", ".join(parts)
     value = re.sub(r"\bкв(?:артира)?\.?\s*(\d+[\w/-]*)", r"кв. \1", value, flags=re.I)
     value = re.sub(r"\b(?:дом|д)\.?\s*(\d+[\w/-]*)", r"д. \1", value, flags=re.I)
-    value = re.sub(r"\b(?:улица|ул)\.?\s*", "ул. ", value, flags=re.I)
+    value = re.sub(r"\b(?:улица\b|ул\b\.?)\s*", "ул. ", value, flags=re.I)
     value = re.sub(r"(?<!\w)(?:г|город)\.?\s+", "г. ", value, flags=re.I)
     value = re.sub(r"(?<!\w)([а-яё][а-яё-]*)", lambda m: m[1].capitalize() if m[1] not in {"г", "ул", "д", "кв", "корп", "обл", "р", "н", "с", "п", "пер", "проспект", "область", "район"} else m[1], value)
     value = re.sub(r"(?<![\d.])\s+(\d+)(?=,?\s*кв\.)", r", д. \1", value)
@@ -291,7 +321,7 @@ def has_locality(value):
     if re.search(r"\b(?:г\.|город|село|с\.|пос[её]лок|п\.|деревня|д\.|станица)\s+[А-Яа-яЁё-]", value, re.I):
         return True
     # 'Екатеринбург, ул. ...' also explicitly names a locality.
-    return bool(re.match(r"^[А-Яа-яЁё-]+,\s*(?:ул\.|улица|проспект|пер\.)", value, re.I))
+    return bool(re.match(r"^(?:в\s+)?[А-Яа-яЁё-]+(?:\s+[А-Яа-яЁё-]+){0,3},\s*(?:ул\.|улица|по улице|на улице|проспект|пер\.)", value, re.I))
 
 
 def question_text(state, spec):

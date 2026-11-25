@@ -220,7 +220,7 @@ async def _request_validated(client, prompt: str, payload: dict, validator, *, s
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
     for attempt in range(2):
         options = {"structured_function": structured_function} if structured_function is not None else {}
-        response = await client.chat_completion(messages=messages, model=settings.GIGACHAT_MODEL,
+        response = await client.chat_completion(messages=messages, model=settings.llm_model,
                                                 temperature=0.1, **options)
         try:
             return validator(_parse_model_response(response.content))

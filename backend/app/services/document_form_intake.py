@@ -239,6 +239,8 @@ def prepare_form_intake(state):
     # fills a calculation slot before the interview reaches it and then causes
     # later identity/contract answers to be skipped.
     if not uses_form_composer(state):return
+    from app.services.document_obligation_facts import prepare_service_balance
+    prepare_service_balance(state)
     from app.services.document_contract_facts import repair_contract_facts
     repair_contract_facts(state)
     from app.services.document_explicit_facts import reuse_personal_signer
@@ -344,6 +346,7 @@ def collect_form_turn(state,text,current):
     if not uses_form_composer(state):return set()
     from app.services.document_scenarios import SCENARIOS
     from app.services.document_case_facts import set_field,collect_case_turn,normalize_contacts,MONTH,MONEY,DATE,NEGATIVE
+    from app.services.document_money_tokens import find_money_quotes
     specs={f.key:f for f in SCENARIOS[state['scenario']].fields};consumed=set()
     def put(key,value,evidence,status='filled'):
         existing=state['fields'].get(key,{})
@@ -386,16 +389,37 @@ def collect_form_turn(state,text,current):
             from app.services.document_case_composition import _money
             put(current,'Основной долг составляет '+_money(amount['value'])+'. Дополнительные начисления не заявляются.',text)
             return consumed
-    if current in specs and specs[current].kind=='date':
+    if current in {'pretrial', 'previous_contact'}:
+        from app.services.document_drafting import canonical_editorial
+        official = canonical_editorial(current, text, state['scenario'])
+        if official:
+            put(current, official, text)
+            return consumed
+    if current == 'date':
+        from app.services.document_explicit_facts import document_date_answer
+        day = document_date_answer(state, text, current)
+        if day:
+            put(current, day, text)
+    elif current in specs and specs[current].kind=='date':
         dates=re.findall(DATE,text,re.I)
         if len(dates)==1:put(current,dates[0],text)
     if current in specs and specs[current].kind=='money':
-        amounts=re.findall(MONEY,text,re.I)
+        amounts=find_money_quotes(text)
         if len(amounts)==1:put(current,amounts[0],text)
     if current=='signature' and re.fullmatch(r'(?:я|сам|сама|лично|подпишу (?:сам|сама|лично)|я лично|мо[йёя])[.! ]*',text,re.I):
         sender=state['fields'].get('sender',{})
         if sender.get('status')=='filled':put('signature',sender['value'],text)
         return consumed
+    if current in {'delivery_status', 'delivery_date'}:
+        delivered = re.search(r'\b(?:товар|заказ|пылесос|покупк\w*)\s+(?:был\s+)?доставлен\w*\b', text, re.I)
+        delivered_date = re.search(r'\bдоставил\w*\s+(' + DATE + r')', text, re.I)
+        if delivered:
+            if 'delivery_status' in specs:
+                put('delivery_status', 'Товар передан покупателю.', delivered[0])
+            if delivered_date and 'delivery_date' in specs:
+                put('delivery_date', delivered_date[1], delivered_date[0])
+            if consumed:
+                return consumed
     if current=='delivery_status' and re.match(r'^\s*нет\b',text,re.I) and re.search(r'не знаю.{0,15}где',text,re.I):
         put(current,'Товар не доставлен. Сведения о его местонахождении мне неизвестны.',text)
         return consumed
@@ -448,6 +472,12 @@ def collect_form_turn(state,text,current):
         # possible later correction.
         put(current,None,text,'unknown')
         return consumed
+    if current in {'sender_details', 'recipient_details', 'party_details'}:
+        entries = [part.strip() for part in text.split(';')]
+        labels = r'(?:серия и номер|дата выдачи|кем выдан|код подразделения)'
+        if len(entries) > 1 and all(re.fullmatch(labels + r'\s*:\s*[^;\n]+', entry, re.I) for entry in entries):
+            put(current, '\n'.join(entries), text)
+            return consumed
     if current=='other_participants' and absence_reply(text):
         put(current,None,text,'not_applicable')
         return consumed
@@ -547,7 +577,7 @@ def collect_form_turn(state,text,current):
     if state['scenario'] in {'claim_labor_salary','pretense_labor_settlement'} and current in {'employment','wages','debt_period','amount'}:
         debt=bool(re.search(r'не (?:выплат|перечисл)|невыплачен|задолжен|долг',text,re.I))
         if debt:
-            amounts=re.findall(MONEY,text,re.I)
+            amounts=find_money_quotes(text)
             period=re.search(r'за\s+('+MONTH+r'(?:\s+\d{4}(?:\s+года)?)?)',text,re.I)
             if len(amounts)==1:put('amount',amounts[0],amounts[0])
             if period:put('debt_period',period[1],period[0])

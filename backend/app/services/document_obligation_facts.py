@@ -5,9 +5,119 @@ factual sentence may answer several questions, but only its matching clauses
 are stored in each field. All derivations retain their literal evidence.
 """
 import re
+from decimal import Decimal
+
+from app.services.document_money_tokens import find_money_quotes
+from app.services.document_source_quotes import source_sentences
 
 NUMBER=r'\d+(?:[ \u00a0]\d{3})*(?:[.,]\d{1,2})?'
 SUM=NUMBER+r'\s*(?:тысяч(?:а|и)?\b|тыс\.?\b|млн\.?)?(?:\s*(?:руб(?:лей|ля|ль|\.)?|₽))?'
+_SERVICE_PRICE = re.compile(
+    r'\b(?:цена|стоимость)\s+(?:(?:всей|всех|оказанных|выполненных|по)\s+)?'
+    r'(?:работ[ыа]?|услуг|договор[ау]|заказа)\b', re.I)
+_PAID_ADVANCE = re.compile(
+    r'\b(?:перечислил[аи]?|перев[её]л[аи]?|вн[её]с(?:ла|ли)?|получил[аи]?|оплатил[аи]?)\s+'
+    r'(?:мне\s+)?(?:аванс|предоплату)\b|\b(?:аванс|предоплата)\b.{0,45}'
+    r'\b(?:получен[аы]?|поступил[аи]?|перечислен[аы]?)\b', re.I)
+_OTHER_PAYMENT = re.compile(
+    r'\b(?:оплатил[аи]?|плат[её]ж|перечислил[аи]?|перев[её]л[аи]?|доплатил[аи]?|'
+    r'доплата|возвратил[аи]?|получил[аи]?|заплатил[аи]?)\b', re.I)
+_UNCERTAIN_MONEY = re.compile(
+    r'\b(?:если|возможно|примерно|около|не|должен|должна|должны|будет|будут|'
+    r'договорились|обещал[аи]?|обязал[аи]?сь|ожидается)\b|\?', re.I)
+
+
+def service_balance_inputs(sources):
+    """Recognise a closed payment history with one price and one actual advance."""
+    from app.services.document_workflow import normalize_money
+    price = {}
+    advances = {}
+    closed = scope = ''
+    for text in sources:
+        for clause in source_sentences(text):
+            if re.search(r'\b(?:других|иных|больше)\s+(?:платежей|переводов|оплат)\s+не\s+(?:поступало|было)', clause, re.I):
+                closed = clause
+            if re.search(r'\b(?:взыскать|получить|требую)\s+только\s+(?:неоплаченн\w+\s+)?остаток\b', clause, re.I):
+                scope = clause
+            money = find_money_quotes(clause)
+            if not money:
+                continue
+            # Only unambiguous roles next to a single amount can enter this
+            # subtraction. More complex allocations require separate facts.
+            if _SERVICE_PRICE.search(clause):
+                target = price
+            elif _PAID_ADVANCE.search(clause):
+                target = advances
+            elif _OTHER_PAYMENT.search(clause):
+                return None  # Another payment cannot be silently omitted.
+            else:
+                continue
+            if len(money) != 1 or _UNCERTAIN_MONEY.search(clause):
+                return None
+            number = normalize_money(money[0])
+            if not number:
+                return None
+            target[clause] = Decimal(number)
+    if len(price) != 1 or len(advances) != 1 or not (closed and scope):
+        return None
+    price_quote, total = next(iter(price.items()))
+    payment_quote, paid = next(iter(advances.items()))
+    if paid >= total:
+        return None
+    return total, paid, [price_quote, payment_quote, closed, scope]
+
+
+def prepare_service_balance(state):
+    if state.get('scenario') != 'claim_debt_services':
+        return
+    from app.services.document_case_composition import _money
+    from app.services.document_case_facts import set_field
+    from app.services.document_chat_context import initial_user_sources
+    sources = initial_user_sources(state, state.get('user_turns', []))
+    verified = service_balance_inputs(sources)
+    fields = state['fields']
+    ledger = state.get('calculation_ledger') or {}
+    derived_keys = {'amount', 'calculation', 'payments'}
+    manual = any(fields.get(k, {}).get('origin') in {'user_correction', 'narrative_conflict'}
+                 or str(fields.get(k, {}).get('origin') or '').startswith('manual')
+                 or k in state.get('narrative_decisions', {}) for k in derived_keys)
+    if ledger.get('origin') == 'service_balance_arithmetic' and (not verified or manual):
+        # A newly disclosed payment or correction invalidates the old net
+        # amount, even when the new story is not yet sufficient to price it.
+        state.pop('calculation_ledger')
+        for key in (*derived_keys, 'claim_price', 'fee'):
+            if fields.get(key, {}).get('origin') in {'service_balance_arithmetic', 'calculation_plan'}:
+                fields.pop(key)
+    if not verified or manual:
+        return
+    total, paid, quotes = verified
+    balance = format(total - paid, '.2f')
+    amount = fields.get('amount', {})
+    if amount.get('status') == 'filled' and amount.get('value') != balance:
+        # A model may mistake the price or advance for the amount claimed.
+        # An independently stated, conflicting balance needs clarification.
+        sources = [value for value in (amount.get('evidence'), amount.get('original')) if value]
+        if amount.get('value') not in {str(total), str(paid)} or not any(
+                source in quote or quote in source for source in sources for quote in quotes[:2]):
+            return
+    if any(it.get('kind') not in {'principal', 'claim_price_reference', 'state_duty'}
+           for it in ledger.get('items', [])):
+        return
+    equation = _money(total) + ' − ' + _money(paid) + ' = ' + _money(balance) + '.'
+    for key, value, evidence in [('amount', balance, quotes[3]),
+                                 ('calculation', equation, quotes[3]),
+                                 ('payments', quotes[1] + ' ' + quotes[2], quotes[1])]:
+        old = fields.get(key, {})
+        if old.get('value') != value or old.get('status') != 'filled':
+            set_field(state, key, value, evidence)
+        fields[key].update(original=evidence, evidence=evidence, source_quotes=quotes,
+                           origin='service_balance_arithmetic')
+    state['calculation_ledger'] = {
+        'version': 1, 'status': 'confirmed', 'origin': 'service_balance_arithmetic',
+        'items': [{'id': 'field:amount', 'kind': 'principal', 'label': 'Основная сумма требования',
+                   'value': balance, 'evidence': quotes[3]}],
+        'total': balance, 'calculation': equation, 'evidence': quotes[3],
+    }
 
 
 def collect_obligation_turn(state,text,current,put):
@@ -50,7 +160,10 @@ def collect_obligation_turn(state,text,current,put):
     if advance:
         fact('advance',advance[1],advance[0]);save('payments',advance[0],advance[0])
     # Split prose at sentence boundaries but not decimal points or dates.
-    clauses=[x.strip(' ,;') for x in re.split(r'(?<!\d)[.!]\s+|;\s*|,\s+(?=(?:акт\s|аванс\s|остаток\s|есть\s))',text,flags=re.I) if x.strip(' ,;')]
+    from app.services.document_source_quotes import source_sentences
+    clauses = [clause.strip(' ,;') for sentence in source_sentences(text) for clause in
+               re.split(r',\s+(?=(?:акт\s|аванс\s|остаток\s|есть\s))', sentence, flags=re.I)
+               if clause.strip(' ,;')]
     contract=next((x for x in clauses if re.search(r'договор\w*.*?(?:№|от\s+\d)',x,re.I)),None)
     if contract and current in {'agreement',None}:
         # Only the agreement reference is placed in the agreement slot.  The

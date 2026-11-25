@@ -5,6 +5,44 @@ transaction occurred. These scopes also apply to future form adapters.
 """
 import re
 
+
+def requests_service_refund(text):
+    """Evidence that the person seeks their payment back for a service."""
+    return bool(re.search(
+        r'\b(?:(?:хочу|прошу|требую)\s+вернуть|(?:иск|претензи\w*)\s+о\s+возврате)'
+        r'\s+(?:мне\s+)?(?:оплат\w*|уплачен\w*|деньги|стоимост\w*)'
+        r'|\b(?:мне|нам)\s+(?:так\s+и\s+)?не\s+оказа[лн]\w*'
+        r'|\bнеоказанн\w*\s+услуг\w*', text, re.I))
+
+
+def requests_service_payment(text):
+    """The provider is collecting a fee; a customer's refund is a different claim."""
+    if requests_service_refund(text):
+        return False
+    return bool(re.search(
+        r'\b(?:взыска\w*|получить|требу\w*)\s+(?:неоплаченн\w*\s+|остат\w*\s+)?'
+        r'(?:оплат\w*|вознаграждени\w*|долг\w*|задолженност\w*)\s+'
+        r'(?:по\s+оплате\s+|за\s+|по\s+договору\s+)(?:оказанн\w*\s+|оказания\s+)?услуг\w*\b'
+        r'|\bзаказчик\w*\s+(?:так\s+и\s+)?не\s+(?:полностью\s+)?оплатил\w*\s+(?:оказанн\w*\s+)?услуг\w*',
+        text, re.I))
+
+
+def describes_property_flood(text):
+    """Use the same event evidence to select and validate a flood form."""
+    if re.search(r'\b(?:залив(?:а|е|у|ом|ы|ов)?|затоплени[еяию])\b', text, re.I):
+        return True
+    for clause in re.split(r'[.!?;\n]', text):
+        flooding = r'(?:залил[аои]?|заливали?|залит[аоы]?|затопил[аои]?|затоплен[аоы]?)'
+        if re.search(rf'\b(?:нас|меня)\s+{flooding}\b|\b{flooding}\s+(?:нас|меня)\b', clause, re.I):
+            return True
+        housing = r'\b(?:квартир\w*|помещени\w*|жиль[еяёю]|потол(?:ок|к\w*)|сверху)\b'
+        if re.search(rf'\b(?:{flooding}|протеч\w*|теч[её]т)\b', clause, re.I) and re.search(housing, clause, re.I):
+            return True
+        if re.search(r'\bвод[аы]\b.{0,20}(?:сверху|из квартиры)', clause, re.I):
+            return True
+    return False
+
+
 SCOPES = {
     'contract_employment':r'(?:трудов|рудов)\w* (?:договор|контракт)|работа учител|работ[ау]\s+(?:учител|педагог)',
     'act_housing_handover':r'квартир|жил|найм', 'act_housing_return':r'квартир|жил|найм',
@@ -27,8 +65,7 @@ SCOPES = {
     'consumer_late_delivery': r'достав|предоплат|не (?:привез|прислал|получ)',
     'claim_consumer_defective_goods': r'товар|покуп|купил|продав|магазин|продукт|телефон|ноутбук|диван|мебел|шкаф|кресл|матрас|стол|стул|кухн',
     'claim_consumer_late_delivery': r'достав|предоплат|не (?:привез|прислал|получ)|срок.{0,20}(?:передач|товар|диван|мебел|шкаф|кресл|матрас|стол|стул|кухн)',
-    'consumer_defective_service': r'услуг|ремонт|подряд|работ',
-    'damage_flood': r'залив|затоп|протеч|теч[её]т|вод[аы].{0,20}(?:сверху|квартир)',
+    'consumer_defective_service': r'услуг|ремонт|подряд|работ|химчистк',
     # A request against a managing organisation often names the claim before
     # it describes the particular damage event.  Do not reject that supported
     # form solely for using the usual wording "взыскать ущерб".
@@ -64,6 +101,10 @@ def scenario_has_evidence(key,state):
         from app.services.document_appeal_routing import appeal_proceeding
         return appeal_proceeding(scope_text(state)) == key.removeprefix('appeal_')
     topic=re.sub(r'^(?:claim|pretense)_','',key)
+    if topic == 'damage_flood':
+        return describes_property_flood(scope_text(state))
+    if topic == 'debt_services' and requests_service_refund(scope_text(state)):
+        return False
     pattern=SCOPES.get(key) or SCOPES.get(topic)
     return bool(pattern and re.search(pattern,scope_text(state),re.I))
 

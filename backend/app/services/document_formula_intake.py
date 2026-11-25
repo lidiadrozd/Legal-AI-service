@@ -11,14 +11,17 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
+import hashlib
 import json
 import re
 from typing import Any, Mapping
+from app.services.document_money_tokens import MONEY_INTEGER, MONEY_START, THOUSANDS_SEPARATORS, money_token_starts_here
 
 from app.services.document_formula_registry import (
     CALCULATED,
     NEEDS_INPUT,
     REVIEW_REQUIRED,
+    _decimal,
     apply_plan_to_state,
     build_calculation_plan,
     detect_requested_rules,
@@ -40,8 +43,8 @@ _DATE = re.compile(
     re.I,
 )
 _MONEY = re.compile(
-    r"(?<![\w\d/№])(\d{1,3}(?:[ \u00a0]\d{3})+|\d+)(?:[,.](\d{1,2}))?\s*"
-    r"(?:руб(?:лей|ля|ль|\.)?|₽)",
+    MONEY_START + "(" + MONEY_INTEGER + r")(?:[,.](\d{1,2}))?\s*"
+    r"(?:руб(?:лей|ля|ль|\.)?|₽)(?!\w)",
     re.I,
 )
 _RATE = re.compile(
@@ -146,7 +149,9 @@ def _money_matches(text: str) -> list[tuple[str, int, int]]:
     """Return positive rouble sums and their literal positions."""
     values: list[tuple[str, int, int]] = []
     for match in _MONEY.finditer(text or ""):
-        raw = match[1].replace("\u00a0", "").replace(" ", "")
+        if not money_token_starts_here(text, match.start()):
+            continue
+        raw = match[1].translate(str.maketrans('', '', THOUSANDS_SEPARATORS))
         if match[2]:
             raw += "." + match[2]
         try:
@@ -478,7 +483,8 @@ def _capture_rule_facts(state: dict[str, Any], text: str, current: str | None, r
         rule_facts = facts.setdefault(rule_id, {})
         if not isinstance(rule_facts, dict):
             rule_facts = facts[rule_id] = {}
-        rule_facts.setdefault("evidence", []).append(text)
+        if text.strip() and text not in rule_facts.setdefault("evidence", []):
+            rule_facts["evidence"].append(text)
         if rule_id in {"civil_395", "labor_delay_236", "contract_interest", "contract_penalty"}:
             loan = state.get('loan_facts', {}) if rule_id in {'contract_interest', 'contract_penalty'} else {}
             if loan.get('principal'):
@@ -520,7 +526,8 @@ def _capture_rule_facts(state: dict[str, Any], text: str, current: str | None, r
             # The user's next literal answer (for example, "по статье 395")
             # is retained as evidence. Detection on the next planning pass
             # turns it into the concrete rule without making up a basis.
-            rule_facts["answer"] = text.strip()
+            if text.strip():
+                rule_facts["answer"] = text.strip()
 
 
 def _plan_facts(state: Mapping[str, Any]) -> dict[str, Any]:
@@ -549,35 +556,136 @@ def should_plan(state: Mapping[str, Any], text: str = "", current: str | None = 
     return False
 
 
-def synchronize_formula_plan(state: dict[str, Any], text: str = "", current: str | None = None, *, force: bool = False) -> dict[str, Any] | None:
+def _official_rate_fingerprint(rule_id: str, data: Mapping[str, Any], fields: Mapping[str, Any]) -> str:
+    """Bind source results to calculation inputs, never conversation wording."""
+    amount = fields.get("amount")
+    amount = amount if isinstance(amount, Mapping) else {}
+    inputs = {key: data.get(key) for key in (
+        "principal", "base_amount", "start_date", "end_date", "partial_payments",
+    )}
+    inputs["amount"] = {"status": amount.get("status"), "value": amount.get("value")}
+    inputs["rule"] = rule_id
+    encoded = json.dumps(inputs, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _resolve_rate_facts(state: dict[str, Any], rule_ids: set[str], facts: dict[str, Any], *, retry_sources: bool) -> dict[str, Any]:
+    """Reuse successes and failures until factual inputs change or retry is explicit.
+
+    Only results carrying our input fingerprint are reusable. Imported rate
+    periods in calculation facts retain the registry's existing source checks;
+    unbound legacy ``rate_data`` is not silently trusted for a new period.
+    """
+    from app.services.document_formula_rate_resolver import resolve_official_rate_data
+
+    fields = state.get("fields") or {}
+    attempts = state.get("official_rate_attempts")
+    attempts = deepcopy(dict(attempts)) if isinstance(attempts, Mapping) else {}
+    rate_data = state.get("rate_data")
+    rate_data = deepcopy(dict(rate_data)) if isinstance(rate_data, Mapping) else {}
+    resolved: dict[str, Any] = {}
+    pending: dict[str, str] = {}
+    for rule_id in sorted(rule_ids & {"civil_395", "labor_delay_236"}):
+        data = {key: value for key, value in facts.items() if not isinstance(value, Mapping)}
+        specific = facts.get(rule_id)
+        if isinstance(specific, Mapping):
+            data.update(specific)
+        imported_periods = data.get("rate_periods") or data.get("segments")
+        if isinstance(imported_periods, list) and imported_periods:
+            # Caller-supplied periods are not results of our source lookup.
+            # Do not overwrite them or mix in a previously cached lookup.
+            attempts.pop(rule_id, None)
+            rate_data.pop(rule_id, None)
+            continue
+        fingerprint = _official_rate_fingerprint(rule_id, data, fields)
+        previous = attempts.get(rule_id)
+        cached = rate_data.get(rule_id)
+        if (not retry_sources and isinstance(previous, Mapping)
+                and previous.get("fingerprint") == fingerprint and isinstance(cached, Mapping)):
+            resolved[rule_id] = deepcopy(dict(cached))
+        else:
+            # Invalidate before resolving: failure after an input correction
+            # must never retain successful segments for the previous inputs.
+            rate_data.pop(rule_id, None)
+            attempts.pop(rule_id, None)
+            pending[rule_id] = fingerprint
+    if pending:
+        fresh = resolve_official_rate_data(set(pending), facts, fields)
+        for rule_id, fingerprint in pending.items():
+            result = fresh.get(rule_id)
+            result = deepcopy(dict(result)) if isinstance(result, Mapping) else {}
+            # Replace, do not deep-merge, so success clears a prior source
+            # error and failure clears old verified segments and totals.
+            rate_data[rule_id] = result
+            attempts[rule_id] = {"fingerprint": fingerprint}
+            resolved[rule_id] = result
+    state["official_rate_attempts"] = attempts
+    state["rate_data"] = rate_data
+    merged = _deep_merge(facts, resolved)
+    for rule_id, result in resolved.items():
+        # A corrected payment must not retain its old input error; similarly,
+        # an input error is not a lingering network/source failure.
+        for error_key in ("source_error", "source_error_detail", "input_error"):
+            if error_key not in result:
+                merged[rule_id].pop(error_key, None)
+    return merged
+
+
+def synchronize_formula_plan(state: dict[str, Any], text: str = "", current: str | None = None, *, force: bool = False, retry_sources: bool = False) -> dict[str, Any] | None:
     """Recompute a plan after a factual turn without choosing legal facts.
 
     Returns ``None`` when the conversation did not request a formula and the
-    selected form has no service-owned formula to maintain.
+    selected form has no service-owned formula to maintain. ``retry_sources``
+    repeats only the source lookup using saved facts; its text is control
+    input and must not become factual evidence.
     """
-    if not force and not should_plan(state, text, current):
+    fields = state.get("fields", {})
+    ledger = state.get("calculation_ledger") or {}
+    valuation = None
+    loan = state.get('loan_facts') or {}
+    known_balance = bool(state.get('scenario') in {'claim_debt_loan', 'pretense_debt_loan'}
+                         and loan.get('principal') and loan.get('payments') and fields.get('amount', {}).get('origin') == 'loan_arithmetic')
+    if known_balance:
+        # The net balance in amount supersedes earlier mirrors of the same principal.
+        ledger = {**ledger, 'items': [item for item in ledger.get('items', []) if item.get('kind') not in {'damage', 'principal'}]}
+        calculation = fields.get('calculation', {})
+        fields = {**fields, 'calculation': {**calculation, 'components': [
+            item for item in calculation.get('components', []) if item.get('kind') not in {'damage', 'principal'}]}}
+    if state.get("scenario") == "claim_damage_flood":
+        from app.services.document_flood_facts import requested_valuation_cost
+        valuation = requested_valuation_cost(state)
+        # A prior generated calculation is a view. Recompute this component from the
+        # current demand so that a correction/withdrawal cannot keep an old charge.
+        calculation = fields.get("calculation", {})
+        components = calculation.get("components", [])
+        kept = [item for item in components if item.get("id") != "field:litigation_costs:valuation"]
+        if kept != components:
+            fields = {**fields, "calculation": {**calculation, "components": kept}}
+        if valuation:
+            items = list(ledger.get("items", []))
+            index = next((i for i, item in enumerate(items) if isinstance(item, Mapping) and item.get("kind") == "valuation"
+                          and _decimal(item.get("value", item.get("amount"))) == _decimal(valuation["value"])), None)
+            if index is None:
+                items.append({**valuation, "id": "field:litigation_costs:valuation"})
+            else:
+                items[index] = {**items[index], "include_in_claim_price": valuation.get("include_in_claim_price", False)}
+            ledger = {**ledger, "items": items}
+    if not force and not valuation and not known_balance and not should_plan(state, text, current):
         return None
     before = json.dumps({"plan": state.get("calculation_plan"), "fields": state.get("fields")}, ensure_ascii=False, sort_keys=True, default=str)
     rule_ids = _rule_ids(state, text)
-    if rule_ids:
+    if rule_ids and not retry_sources:
         _capture_rule_facts(state, text, current, rule_ids)
     facts = _plan_facts(state)
     # New and migrated live interviews opt into the official source resolver.
     # Plain in-memory unit states remain deterministic unless they explicitly
     # request it, which keeps calculations testable without a network.
     if state.get("official_rate_lookup") is True and rule_ids:
-        from app.services.document_formula_rate_resolver import resolve_official_rate_data
-        resolved = resolve_official_rate_data(rule_ids, facts, state.get("fields") or {})
-        if resolved:
-            facts = _deep_merge(facts, resolved)
-            state["rate_data"] = _deep_merge(
-                state.get("rate_data") if isinstance(state.get("rate_data"), Mapping) else {},
-                resolved,
-            )
+        facts = _resolve_rate_facts(state, rule_ids, facts, retry_sources=retry_sources)
     plan = build_calculation_plan(
         state.get("scenario"),
-        fields=state.get("fields"),
-        calculation_ledger=state.get("calculation_ledger"),
+        fields=fields,
+        calculation_ledger=ledger,
         text=text,
         current=current,
         # A direct request such as "посчитайте неустойку" must return the
@@ -630,7 +738,10 @@ def collect_formula_turn(state: dict[str, Any], text: str, current: str | None) 
         str(item) for item in state.get("formula_requested_rules", ())
         if isinstance(item, str)
     }
-    explicit = direct | (remembered if not pending else set())
+    # Once a plan has been built, only a new formula request or a missing
+    # input for the pending rule can consume this turn. Remembered rules
+    # otherwise swallow answers to every later ordinary field.
+    explicit = direct | (remembered if not existing else set())
 
     # A completed calculation is history, not a conversation mode.  It must
     # never consume the next ordinary answer (name, address, contract, etc.).

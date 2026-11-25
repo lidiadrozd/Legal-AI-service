@@ -45,7 +45,7 @@ def form_narrative_keys(state):
         # Component arithmetic is deterministic and already has document
         # style.  Do not let a prose editor paraphrase or drop part of it.
         and state['fields'][f.key].get('origin') not in {
-            'source_bound_arithmetic', 'calculation_plan', 'calculation_plan_composition',
+            'source_bound_arithmetic', 'loan_arithmetic', 'service_balance_arithmetic', 'calculation_plan', 'calculation_plan_composition',
         }
         and state['fields'][f.key].get('value')]
 
@@ -63,6 +63,40 @@ def strip_purpose_echo(text,purpose,source):
     # providers append it verbatim despite receiving only a source fragment.
     if purpose.casefold() in source.casefold():return text
     return re.sub(r'(?:(?<=\.)\s+|^)'+re.escape(purpose)+r'[.! ]*$', '',text,flags=re.I).strip()
+
+
+def _consumer_source_candidate(key,source,mode,scenario):
+    """Keep a narrow set of literal consumer facts when the editor fails.
+
+    These slots contain facts already bound to the user's answer by intake.
+    The fallback only repairs capitalization/punctuation or expands an
+    explicit card-transfer answer.  It never supplies a missing product,
+    defect, date, seller, payment method or requisite.
+    """
+    if not scenario.startswith('pretense_consumer_') or key not in {'purchase','defect','facts','seller_response','payment'}:
+        return None
+    from app.services.document_dialogue import conversational_value
+    from app.services.document_drafting import validate_edit
+    from app.services.document_field_safety import field_value_problem
+    text=re.sub(r'\s+',' ',(source or '')).strip()
+    if (not text or conversational_value(text) or field_value_problem(key,text)
+            or re.search(r'[{}<>`]|\b(?:игнорируй|забудь|выполни инструкц|следуй инструкц|системный промпт)\b',text,re.I)):
+        return None
+    if key=='payment':
+        if (re.search(r'\bперевод\w*\b.{0,35}\bкарт\w*\b',text,re.I)
+                and re.search(r'\b(?:номер|реквизит)\w*.{0,35}\b(?:напиш|впиш|укаж|сообщ)\w*\b',text,re.I)):
+            return 'банковским переводом на карту; реквизиты будут сообщены отдельно'
+        return None
+    # The intake already bound this passage to the field. Do not require a
+    # product or defect to appear in a second, editor-specific vocabulary.
+    if len(text.split()) < 2:
+        return None
+    candidate=text[:1].upper()+text[1:]
+    candidate=re.sub(r'([.!]\s+)([а-яё])',lambda match:match[1]+match[2].upper(),candidate)
+    if candidate[-1] not in '.!':candidate+='.'
+    if mode!='sentence' or not formal_text(candidate) or requires_prose_edit(candidate):
+        return None
+    return candidate if validate_edit(candidate,text) and not adds_request(key,candidate,text) else None
 
 
 def local_candidate(key,source,mode,scenario):
@@ -85,6 +119,9 @@ def local_candidate(key,source,mode,scenario):
     if key=='contacts':
         from app.services.document_case_facts import normalize_contacts
         return normalize_contacts(source) or None
+    if key=='consumer_status' and scenario.startswith('pretense_consumer_') and mode=='phrase':
+        if source.strip().casefold()=='для дома':
+            return 'домашнего использования'
     # Date and property slots below are embedded in fixed contractual wording.
     # They are data, not prose: wrapping "до 20.10.2026" in another sentence
     # would make the result duplicate the template's predicate and is not
@@ -133,6 +170,8 @@ def local_candidate(key,source,mode,scenario):
             from app.services.document_case_composition import _document_list
             return _document_list(canonical)
         return canonical
+    consumer_source=_consumer_source_candidate(key,source,mode,scenario)
+    if consumer_source:return consumer_source
     candidate=repair_editorial_surface(key,source,formal_source_candidate(source)).strip()
     if not formal_text(candidate):return None
     if requires_prose_edit(candidate):return None
@@ -313,8 +352,61 @@ async def prepare_form_document(state,client=None,*,source_keys=None):
                     for key in rejected:
                         candidate=local_candidate(key,source_text(result,key),formats.get(key,'sentence'),result['scenario'])
                         if candidate and _validate_slot(key,candidate,source_text(result,key),formats.get(key,'sentence')):valid[key]=candidate
+            # A provider may return a rejected/empty edit after intake has
+            # already bound a usable consumer fact.  Give the same narrow
+            # deterministic fallback one final chance before exposing a
+            # missing-slot marker.  This also covers the last verification
+            # revision, where ``valid`` is intentionally empty.
+            for key in keys:
+                if key in edits:
+                    continue
+                source=source_text(result,key)
+                candidate=local_candidate(key,source,formats.get(key,'sentence'),result['scenario'])
+                if candidate and _validate_slot(key,candidate,source,formats.get(key,'sentence')):
+                    result.setdefault('draft_review',{})[key]={'source_preserved':True,
+                        'reason':'editor_unavailable_or_rejected'}
+                    edits[key]=candidate
             missing.extend(k for k in keys if k not in edits)
-        except (RuntimeError,ValueError,TypeError,AttributeError):missing.extend(k for k in keys if k not in edits)
+        except (RuntimeError,ValueError,TypeError,AttributeError):
+            # Do not discard a source-bound consumer answer merely because
+            # the editor request itself failed (timeout, malformed response,
+            # or a temporary provider outage).
+            for key in keys:
+                if key in edits:
+                    continue
+                source=source_text(result,key)
+                candidate=local_candidate(key,source,formats.get(key,'sentence'),result['scenario'])
+                if candidate and _validate_slot(key,candidate,source,formats.get(key,'sentence')):
+                    result.setdefault('draft_review',{})[key]={'source_preserved':True,
+                        'reason':'editor_unavailable_or_rejected'}
+                    edits[key]=candidate
+            missing.extend(k for k in keys if k not in edits)
+    # A wording failure does not make a verified, field-sized user statement
+    # disappear. Only copy text that can be traced back to this interview.
+    from app.services.document_chat_context import initial_user_sources
+    from app.services.document_source_quotes import literal_evidence, source_sentences
+    from app.services.document_dialogue import conversational_value
+    user_sources = initial_user_sources(result, result.get('user_turns', []))
+    for key in list(missing):
+        mode = formats.get(key, 'sentence')
+        if mode not in {'sentence', 'phrase'}:
+            continue
+        source = source_text(result, key).strip()
+        if (not source or conversational_value(source) or '?' in source
+                or re.search(r'[{}<>`]|\b(?:игнорируй|забудь|системный промпт|следуй инструкц)', source, re.I)):
+            continue
+        sentences = source_sentences(source)
+        if (not sentences or not all(any(literal_evidence(sentence, turn) for turn in user_sources)
+                                     for sentence in sentences)
+                or any(len(sentences) > 1 and len(turn) >= 120 and source == turn.strip() for turn in user_sources)):
+            continue
+        candidate = source.rstrip(' .')
+        if mode == 'sentence':
+            candidate = candidate[:1].upper() + candidate[1:] + '.'
+        if _validate_slot(key, candidate, source, mode):
+            edits[key] = candidate
+            missing.remove(key)
+            result.setdefault('draft_review', {})[key] = {'source_preserved': True}
     result.update(draft_fields=edits,form_review_fields=sorted(set(missing)),draft_version=EDITOR_VERSION,
         draft_digest=facts_digest(result['fields']),draft_error='incomplete_official_slots' if missing else None)
     total=TokenUsage(sum(u.prompt_tokens for u in usage),sum(u.completion_tokens for u in usage),
@@ -384,6 +476,147 @@ def _compose_attachment_list(state,fields,source):
         _set_presentation(fields,'attachments',None,status='review_required',origin='attachment_review')
 
 
+def _media_record(clause):
+    """Recognise only unqualified descriptions of recording the defect."""
+    words = re.findall(r'[\w-]+', clause.casefold().replace('ё', 'е'))
+    simple = (r'я|на|в|и|имеется|имеются|есть|снял[аи]?|снят[аыо]?|зафиксировал[аи]?|'
+              r'зафиксирован[аыо]?|записал[аи]?|записан[аыо]?|сфотографировал[аи]?|'
+              r'протечк\w*|течь|дефект\w*|недостат\w*|неисправност\w*|видео\w*|фото\w*')
+    if not words or not all(re.fullmatch(simple, word) for word in words):
+        return set()
+    return {medium for medium in ('видео', 'фото') if any(w.startswith(medium) for w in words)}
+
+
+def _remove_repeated_sentences(fields, secondary, primary):
+    """Drop only a complete repeated assertion. Preserve dates, payments and negation."""
+    from app.services.document_source_quotes import source_sentences
+    def tokens(line):
+        return tuple(word for word in re.findall(r'[\w-]+', line.casefold().replace('ё', 'е'))
+                     if word not in {'я', 'но'})
+    earlier = {tokens(sentence) for key in primary for sentence in
+               source_sentences(fields.get(key, {}).get('value') or '')}
+    item = fields.get(secondary, {})
+    if item.get('status') != 'filled' or not item.get('value'):
+        return
+    lines = source_sentences(item['value'])
+    kept = [line for line in lines if tokens(line) not in earlier]
+    if kept and kept != lines:
+        item['value'] = ' '.join(kept)
+    elif lines and not kept:
+        item.update(value=None, status='not_applicable', origin='already_rendered_fact')
+
+
+def _dedupe_presentation_sentences(fields):
+    """Remove literal sentence repeats introduced by multiple fact sources.
+
+    This is deliberately format-only: it never merges different facts or
+    compares meanings, and it preserves the first occurrence and its numbers.
+    Semantic wording remains the editor's responsibility.
+    """
+    from app.services.document_source_quotes import source_sentences
+    for item in fields.values():
+        if item.get('status') != 'filled' or not isinstance(item.get('value'), str):
+            continue
+        seen = set()
+        kept = []
+        for sentence in source_sentences(item['value']):
+            normalized = re.sub(r'\s+', ' ', sentence.casefold().replace('ё', 'е')).strip(' .!?')
+            if normalized and normalized in seen:
+                continue
+            if normalized:
+                seen.add(normalized)
+            kept.append(sentence)
+        if kept and len(kept) != len(source_sentences(item['value'])):
+            item['value'] = ' '.join(kept)
+
+
+def _compose_consumer_evidence(state, fields):
+    """Print recording details under evidence and keep distinct events in the narrative."""
+    from app.services.document_source_quotes import source_sentences
+
+    from app.services.document_consumer_facts import _USE_PURPOSE
+    raw = state.get('fields', {})
+    purpose = fields.get('consumer_status', {})
+    if purpose.get('value') and any('для {{consumer_status}}' in b['text'] for b in _package(state)['blocks']):
+        from app.services.document_drafting import canonical_editorial
+        source = raw.get('consumer_status', {}).get('value') or ''
+        if canonical := canonical_editorial('consumer_status', source, state['scenario']):
+            purpose['value'] = canonical
+        elif source.casefold().strip(' .') == 'для дома':
+            purpose['value'] = 'домашнего использования'
+        purpose['value'] = re.sub(r'^для\s+', '', purpose['value'], flags=re.I)
+    category = raw.get('goods_category', {})
+    purchase = fields.get('purchase', {})
+    service = fields.get('service_description', {})
+    if service.get('status') == 'filled' and purchase.get('status') == 'filled':
+        wording = (service.get('value') or '').strip(' .')
+        if wording and re.search(r'(?<!\w)' + re.escape(wording) + r'(?!\w)', purchase.get('value') or '', re.I):
+            service.update(value=None, status='not_applicable', origin='already_rendered_fact')
+    if state['scenario'] == 'pretense_consumer_defective_goods' and purchase.get('status') == 'filled':
+        from app.services.document_money_tokens import MONEY_PATTERN
+        from app.services.document_workflow import normalize_money
+        amount = fields.get('amount', {})
+        price = normalize_money(str(amount.get('value') or ''))
+        quoted_prices = re.finditer(r'\b(?:за|по цене|стоимостью|ценой)\s+(' + MONEY_PATTERN + ')',
+                                    purchase.get('value') or '', re.I)
+        if amount.get('status') == 'filled' and price and any(normalize_money(m[1]) == price for m in quoted_prices):
+            amount.update(value=None, status='not_applicable', origin='already_rendered_fact')
+    if category.get('status') == 'filled' and category.get('value'):
+        # Category/model is a phrase, so it does not require a prose rewrite.
+        fields['goods_category']['value'] = category['value']
+        if category['value'].casefold() in (purchase.get('value') or '').casefold():
+            fields['goods_category'].update(value=None, status='not_applicable', origin='already_rendered_fact')
+    if purpose.get('status') == 'filled' and purchase.get('status') == 'filled' and purchase.get('value'):
+        literal = (raw.get('consumer_status', {}).get('value') or '').casefold()
+        purchase['value'] = _USE_PURPOSE.sub(lambda m: '' if m[0].casefold() == literal else m[0], purchase['value'])
+        purchase['value'] = re.sub(r' {2,}', ' ', purchase['value'])
+    payment = raw.get('payment', {})
+    if payment.get('status') == 'filled' and re.match(r'^на\s+(?:карту|сч[её]т)\b', payment.get('value') or '', re.I):
+        from app.services.document_drafting import canonical_editorial
+        fields['payment']['value'] = canonical_editorial('payment', payment['value'], state['scenario']) or payment['value']
+        request = fields.get('requests', {})
+        if request.get('value') and request['value'].rstrip('. ').casefold().endswith(payment['value'].rstrip('. ').casefold()):
+            request['value'] = request['value'].rstrip('. ')[:-len(payment['value'].rstrip('. '))].rstrip() + '.'
+    extra = raw.get('additional_claims', {}).get('value') or ''
+    attachment = re.fullmatch(r'\s*(?:к претензии\s+)?(?:приложу|прилагаю)\s+([^.!?;]+)[.! ]*', extra, re.I)
+    from app.services.document_case_composition import _document_list
+    if (attachment and fields.get('attachments', {}).get('status') == 'filled'
+            and _document_list(attachment[1]) == _document_list(raw.get('attachments', {}).get('value') or '')):
+        fields['additional_claims'].update(value=None, status='not_applicable', origin='already_rendered_fact')
+    _remove_repeated_sentences(fields, 'facts', ('seller_response', 'defect'))
+    evidence = fields.get('defect_evidence', {})
+    if evidence.get('status') != 'filled' or not evidence.get('value'):
+        return
+    # A reference to another recording, an unavailable file, a third-party
+    # witness, a date or a file name is distinct evidence and must survive.
+    recorded = _media_record(evidence['value'])
+    if not recorded:
+        return
+    for key in ('defect', 'facts'):
+        item = fields.get(key, {})
+        if item.get('status') != 'filled' or not item.get('value'):
+            continue
+        kept = []
+        changed = False
+        for sentence in source_sentences(item['value']):
+            parts = re.split(r'([,;]\s*|\s+и\s+)', sentence.rstrip('.!?'), flags=re.I)
+            remaining = ''
+            for i in range(0, len(parts), 2):
+                media = _media_record(parts[i])
+                if media and media <= recorded:
+                    changed = True
+                    continue
+                remaining += (parts[i-1] if i and remaining else '') + parts[i]
+            if remaining.strip():
+                kept.append(remaining[:1].upper() + remaining[1:] + (sentence[-1] if sentence[-1] in '.!?' else '.'))
+        if changed and kept:
+            item['value'] = ' '.join(kept)
+        elif changed and key == 'facts':
+            # This is an optional template paragraph. Intake still retains
+            # its original value and the user's full source quotation.
+            item.update(status='not_applicable', value=None)
+
+
 def _loan_receipt_sentence(source):
     if not re.search(r'\bрасписк\w*\b',source or '',re.I):
         return None
@@ -439,7 +672,7 @@ def _loan_transfer_sentence(source,amount):
     amount_part=('в размере '+amount+' ' if amount else '')
     method=''
     if re.search(r'наличн',source,re.I):
-        method=' наличными денежными средствами'
+        method=' наличными'
     elif re.search(r'(?:банковск\w*\s+)?перевод',source,re.I):
         method=' банковским переводом'
     elif re.search(r'\bперев[её]л[аи]?\b.{0,80}\bкарт',source,re.I):
@@ -457,6 +690,9 @@ def _loan_due_phrase(source):
 
 
 def _loan_pretrial_sentence(source):
+    if re.fullmatch(r'\s*(?:до суда\s+)?(?:не обращал(?:ся|ась)|(?:претензию|обращение)\s+не\s+'
+                    r'(?:отправлял[аи]?|направлял[аи]?))[.! ]*', source or '', re.I):
+        return 'До обращения в суд требование ответчику не направлялось.'
     if not re.search(r'\b(?:претензи\w*|обращал(?:ась|ся)?|обращени\w*)\b',source or '',re.I):
         return None
     date=_date_near(source,r'\b(?:претензи\w*|обращал(?:ась|ся)?|обращени\w*)\b')
@@ -730,7 +966,7 @@ def _compose_debt_claim_presentation(state,fields):
     if state['scenario']=='claim_debt_loan':
         combined=' '.join(raw.get(key,'') for key in ('agreement','transfer','due_date','pretrial','facts'))
         from app.services.document_case_composition import _money
-        amount=fields.get('amount',{}).get('value')
+        amount=(state.get('loan_facts') or {}).get('principal') or fields.get('amount',{}).get('value')
         formatted_amount=_money(amount) if amount else ''
         agreement=_loan_agreement_sentence(raw.get('agreement') or combined)
         if agreement:
@@ -742,7 +978,8 @@ def _compose_debt_claim_presentation(state,fields):
         if due:
             _set_presentation(fields,'due_date',due)
         payments=fields.get('payments',{})
-        if (payments.get('status')=='not_applicable' or _is_absence_reply(raw.get('payments',''))
+        if not (state.get('loan_facts') or {}).get('payments') and (
+                payments.get('status')=='not_applicable' or _is_absence_reply(raw.get('payments',''))
                 or re.search(r'\bне\s+вернул\w*\b|\bплатеж\w*\s+не\s+было\b|'
                              r'\bпусть\s+вс[её].{0,25}\b(?:верн|возвращ)',raw.get('payments',''),re.I)):
             # The surrounding template already says "Фактически полученные в
@@ -769,7 +1006,21 @@ def _compose_debt_claim_presentation(state,fields):
     requests=_money_requests_for_debt_claim(state,fields)
     if requests:
         _set_presentation(fields,'requests',requests,origin='typed_request_composition')
+    service_calculation = fields.get('calculation', {})
+    if service_calculation.get('origin') == 'service_balance_arithmetic' and service_calculation.get('status') == 'filled':
+        # Keep the audited subtraction and its operand provenance intact.
+        return
     calculation=_confirmed_calculation_text(state,fields)
+    loan = state.get('loan_facts') or {}
+    if state['scenario'] == 'claim_debt_loan' and loan.get('principal') and loan.get('payments'):
+        from app.services.document_case_composition import _money
+        principal = Decimal(loan['principal'])
+        paid = sum(Decimal(payment['amount']) for payment in loan['payments'])
+        if paid <= principal:
+            subtraction = _money(principal) + ' − ' + _money(paid) + ' = ' + _money(principal - paid) + '.'
+            extra = any(item['kind'] not in {'principal', 'damage', 'state_duty', 'claim_price_reference'}
+                        for item in _confirmed_plan_items(state))
+            calculation = subtraction + ('\n' + calculation if calculation and extra else '')
     if calculation and 'calculation' in fields:
         _set_presentation(fields,'calculation',calculation,origin='calculation_plan_composition')
 
@@ -795,6 +1046,39 @@ def _compose_damage_property_presentation(state, fields):
         _set_presentation(fields, 'property', compact, origin='multi_fact_property_presentation')
 
 
+def _compose_appraisal_cost(fields, plan):
+    """Give the paid expense one evidence paragraph and one monetary prayer."""
+    from app.services.document_case_composition import _money
+    from app.services.document_flood_facts import ASSESSMENT_LOSS_QUALIFIER
+    from app.services.document_source_quotes import source_sentences
+
+    costs = [item for item in plan.get('items', ()) if item.get('include_in_recovery_total')
+             and (item.get('kind') == 'valuation' or not item.get('include_in_claim_price'))]
+    if len(costs) != 1 or costs[0].get('kind') != 'valuation':
+        return
+    expense = fields.get('litigation_costs', {})
+    requests = fields.get('requests', {})
+    if expense.get('status') != 'filled' or requests.get('status') != 'filled':
+        return
+    as_loss = costs[0].get('include_in_claim_price')
+    qualifier = r'\s+' + ASSESSMENT_LOSS_QUALIFIER if as_loss else ''
+    covered_demand = re.compile(
+        r'(?:прошу\s+(?:суд\s+)?)?(?:взыскать|возместить)\s+'
+        r'(?:(?:стоимость\s+ремонта|ущерб)\s+и\s+)?(?:расходы\s+на\s+оценку|стоимость\s+оценки)'
+        + qualifier + r'[.! ]*', re.I)
+    proofs = [line for line in source_sentences(expense.get('value') or '') if not covered_demand.fullmatch(line)]
+    if not proofs or any(re.search(r'\b(?:прошу|требую|взыскать|возместить)\b', line, re.I) for line in proofs):
+        return
+    existing = fields.get('evidence', {})
+    evidence = source_sentences(existing['value']) if existing.get('status') == 'filled' and existing.get('value') else []
+    _set_presentation(fields, 'evidence', '\n'.join(dict.fromkeys(evidence + proofs)), origin='calculation_plan_composition')
+    prayers = [line for line in source_sentences(requests['value']) if not covered_demand.fullmatch(line)]
+    label = 'убытки в виде расходов на оценку' if as_loss else 'расходы на оценку ущерба'
+    prayers.append('Взыскать с ответчика ' + label + ' в размере ' + _money(costs[0]['value']) + '.')
+    _set_presentation(fields, 'requests', '\n'.join(prayers), origin='calculation_plan_composition')
+    _set_presentation(fields, 'litigation_costs', None, status='not_applicable', origin='already_rendered_fact')
+
+
 def form_presentation_fields(state):
     fields=deepcopy(state['fields'])
     from app.services.document_scenarios import SCENARIOS
@@ -809,8 +1093,10 @@ def form_presentation_fields(state):
     for key in form_narrative_keys(state):
         candidate=state.get('draft_fields',{}).get(key)
         if candidate:fields[key]['value']=candidate
-        else:
-            fields[key].update(value='['+labels[key].lower()+']',origin='unverified_draft_slot')
+        elif (key in state.get('form_review_fields', ()) or
+              fields.get(key, {}).get('status') != 'filled' or not fields.get(key, {}).get('value')):
+            from app.services.document_fact_provenance import missing_data_placeholder
+            fields[key].update(value=missing_data_placeholder(labels[key]),origin='unverified_draft_slot')
     for key in requisite_keys(state):
         stored=fields.get(key,{})
         if stored.get('status')!='filled':continue
@@ -860,6 +1146,12 @@ def form_presentation_fields(state):
             from app.services.document_presentation import format_money
             fields['requests']={**fields.get('requests',{}),'status':'filled','value':'Прошу вернуть уплаченную сумму в размере '+format_money(amount['value'])+' рублей.','origin':'typed_request_composition'}
     if 'consumer' in key:
+        _compose_consumer_evidence(state, fields)
+        from app.services.document_editorial_grammar import clarify_consumer_wording
+        for field in ('seller_response', 'requests'):
+            item = fields.get(field, {})
+            if item.get('status') == 'filled' and item.get('value'):
+                item['value'] = clarify_consumer_wording(field, item['value'])
         purchase=state.get('fields',{}).get('purchase',{})
         # A missing purchase date does not erase the already supplied item
         # and price from an explicitly requested draft.
@@ -882,7 +1174,34 @@ def form_presentation_fields(state):
     # that happens to mention the same principal debt.
     _compose_debt_claim_presentation(state,fields)
     _compose_debt_pretense_presentation(state,fields)
+    pretrial = state.get('fields', {}).get('pretrial', {})
+    if pretrial.get('pending_dispatch_date') and pretrial.get('status') == 'filled':
+        statement = fields.get('pretrial', {}).get('value') or pretrial['value']
+        _set_presentation(fields, 'pretrial', statement.rstrip(' .') +
+                          '. Дата направления претензии: ____________________.')
     _compose_damage_property_presentation(state,fields)
+    if key == 'claim_damage_flood':
+        plan = state.get('calculation_plan') or {}
+        if (plan.get('status') == 'calculated' and plan.get('claim_price_total') and plan.get('recovery_total')
+                and fields.get('claim_price', {}).get('status') == 'filled'):
+            from app.services.document_case_composition import _money
+            price = plan['claim_price_total']
+            recovery = plan['recovery_total']
+            if Decimal(recovery) > Decimal(price):
+                # The tariff still uses the unmodified price of claim in state.
+                fields['claim_price']['value'] = _money(price) + '\nВсего к взысканию с учётом расходов: ' + _money(recovery)
+        from app.services.document_addresses import postal_phrase
+        ownership = re.fullmatch(r'(?:я\s+)?(?:являюсь\s+)?(собственница|собственник|собственницей|собственником)\s+(.+)',
+                                 (state['fields'].get('property_right', {}).get('value') or '').strip(), re.I)
+        if ownership and postal_phrase(ownership[2]) == (fields.get('property_address', {}).get('value') or ''):
+            owner = 'собственница' if ownership[1].casefold() in {'собственница', 'собственницей'} else 'собственник'
+            fields['property_right']['value'] = f'Я {owner} повреждённой квартиры.'
+        primary = ['facts', 'damage_object']
+        if fields.get('restoration', {}).get('value') in {'частично восстановлено', 'не восстановлено'}:
+            primary.append('restoration_estimate')
+        _remove_repeated_sentences(fields, 'evidence', primary)
+        if plan.get('status') == 'calculated':
+            _compose_appraisal_cost(fields, plan)
     if key=='contract_work':
         from app.services.document_contract_facts import TERM_KEYS
         replacements={'исполнитель':'Подрядчик','исполнителя':'Подрядчика','исполнителю':'Подрядчику','исполнителем':'Подрядчиком'}
@@ -890,4 +1209,5 @@ def form_presentation_fields(state):
             item=fields.get(field_key,{})
             if item.get('value'):
                 item['value']=re.sub(r'\bисполнител(?:ь|я|ю|ем)\b',lambda m:replacements[m[0].lower()],item['value'],flags=re.I)
+    _dedupe_presentation_sentences(fields)
     return align_narrator_gender(fields,state)

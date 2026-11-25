@@ -44,7 +44,9 @@ def test_editor_field_name_is_not_an_extra_document_sentence():
 
 @pytest.mark.asyncio
 async def test_service_claim_reuses_initial_amount_advance_and_known_deadline(monkeypatch):
-    provider=AsyncMock(side_effect=AssertionError('Explicit answers must not need an LLM'))
+    # Supplemental multi-field extraction may run, but provider failure must
+    # not prevent the deterministic collectors from preserving these facts.
+    provider=AsyncMock(side_effect=RuntimeError('offline'))
     monkeypatch.setattr('app.services.document_workflow.get_gigachat_client',provider)
     request='Нужен иск: я разработал сайт для заказчика, он принял работу, но не выплатил оставшиеся 60 тысяч рублей.'
     state=new_state(request)
@@ -73,15 +75,28 @@ async def test_service_claim_reuses_initial_amount_advance_and_known_deadline(mo
         ('никакие','contacts'),
         ('+79122423123','attachments'),
         ('договор, акт и переписка','date'),
-        ('20.10.26','signature'),
-        ('Петров Алексей Сергеевич',None),
+        ('20.10.26',None),
     ]
     for text,next_key in turns:
         state,answer,_=await advance_interview(state,text)
         assert not state.get('provider_failure'),(text,answer)
         assert state['last_questions']==([next_key] if next_key else []),(text,state['last_questions'],answer)
-    provider.assert_not_called()
-    assert state['phase']=='ready'
+    # All factual questions are complete. The business-dispute tariff was
+    # already an export blocker; it must now surface as service review rather
+    # than advertise readiness or ask the user to repeat a monetary answer.
+    from app.services.document_schema import formula_export_issues
+    from app.services.document_workflow import pending_fields
+    assert state['phase']=='collecting'
+    assert state['last_questions']==[] and not pending_fields(state)
+    assert state['question_origin']=='calculation_review'
+    duty=next(rule for rule in state['calculation_plan']['rules'] if rule['id']=='state_duty')
+    assert duty['status']=='review_required'
+    assert duty['system_action']=='review_state_duty_policy'
+    assert duty['question'] is None and duty['missing']==[]
+    assert duty['review_reason'] in answer and 'предпринимательского спора' in answer
+    blockers=formula_export_issues(state)
+    assert any(issue['code']=='pending_calculation_plan' for issue in blockers)
+    assert any(duty['review_reason'] in issue['question'] for issue in blockers)
     assert state['fields']['court']['status']=='unknown'
     assert state['fields']['facts']['status']=='not_applicable'
     assert Decimal(state['fields']['amount']['value'])==60000

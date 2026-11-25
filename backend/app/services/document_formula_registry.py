@@ -424,7 +424,19 @@ def _ledger_items(calculation_ledger: Mapping[str, Any] | None, fields: Mapping[
         raw.extend(item for item in ledger["items"] if isinstance(item, Mapping))
     calculation = (fields or {}).get("calculation")
     if isinstance(calculation, Mapping) and isinstance(calculation.get("components"), list):
-        raw.extend(item for item in calculation["components"] if isinstance(item, Mapping))
+        generated = calculation.get("origin") in {"calculation_plan", "calculation_plan_composition"}
+        for item in calculation["components"]:
+            if not isinstance(item, Mapping):
+                continue
+            # The displayed calculation stores both source components and
+            # formula results. Re-importing our own interest as a user-stated
+            # amount creates a false conflict on the very next sync. Keep
+            # original principal/expenses/manual sums; recompute formula IDs
+            # from their saved inputs and verified sources instead.
+            formula_id = str(item.get("id") or "").removeprefix("formula:")
+            if generated and item.get("id") == f"formula:{formula_id}" and formula_id in RULE_BY_ID:
+                continue
+            raw.append(item)
     result: list[dict[str, Any]] = []
     for index, item in enumerate(raw, 1):
         normal = _normalise_item(item, index=index)
@@ -461,12 +473,20 @@ def _entry(rule: FormulaRule, status: str, *, inputs: Mapping[str, Any] | None =
            items: Iterable[Mapping[str, Any]] = (), formula: str | None = None,
            evidence: Iterable[str] = (), review_reason: str | None = None,
            system_action: str | None = None) -> dict[str, Any]:
+    # Materialise once: callers may pass a generator and the same values must
+    # be available both to the recovery question and to the stored plan.
+    missing = list(missing)
+    if status == NEEDS_INPUT and not str(question or "").strip():
+        question = _input_question(rule.id, missing)
+    if status == REVIEW_REQUIRED and not str(review_reason or "").strip():
+        review_reason = _review_reason(rule.label, system_action)
+        system_action = system_action or "rebuild_calculation_plan"
     return {
         "id": rule.id,
         "label": rule.label,
         "status": status,
         "inputs": dict(inputs or {}),
-        "missing": list(missing),
+        "missing": missing,
         "question": question,
         "items": [dict(item) for item in items],
         "formula": formula,
@@ -528,6 +548,62 @@ def _input_question(rule_id: str, missing: Sequence[str]) -> str:
     if rule_id == "court_costs":
         return "Перечислите судебные расходы по отдельности и укажите сумму каждого расхода."
     return "Укажите недостающие подтверждённые суммы и даты для расчёта."
+
+
+_MISSING_FACT_NAMES = {
+    "principal": "сумма непогашенного долга",
+    "start_date": "дата начала начисления",
+    "end_date": "дата фактической оплаты или окончания расчёта",
+    "partial_payments": "даты и суммы частичных платежей",
+    "legal_basis": "фактическое основание начисления",
+    "rate_percent": "согласованная ставка",
+    "rate_period": "период ставки",
+    "days": "период просрочки",
+    "day_divisor": "порядок пересчёта годовой ставки по дням",
+    "payment_year": "год частичного платежа",
+    "payment_day_policy": "порядок учёта платежа в день его поступления",
+    "fixed_amount": "фиксированная сумма начисления",
+    "monthly_amount": "ежемесячная сумма",
+    "installments": "суммы и сроки отдельных платежей",
+    "items": "отдельные подтверждённые составляющие",
+    "claim_price": "цена иска или вид требования",
+}
+
+
+def _missing_question(entry: Mapping[str, Any]) -> str:
+    """Recover a field-specific question from a damaged saved rule."""
+    missing = [str(item) for item in entry.get("missing") or () if item]
+    rule_id = str(entry.get("id") or "")
+    if rule_id in RULE_BY_ID and missing:
+        return _input_question(rule_id, missing)
+    labels = [_MISSING_FACT_NAMES.get(item, item.replace("_", " ")) for item in missing]
+    label = str(entry.get("label") or rule_id or "денежного требования")
+    if labels:
+        return f"Для расчёта «{label}» не хватает: {', '.join(labels)}. Укажите только эти сведения."
+    return ""
+
+
+def _review_reason(label: str, action: str | None) -> str:
+    """Every review blocker must identify the concrete service-side check."""
+    reasons = {
+        "load_key_rate_history": "Не удалось получить исторические ключевые ставки Банка России для сохранённого периода.",
+        "retry_key_rate_history": "Не удалось получить исторические ключевые ставки Банка России для сохранённого периода.",
+        "load_labor_delay_rates": "Не удалось получить ключевые ставки для расчёта компенсации за задержку выплаты.",
+        "retry_labor_delay_rates": "Не удалось получить ключевые ставки для расчёта компенсации за задержку выплаты.",
+        "load_state_duty_tariff": "Нет актуального проверенного тарифа государственной пошлины для этого вида требования.",
+        "validate_state_duty_tariff": "Сохранённый тариф государственной пошлины неполон или имеет неподдерживаемую структуру.",
+        "verify_state_duty_tariff": "Размер государственной пошлины не подтверждён проверяемым источником.",
+        "verify_state_duty_exemption": "Основание льготы по государственной пошлине не подтверждено.",
+        "review_state_duty_policy": "Нужно проверить вид требования и применимый порядок расчёта государственной пошлины.",
+        "verify_key_rate_history": "Исторические ключевые ставки не подтверждены проверяемым источником.",
+        "verify_contract_clause": "Условие договора о ставке не подтверждено текстом договора.",
+        "rebuild_calculation_plan": "Сохранённый план расчёта повреждён или неполон; его нужно пересобрать из сохранённых фактов.",
+    }
+    if action in reasons:
+        return reasons[action]
+    name = label or "денежного требования"
+    return (f"Расчёт «{name}» требует проверки: в сохранённом плане не указана подтверждённая причина "
+            "или источник. Нужно пересобрать план из сохранённых фактов.")
 
 
 def _as_rule_facts(facts: Mapping[str, Any], rule_id: str) -> dict[str, Any]:
@@ -600,6 +676,9 @@ def _formula_item(rule_id: str, kind: str, label: str, amount: Decimal, *, price
 
 
 def _calculate_civil_395(rule: FormulaRule, data: Mapping[str, Any], fields: Mapping[str, Any] | None) -> dict[str, Any]:
+    input_error = str(data.get("input_error") or "").strip()
+    if input_error:
+        return _entry(rule, NEEDS_INPUT, inputs=data, missing=["partial_payments"], question=input_error)
     principal = _principal(data, fields)
     missing: list[str] = []
     if principal is None or principal <= 0:
@@ -681,8 +760,11 @@ def _calculate_contract_rate(rule: FormulaRule, data: Mapping[str, Any], fields:
                 boundary = min(stop, max(cursor, effective))
                 count = (boundary-cursor).days
                 if count:
-                    total += balance * rate / _HUNDRED * count
-                    parts.append(f'{_money(balance)} × {_percent(rate)} × {count} дн.')
+                    part_total = (balance * rate / _HUNDRED * count).quantize(
+                        _TWO, rounding=ROUND_HALF_UP)
+                    total += part_total
+                    parts.append(
+                        f'{_money(balance)} × {_percent(rate)} × {count} дн. = {_money(part_total)}')
                 if effective >= stop:
                     cursor = stop
                     break
@@ -690,9 +772,12 @@ def _calculate_contract_rate(rule: FormulaRule, data: Mapping[str, Any], fields:
                 cursor = boundary
             if cursor < stop:
                 count = (stop-cursor).days
-                total += balance * rate / _HUNDRED * count
-                parts.append(f'{_money(balance)} × {_percent(rate)} × {count} дн.')
-            expression = ' + '.join(parts)
+                part_total = (balance * rate / _HUNDRED * count).quantize(
+                    _TWO, rounding=ROUND_HALF_UP)
+                total += part_total
+                parts.append(
+                    f'{_money(balance)} × {_percent(rate)} × {count} дн. = {_money(part_total)}')
+            expression = '; '.join(parts)
         else:
             total = principal * rate / _HUNDRED * days
             expression = f"{_money(principal)} × {_percent(rate)} × {days} дн."
@@ -714,7 +799,8 @@ def _calculate_contract_rate(rule: FormulaRule, data: Mapping[str, Any], fields:
                       system_action="expand_contract_month_periods")
     total = total.quantize(_TWO, rounding=ROUND_HALF_UP)
     item = _formula_item(rule.id, kind, rule.label, total, evidence=str(data.get("source") or data.get("contract_clause") or ""))
-    return _entry(rule, CALCULATED, inputs=data, items=[item], formula=expression + " = " + _money(total),
+    result_formula = (expression + "; Итого: " + _money(total)) if payments else (expression + " = " + _money(total))
+    return _entry(rule, CALCULATED, inputs=data, items=[item], formula=result_formula,
                   evidence=[str(data.get("source") or data.get("contract_clause") or "")])
 
 
@@ -755,6 +841,9 @@ def _calculate_consumer_delay(rule: FormulaRule, data: Mapping[str, Any], fields
 
 
 def _calculate_labor_delay(rule: FormulaRule, data: Mapping[str, Any], fields: Mapping[str, Any] | None) -> dict[str, Any]:
+    input_error = str(data.get("input_error") or "").strip()
+    if input_error:
+        return _entry(rule, NEEDS_INPUT, inputs=data, missing=["partial_payments"], question=input_error)
     principal = _principal(data, fields)
     missing = []
     if principal is None or principal <= 0:
@@ -822,15 +911,22 @@ def _calculate_alimony_penalty(rule: FormulaRule, data: Mapping[str, Any], field
 
 def _calculate_court_costs(rule: FormulaRule, data: Mapping[str, Any], components: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     entries = data.get("items") if isinstance(data.get("items"), list) else [item for item in components if item.get("kind") in {"expenses", "valuation", "court_cost", "representative_cost"}]
+    loss_amounts = {item["value"] for item in components if item["kind"] == "valuation" and item.get("include_in_claim_price")}
     costs: list[dict[str, Any]] = []
+    included_as_loss = False
     for index, raw in enumerate(entries or [], 1):
         if not isinstance(raw, Mapping):
             continue
         normal = _normalise_item({**raw, "kind": raw.get("kind") or "court_cost", "include_in_claim_price": False}, index=index)
         if normal:
+            if normal["kind"] == "valuation" and normal["value"] in loss_amounts:
+                included_as_loss = True
+                continue
             normal["include_in_claim_price"] = False
             costs.append(normal)
     if not costs:
+        if included_as_loss:
+            return _entry(rule, NOT_REQUESTED)
         return _entry(rule, NEEDS_INPUT, inputs=data, missing=["items"], question=_input_question(rule.id, ["items"]))
     total = sum((Decimal(item["value"]) for item in costs), Decimal("0")).quantize(_TWO, rounding=ROUND_HALF_UP)
     return _entry(rule, CALCULATED, inputs=data, items=costs,
@@ -977,6 +1073,78 @@ def _normalise_requested(scenario: str | None, requested: Iterable[str] | None, 
     return ids
 
 
+def _is_dependency(entry: Mapping[str, Any]) -> bool:
+    return bool(entry.get("blocked_by")) or (
+        entry.get("id") == "state_duty"
+        and "complete_claim_price" in (entry.get("missing") or ())
+    )
+
+
+def _primary_pending_entry(entries: Sequence[Mapping[str, Any]]) -> Mapping[str, Any] | None:
+    unresolved = [entry for entry in entries if entry.get("status") in {NEEDS_INPUT, REVIEW_REQUIRED}]
+    primary = [entry for entry in unresolved if not _is_dependency(entry)]
+    # Ask for an actual missing fact before reporting a system check. A
+    # dependent fee cannot provide a useful question while its parent waits.
+    return next((entry for entry in primary if entry.get("status") == NEEDS_INPUT),
+                next(iter(primary), next(iter(unresolved), None)))
+
+
+def normalize_calculation_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
+    """Repair saved dependency blockers without recalculating or changing facts."""
+    result = dict(plan)
+    entries = [dict(entry) for entry in plan.get("rules", ()) if isinstance(entry, Mapping)]
+    if not entries:
+        return result
+    for entry in entries:
+        status = entry.get("status")
+        if status == NEEDS_INPUT and not str(entry.get("question") or "").strip():
+            question = _missing_question(entry)
+            if question:
+                entry["question"] = question
+            else:
+                entry.update(
+                    status=REVIEW_REQUIRED,
+                    missing=[],
+                    question=None,
+                    review_reason=_review_reason(str(entry.get("label") or entry.get("id") or ""),
+                                                 "rebuild_calculation_plan"),
+                    system_action="rebuild_calculation_plan",
+                )
+        elif status == REVIEW_REQUIRED and not str(entry.get("review_reason") or "").strip():
+            action = str(entry.get("system_action") or "rebuild_calculation_plan")
+            entry["review_reason"] = _review_reason(str(entry.get("label") or entry.get("id") or ""), action)
+            entry["system_action"] = action
+    primary_ids = [str(entry["id"]) for entry in entries
+                   if entry.get("id") and entry.get("status") in {NEEDS_INPUT, REVIEW_REQUIRED}
+                   and not _is_dependency(entry)]
+    for entry in entries:
+        if (entry.get("id") != "state_duty" or not _is_dependency(entry)
+                or entry.get("status") not in {NEEDS_INPUT, REVIEW_REQUIRED}):
+            continue
+        entry.update(status=REVIEW_REQUIRED, missing=[], question=None,
+                     blocked_by=primary_ids or list(entry.get("blocked_by") or ()))
+        if not primary_ids:
+            # A sparse legacy snapshot may have lost the parent rule. Keep
+            # export blocked and request a system rebuild, never a fake fact.
+            entry.update(
+                review_reason="Не удалось восстановить расчёт денежных требований для проверки госпошлины. Нужно повторить проверку сохранённых данных.",
+                system_action="rebuild_calculation_plan",
+            )
+    summary = _aggregate(entries, scenario=plan.get("scenario"))
+    # Stored monetary values and cursor metadata remain untouched. This is a
+    # state migration, not a fresh calculation from possibly sparse inputs.
+    for key in ("status", "rules", "pending_question", "unresolved_rule_ids"):
+        result[key] = summary[key]
+    return result
+
+
+def primary_pending_rule(plan: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    """Return the actionable root rule, including for saved legacy plans."""
+    normalized = normalize_calculation_plan(plan)
+    return _primary_pending_entry([entry for entry in normalized.get("rules", ())
+                                   if isinstance(entry, Mapping)])
+
+
 def _aggregate(entries: Sequence[Mapping[str, Any]], *, scenario: str | None) -> dict[str, Any]:
     items: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
@@ -1017,7 +1185,8 @@ def _aggregate(entries: Sequence[Mapping[str, Any]], *, scenario: str | None) ->
         status = CALCULATED
     else:
         status = NOT_REQUESTED
-    pending = next((entry.get("question") for entry in entries if entry.get("status") == NEEDS_INPUT and entry.get("question")), None)
+    primary = _primary_pending_entry(entries)
+    pending = primary.get("question") if primary and primary.get("status") == NEEDS_INPUT else None
     return {
         "version": PLAN_VERSION,
         "scenario": scenario,
@@ -1115,11 +1284,12 @@ def build_calculation_plan(
         if partial.get("status") not in {NEEDS_INPUT, REVIEW_REQUIRED} and partial.get("claim_price_total") is not None:
             price = Decimal(str(partial["claim_price_total"]))
         if partial.get("status") in {NEEDS_INPUT, REVIEW_REQUIRED}:
-            entries.append(_entry(
-                RULE_BY_ID["state_duty"], NEEDS_INPUT,
-                inputs=_as_rule_facts(all_facts, "state_duty"), missing=["complete_claim_price"],
-                question="Сначала нужно завершить расчёт всех заявленных денежных требований; после этого система определит госпошлину по проверенному тарифу.",
-            ))
+            entries.append(dict(_entry(
+                RULE_BY_ID["state_duty"], REVIEW_REQUIRED,
+                inputs=_as_rule_facts(all_facts, "state_duty"),
+            ), blocked_by=[str(entry["id"]) for entry in entries
+                           if entry.get("status") in {NEEDS_INPUT, REVIEW_REQUIRED}
+                           and not _is_dependency(entry)]))
         else:
             entries.append(_calculate_state_duty(RULE_BY_ID["state_duty"], _as_rule_facts(all_facts, "state_duty"), fields, price))
 
@@ -1179,7 +1349,9 @@ def apply_plan_to_state(state: dict[str, Any], plan: Mapping[str, Any] | None = 
     calculated plans may populate the existing calculation/claim-price/fee
     slots when that template renders them.
     """
-    result = (plan_from_state(state, facts=managed_formula_facts(state)) if plan is None else dict(plan))
+    result = normalize_calculation_plan(
+        plan_from_state(state, facts=managed_formula_facts(state)) if plan is None else plan
+    )
     state["calculation_plan"] = result
     fields = state.setdefault("fields", {})
     scenario_fields: set[str] = set()
@@ -1212,6 +1384,14 @@ def apply_plan_to_state(state: dict[str, Any], plan: Mapping[str, Any] | None = 
             # answer to the tariff review.
             result["deferred"] = True
             return result
+        if state.get('manual_formula_input'):
+            from app.services.document_formula_recovery import pending_input_signature
+            if state['manual_formula_input'] == pending_input_signature(result):
+                # The input stays missing in the financial ledger (and still
+                # blocks ordinary export). Do not reopen the same form slot
+                # when processing the next address or contact detail.
+                result["deferred"] = True
+                return result
         target = None
         scenario = state.get("scenario")
         if scenario:
@@ -1220,7 +1400,10 @@ def apply_plan_to_state(state: dict[str, Any], plan: Mapping[str, Any] | None = 
         if target:
             question = first_pending_question(result)
             if not question:
-                question = "Для этого расчёта нужны дополнительные подтверждённые исходные данные."
+                primary = primary_pending_rule(result) or {}
+                question = (_missing_question(primary)
+                            or _review_reason(str(primary.get("label") or "денежного требования"),
+                                              "rebuild_calculation_plan"))
             previous = fields.get(target, {})
             pending = {**previous, "status": "incomplete", "value": None,
                        "origin": "calculation_plan", "error": question}
@@ -1242,6 +1425,7 @@ def apply_plan_to_state(state: dict[str, Any], plan: Mapping[str, Any] | None = 
         return result
     if status != CALCULATED:
         return result
+    state.pop('manual_formula_input', None)
     # Stable formula lines make a transparent calculation paragraph.  An
     # arithmetic-only plan has a more readable summary in its own rule, and
     # still remains deterministic.
@@ -1251,7 +1435,7 @@ def apply_plan_to_state(state: dict[str, Any], plan: Mapping[str, Any] | None = 
     } - {"arithmetic_components", "state_duty", "fixed_alimony_annual_price"}
     existing_calculation = fields.get("calculation", {})
     preserve_source_arithmetic = (
-        existing_calculation.get("origin") == "source_bound_arithmetic"
+        existing_calculation.get("origin") in {"source_bound_arithmetic", "service_balance_arithmetic"}
         and not calculated_substantive_rules
     )
     if ("calculation" in fields or ("calculation" in scenario_fields and lines)) and not preserve_source_arithmetic:
@@ -1321,7 +1505,7 @@ def apply_plan_to_state(state: dict[str, Any], plan: Mapping[str, Any] | None = 
         if amount:
             text = "Государственная пошлина составляет " + _money(amount) + "."
         if evidence:
-            text = text.rstrip(".") + " Основание: " + evidence.rstrip(".") + "."
+            text += " Основание: " + evidence.rstrip(".") + "."
         fields["fee"] = {**fields.get("fee", {}), "status": "filled", "value": text,
                          "origin": "calculation_plan", "error": None}
     return result
@@ -1366,18 +1550,15 @@ def _plan_target_field(plan: Mapping[str, Any], scenario: Any,
 
 
 def first_pending_question(plan: Mapping[str, Any]) -> str | None:
-    """Return exactly one user-facing factual question, if the plan has one."""
+    """Return the missing fact or the primary system-review explanation."""
+    primary = primary_pending_rule(plan)
+    if primary:
+        text = primary.get("question") if primary.get("status") == NEEDS_INPUT else primary.get("review_reason")
+        return str(text).strip() if text else None
+    # Very old/sparse snapshots may contain only a pending question. Preserve
+    # that compatibility, but never prefer it over an actionable rule.
     question = plan.get("pending_question")
-    if question:
-        return str(question)
-    unresolved = set(plan.get("unresolved_rule_ids") or ())
-    for rule in plan.get("rules", ()):
-        if not isinstance(rule, Mapping) or rule.get("id") not in unresolved:
-            continue
-        reason = str(rule.get("review_reason") or "").strip()
-        if reason:
-            return reason
-    return None
+    return str(question) if question else None
 
 
 def calculation_is_blocking(plan: Mapping[str, Any]) -> bool:

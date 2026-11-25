@@ -126,6 +126,87 @@ def test_vague_appraiser_reference_requires_the_actual_numbers():
     assert "Укажите каждую сумму" in state["fields"]["calculation"]["error"]
 
 
+def test_previous_assessment_cost_does_not_loop_on_litigation_costs():
+    state = new_state("Иск о возмещении ущерба от залива квартиры")
+    state.update(scenario="claim_damage_flood", phase="collecting", last_questions=["litigation_costs"])
+    state["calculation_ledger"] = {
+        "items": [{"kind": "damage", "label": "Имущественный ущерб", "value": "86400.00"},
+                  {"kind": "valuation", "label": "Расходы на оценку", "value": "6000.00",
+                   "evidence": "За оценку я отдельно заплатила 6 000 рублей"}],
+        "evidence": "За оценку я отдельно заплатила 6 000 рублей, квитанция есть.",
+        "status": "confirmed",
+    }
+    state["formula_requested_rules"] = ["court_costs"]
+
+    changed = collect_calculation_turn(state, "Я уже ответила.", "litigation_costs")
+
+    assert changed == {"litigation_costs"}
+    assert state["fields"]["litigation_costs"]["status"] == "filled"
+    assert "6 000 рублей" in state["fields"]["litigation_costs"]["value"]
+    assert "квитанция есть" in state["fields"]["litigation_costs"]["value"]
+
+
+@pytest.mark.parametrize("message,status", [
+    ("Нет", "confirmed"),
+    ("Я не хочу взыскивать расходы на оценку в 6 000 рублей", "confirmed"),
+    ("Я уже ответила!", "needs_confirmation"),
+])
+def test_saved_cost_does_not_override_refusal_or_unresolved_total(message, status):
+    state = new_state("Иск о возмещении ущерба от залива квартиры")
+    state.update(scenario="claim_damage_flood", last_questions=["litigation_costs"])
+    state["calculation_ledger"] = {
+        "items": [{"kind": "valuation", "label": "Расходы на оценку", "value": "6000.00"}],
+        "evidence": "За оценку я заплатила 6 000 рублей.", "status": status,
+    }
+    collect_calculation_turn(state, message, "litigation_costs")
+    assert state["fields"].get("litigation_costs", {}).get("status") != "filled"
+    assert state["calculation_ledger"]["status"] == status
+
+
+def test_new_expense_is_collected_before_any_reference_to_an_earlier_answer():
+    state = new_state("Иск о возмещении ущерба от залива квартиры")
+    state.update(scenario="claim_damage_flood", last_questions=["litigation_costs"])
+    state["calculation_ledger"] = {
+        "items": [{"kind": "valuation", "label": "Расходы на оценку", "value": "6000.00"}],
+        "evidence": "За оценку я заплатила 6 000 рублей.", "status": "confirmed",
+    }
+    collect_calculation_turn(state, "Я ещё заплатила почтовые расходы 550 рублей, квитанция есть.", "litigation_costs")
+    assert [item["value"] for item in state["calculation_facts"]["court_costs"]["items"]] == ["6000.00", "550.00"]
+
+
+@pytest.mark.asyncio
+async def test_short_recall_uses_saved_cost_before_provider(monkeypatch):
+    state = new_state("Иск о возмещении ущерба от залива квартиры")
+    state.update(
+        scenario="claim_damage_flood",
+        phase="collecting",
+        last_questions=["litigation_costs"],
+        text_package=load_text_package(SCENARIOS["claim_damage_flood"]),
+        user_turns=["4 ноября меня залил сосед из квартиры № 21."],
+    )
+    state["calculation_ledger"] = {
+        "items": [{"kind": "damage", "label": "Имущественный ущерб", "value": "86400.00"},
+                  {"kind": "valuation", "label": "Расходы на оценку", "value": "6000.00"}],
+        "evidence": "За оценку я отдельно заплатила 6 000 рублей, квитанция есть.",
+        "status": "confirmed",
+    }
+    state["fields"] = {
+        "property_address": {"status": "filled", "value": "г. Екатеринбург, ул. Лесная, д. 12, кв. 17"},
+        "recipient_address": {"status": "filled", "value": "г. Екатеринбург, ул. Лесная, д. 12, кв. 21"},
+        "source_address": {"status": "filled", "value": "г. Екатеринбург, ул. Лесная, д. 12, кв. 17"},
+    }
+    provider = AsyncMock(side_effect=AssertionError("Known expense must not call the provider"))
+    monkeypatch.setattr("app.services.document_workflow.get_gigachat_client", provider)
+
+    updated, _, _ = await advance_interview(state, "я уже ответила!")
+
+    assert updated["fields"]["litigation_costs"]["status"] == "filled"
+    assert "6 000 рублей" in updated["fields"]["litigation_costs"]["value"]
+    assert updated["fields"]["source_address"]["status"] == "incomplete"
+    assert updated["fields"]["source_address"]["origin"] == "source_address_conflict"
+    provider.assert_not_awaited()
+
+
 @pytest.mark.asyncio
 async def test_calculate_it_for_me_with_components_stays_in_the_factual_intake(monkeypatch):
     state = damage_state()

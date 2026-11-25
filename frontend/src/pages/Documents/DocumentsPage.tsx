@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import styled from 'styled-components';
@@ -296,6 +296,7 @@ export default function DocumentsPage() {
   const [aiQuestions, setAiQuestions] = useState('');
   const [aiDocType, setAiDocType] = useState<AiDocumentType | ''>('');
   const [aiTitle, setAiTitle] = useState('');
+  const startAttempt = useRef<{ fingerprint: string; id: string } | null>(null);
   const addToast = useUIStore((s) => s.addToast);
   const queryClient = useQueryClient();
 
@@ -382,28 +383,33 @@ export default function DocumentsPage() {
       if (generateMode === 'ai') {
           setAiQuestions('');
         const prompt = aiPrompt.trim();
-        if (prompt.length < 10) {
-          addToast({ type: 'error', message: 'Опишите запрос подробнее (минимум 10 символов)' });
+        if (prompt.length < 3) {
+          addToast({ type: 'error', message: 'Укажите вид документа или опишите запрос (минимум 3 символа)' });
           setIsGenerating(false);
           return;
         }
-        const interview = await documentsApi.startInterview({
+        const payload = {
           prompt,
           filename: filename.trim() || 'ai-document',
           output_format: outputFormat,
           ...(aiTitle.trim() ? { title: aiTitle.trim() } : {}),
           ...(aiDocType ? { document_type: aiDocType } : {}),
           ...(selectedChatId ? { chat_id: Number(selectedChatId) } : {}),
+        };
+        const fingerprint = JSON.stringify(payload);
+        if (startAttempt.current?.fingerprint !== fingerprint) {
+          startAttempt.current = { fingerprint, id: crypto.randomUUID() };
+        }
+        const interview = await documentsApi.startInterview({
+          ...payload, start_request_id: startAttempt.current.id,
         });
+        startAttempt.current = null;
         setShowGenerateModal(false);
         setAiPrompt('');
         setAiDocType('');
         setAiTitle('');
         setSelectedChatId('');
         queryClient.invalidateQueries({ queryKey: ['chats'] });
-        if (interview.context_omitted) {
-          addToast({ type: 'info', message: 'Прежний чат недоступен. Подготовка начата по вашему описанию.' });
-        }
         navigate(`/chat/${interview.chat_id}`);
         return;
       }

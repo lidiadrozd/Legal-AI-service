@@ -1,7 +1,91 @@
 """Postal components and explicit reference confirmation, shared by all forms."""
 import re
 
-RELATIVE = re.compile(r'в (?:том|этом) же доме|там же|тот же адрес|по тому же адресу|мой (?:же )?адрес|адрес (?:истца|заявителя|ответчика)|как у меня', re.I)
+_OWN_ADDRESS = re.compile(r'(?:это\s+)?мой(?:\s+(?:(?:указанный(?:\s+выше)?|прежний|же)\s+)?адрес)?[.!]?', re.I)
+RELATIVE = re.compile(r'в (?:том|этом) же доме|там же|тот же адрес|по тому же адресу|мой (?:же |указанный (?:выше )?)?адрес|адрес (?:истца|заявителя|ответчика)|как у меня', re.I)
+
+# The model chooses the address and its role. Format only the isolated,
+# labelled address fragment. Keep inflected street names with their original
+# preposition: «по улице Ахматовой» does not imply a street called «Ахматовая».
+_NUMBER = r'\d+[А-Яа-яЁёA-Za-z]?(?:[/–-]\d+[А-Яа-яЁёA-Za-z]?)?'
+_NAME = r'[А-ЯЁ][\w-]*(?:\s+[А-ЯЁ][\w-]*){0,3}'
+_POSTAL_PART = re.compile(r'(?<!\w)(?:'
+    rf'(?P<flat>(?i:квартир[аеыу]|кв\.?)\s*№?\s*(?P<flat_number>{_NUMBER}))|'
+    rf'(?P<house>(?i:(?:в\s+)?доме|дом(?:а)?|д\.)\s*№?\s*(?P<house_number>{_NUMBER}))|'
+    rf'(?P<street>(?i:по улице|на улице|улица|ул\.)\s+(?P<street_name>{_NAME}))|'
+    rf'(?P<locality>(?i:в\s+(?:городе\s+)?|г\.\s*|город\s+)(?P<city_name>{_NAME})))'
+)
+_PART_SEPARATOR = re.compile(r'\s*,?\s*(?:по\s+адресу\s*:?\s*)?', re.I)
+
+
+def _locality_value(name, locative):
+    if not locative:
+        return 'г. ' + name
+    if ' ' not in name and name.casefold().endswith(('бурге', 'граде', 'городе', 'ске')):
+        return 'г. ' + name[:-1]
+    # Several city names can share a case ending. Keep the supplied spelling.
+    return 'в ' + name
+
+
+def postal_phrase(raw):
+    """Format a set of labelled components supplied in any order."""
+    text = raw.strip(' .')
+    if not re.search(r'\b(?:квартиры|доме|по улице|на улице)\b', text, re.I):
+        return None
+    text = re.sub(r'^(?:вот\s+(?:тут|здесь)\s+есть\s*:\s*)?(?:(?:я\s+)?собственни(?:ца|к)\s+)?', '', text, flags=re.I)
+    parts = {}
+    offset = 0
+    for match in _POSTAL_PART.finditer(text):
+        if not _PART_SEPARATOR.fullmatch(text[offset:match.start()]) or match.lastgroup in parts:
+            return None
+        kind = match.lastgroup
+        if kind == 'locality':
+            parts[kind] = _locality_value(match['city_name'], match[0].casefold().startswith('в '))
+        elif kind == 'street':
+            parts[kind] = (match[0] if re.match('по |на ', match[0], re.I) else 'ул. ' + match['street_name'])
+        else:
+            parts[kind] = ('д. ' if kind == 'house' else 'кв. ') + match[kind + '_number']
+        offset = match.end()
+    if text[offset:].strip(' ,') or not {'house', 'street'} <= parts.keys():
+        return None
+    return ', '.join(parts[key] for key in ('locality', 'street', 'house', 'flat') if key in parts)
+
+
+def complete_address_quote(quote, source):
+    """Expand a truncated model quote only within one unambiguous series of postal components."""
+    if source.count(quote) != 1:
+        return quote
+    start = source.index(quote)
+    end = start + len(quote.rstrip(' .'))
+    group = []
+    for part in _POSTAL_PART.finditer(source):
+        if group and (not _PART_SEPARATOR.fullmatch(source[group[-1].end():part.start()])
+                      or any(old.lastgroup == part.lastgroup for old in group)):
+            if group[0].start() <= start and end <= group[-1].end():
+                break
+            group = []
+        group.append(part)
+    if group and group[0].start() <= start and end <= group[-1].end():
+        full = source[group[0].start():group[-1].end()]
+        if len(full) > len(quote) and postal_phrase(full):
+            return full
+    return quote
+
+
+def add_missing_locality(previous, message):
+    """Merge a city-only reply into a saved address without replacing the street/house."""
+    from app.services.document_dialogue import has_locality
+    if not previous or has_locality(previous):
+        return None
+    parts = components(previous)
+    if not (parts['house'] or parts['street']):
+        return None
+    reply = re.sub(r'[\s,.;—-]+(?:написано(?:\s+же)?|уже\s+(?:писала?|указывала?)(?:\s+выше)?)\s*[.!]*$', '', message.strip(), flags=re.I)
+    city = re.fullmatch(rf'(?P<prefix>(?i:в\s+(?:городе\s+)?|город\s+|г\.\s*))?(?P<name>{_NAME}|[а-яё-]+)[.!]?', reply)
+    if not city:
+        return None
+    locality = _locality_value(city['name'].title(), (city['prefix'] or '').casefold().startswith('в '))
+    return f'{locality}, {previous}'
 
 
 def collect_role_addresses(state, message):
@@ -48,13 +132,13 @@ def explicit_component_correction(previous,message):
 
 def components(value):
     city = re.search(r'(?:^|,\s*)(?:г\.?|город|село|пос[её]лок|деревня)\s+([^,]+)', value, re.I)
-    street = re.search(r'(?:^|,\s*)(?:ул\.?|улица|просп(?:ект)?\.?|пер(?:еулок)?\.?)\s+([^,]+)', value, re.I)
+    street = re.search(r'(?:^|,\s*)(?:ул\.?|улица|по улице|на улице|просп(?:ект)?\.?|пер(?:еулок)?\.?)\s+([^,]+)', value, re.I)
     house = re.search(r'(?:^|[,\s])(?:д\.|дом)\s*(\d+[\w/-]*)', value, re.I)
     flat = re.search(r'(?:кв\.?|квартира)\s*№?\s*(\d+[\w/-]*)', value, re.I)
     if not city and ',' in value:
         first = value.split(',')[0].strip()
-        if re.fullmatch(r'[А-Яа-яЁё-]+(?:\s+[А-Яа-яЁё-]+)*', first) and not re.match(r'ул\b|улица\b', first, re.I):
-            city = (first, first)
+        if re.fullmatch(r'[А-Яа-яЁё-]+(?:\s+[А-Яа-яЁё-]+)*', first) and not re.match(r'ул\b|улица\b|(?:на|по) улице\b', first, re.I):
+            city = (first, re.sub(r'^в\s+', '', first, flags=re.I))
     return {'locality': city[1].strip() if city else None, 'street': street[1].strip() if street else None,
             'house': house[1] if house else None, 'flat': flat[1] if flat else None}
 
@@ -75,7 +159,8 @@ def address_error(value):
 
 def reference_candidate(state, key, raw):
     """Propose a full address, never silently infer a party's residence."""
-    if not RELATIVE.search(raw):
+    own = _OWN_ADDRESS.fullmatch(raw.strip())
+    if not (own or RELATIVE.search(raw)):
         return None
     # A labelled, fully written address is not a reference to another party.
     # Extractors keep the label in evidence; on the next turn that evidence
@@ -88,7 +173,7 @@ def reference_candidate(state, key, raw):
     fields = state.get('fields', {})
     if re.search(r'ответчика', raw, re.I):
         source = 'recipient_address'
-    elif re.search(r'истца|заявителя|мой|у меня', raw, re.I):
+    elif own or re.search(r'истца|заявителя|мой|у меня', raw, re.I):
         source = 'sender_address'
     else:
         source = 'property_address' if key == 'source_address' else 'sender_address'
@@ -108,22 +193,76 @@ def store_reference(state, key, raw):
     if candidate:
         state['fields'][key] = {'status': 'incomplete', 'value': None, 'original': raw, 'evidence': raw,
             'address_candidate': candidate, 'error': f'Правильно понимаю полный адрес: {candidate["value"]}?'}
+        if key == 'property_address' and _OWN_ADDRESS.fullmatch(raw.strip()):
+            # The property-address question explicitly offers the claimant's
+            # address. Their reply already identifies the reference.
+            _accept_reference(state, key, candidate, raw)
         return True
     return False
 
 
+def prepare_property_address_reference(state):
+    """Ask permission to reuse a known property address as the claimant's address."""
+    if state.get('scenario') != 'claim_damage_flood':
+        return
+    fields = state.get('fields', {})
+    target = fields.get('sender_address', {})
+    address = fields.get('property_address', {})
+    candidate = target.get('address_candidate') or {}
+    if candidate.get('reference_field') == 'property_address' and candidate.get('reference_value') != address.get('value'):
+        target.pop('address_candidate')
+        target.pop('error', None)
+    if (address.get('status') != 'filled' or not address.get('value') or target.get('value')
+            or target.get('status') in {'filled', 'not_applicable', 'unknown', 'review_required'}
+            or target.get('address_candidate') or target.get('error') or target.get('declined_reference')):
+        return
+    value = address['value']
+    fields['sender_address'] = {
+        **target, 'status': 'incomplete',
+        'address_candidate': {'value': value, 'reference_value': value, 'reference_field': 'property_address'},
+        'error': f'Указать для связи с истцом адрес повреждённой квартиры — {value}?',
+    }
+
+
 def confirm_reference(state, key, message):
     current = state.get('fields', {}).get(key, {})
+    if key == 'source_address' and current.get('origin') == 'source_address_conflict':
+        choice = re.fullmatch(r'\s*(?:нет[, ]+)?(?:остав(?:ь|ьте)|укаж(?:и|ите))\s+(?:(?:квартир[уа]|кв\.?)\s*)?'
+                              r'№?\s*(\d+[\w/-]*)[.!\s]*', message, re.I)
+        if choice:
+            addresses = [state['fields'].get(k, {}) for k in ('property_address', 'recipient_address')]
+            matches = [item['value'] for item in addresses if item.get('status') == 'filled'
+                       and components(item['value']).get('flat') == choice[1]]
+            if len(matches) == 1:
+                current.update(status='filled', value=matches[0], origin='confirmed_flood_source',
+                               original=matches[0], evidence=message, confirmed_source=True,
+                               address_components=components(matches[0]), error=None)
+                current.pop('address_candidate', None)
+                state['revision'] = state.get('revision', 0) + 1
+                return True
     candidate = current.get('address_candidate')
-    if not candidate or not re.fullmatch(r'\s*(?:да|верно|в[сеё] верно|правильно|подтверждаю|да[, ]+верно)[.!]?\s*', message, re.I):
+    if not candidate:
+        return False
+    if re.fullmatch(r'\s*(?:нет|другой|адрес другой)[.!]?\s*', message, re.I):
+        current.pop('address_candidate')
+        current.update(declined_reference=candidate['reference_value'], error='Какой адрес указать в этом поле?')
+        state['revision'] = state.get('revision', 0) + 1
+        return True
+    if not re.fullmatch(r'\s*(?:да|верно|в[сеё] верно|правильно|подтверждаю|да[, ]+верно|'
+                        r'(?:да[, ]+)?(?:укаж(?:и|ите)\s+)?(?:тот|этот)\s+же(?:\s+адрес)?)[.!]?\s*', message, re.I):
         return False
     reference = state['fields'].get(candidate['reference_field'], {})
     if reference.get('value') != candidate['reference_value']:
         current.pop('address_candidate', None)
         current['error'] = 'Адрес, на который вы ссылались, изменился. Какой полный адрес нужно указать?'
         return True
+    _accept_reference(state, key, candidate, message)
+    return True
+
+
+def _accept_reference(state, key, candidate, message):
+    current = state['fields'][key]
     current.update(status='filled', value=candidate['value'], error=None, origin='confirmed_address_reference',
         confirmation=message, address_reference=candidate, address_components=components(candidate['value']))
     current.pop('address_candidate', None)
     state['revision'] = state.get('revision', 0) + 1
-    return True

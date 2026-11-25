@@ -98,7 +98,8 @@ async def test_unverified_colloquial_text_is_a_named_gap_and_file_still_download
     downloaded=await client.get('/documents/'+response.json()['document_id']+'/download')
     text='\n'.join(p.text for p in Document(BytesIO(downloaded.content)).paragraphs)
     assert raw not in text and 'требуется редакция' not in text
-    assert '['+next(f.label.lower() for f in SCENARIOS[state['scenario']].fields if f.key=='facts')+']' in text
+    label = next(f.label.lower() for f in SCENARIOS[state['scenario']].fields if f.key == 'facts')
+    assert f'[ДАННЫЕ ОТСУТСТВУЮТ: {label}]' in text
     stored=await db_session.get(StoredDocument,response.json()['document_id'])
     assert stored.generation_meta['fields']['facts']['value']==raw
     assert any(i['field']=='facts' for i in stored.generation_meta['readiness']['legal_review'])
